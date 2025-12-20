@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: research-os-api
+  datasource:
+    url: jdbc:postgresql://localhost:5432/researchos
+    username: user
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+researchos:
+  api:
+    provider: fmp
+    base-url: https://financialmodelingprep.com/api/v3
+    key: cun3bDZAclkpsncg0XWHNUWBeyDbjIbD
