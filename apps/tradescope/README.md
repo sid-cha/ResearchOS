@@ -1,15 +1,15 @@
-# TradeScope AI v0.6 — Professional Terminal + Evidence-Grounded Analyst Assistant
+# TradeScope AI v0.7 — Market Data Integrity + Evidence-Grounded Research
 
-**Status:** Sprints 1–3, a local-first investigation workflow, and professional light/dark workspaces; local preview, **not** an institutional surveillance release or public licensed data product.
+**Status:** Local-first research workstation with server-side IEX streaming, snapshot fallback, investigations and professional light/dark workspaces. Authenticated live streaming requires local provider verification; this is **not** an institutional surveillance release or public licensed data product.
 
-Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The prior synthetic trade blotter, historical-trade playback, and IEX snapshot polling remain intact. New Event Intelligence adds corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
+Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The synthetic trade blotter, historical-trade playback, and IEX snapshot API remain available. Event Intelligence includes corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
 
 ## Quick start — Windows PowerShell
 
 ```powershell
 cd apps/tradescope
 node --version       # 22.16+ required
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 notepad .env         # replace API credentials and SEC contact address
 npm start
 ```
@@ -26,19 +26,30 @@ Defense in depth:
 - `.gitignore` excludes `.env` and `.env.*` (except the harmless template).
 - `.vercelignore` excludes environment files from **Vercel CLI** uploads; that configuration does **not** protect arbitrary manually created ZIP archives.
 - The local HTTP server serves only an explicit list of public assets, so `.env` cannot be requested over HTTP.
-- `npm run build:static` generates **only** eight allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
+- `npm run build:static` generates **only** twelve allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
 - This static demo cannot execute the local `/api` endpoints. To offer live data on Vercel, deploy a secured backend, store credentials in server-side environment variables, and review market-data licensing and access controls first.
 
 On Windows PowerShell, create and edit the local credentials file:
 
 ```powershell
-Copy-Item .env.example .env
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
 notepad .env
 npm test
 npm run build:static
 ```
 
 Never share the real `.env` file or include it in screenshots, bug reports, downloadable ZIPs, or Vercel Drop uploads. If a key was exposed in a conversation or log, revoke/rotate it in Alpaca before continuing.
+
+## v0.7 — Market Data Integrity
+
+- **LIVE IEX streaming:** one server-owned, authenticated WebSocket connection at the fixed Alpaca IEX endpoint serves the ten-symbol pilot. The browser connects through same-origin `GET /api/stream` SSE. Authentication and full trade/quote/bar subscription acknowledgement precede observation delivery; no credentials reach clients.
+- **Canonical events:** schema-v1 trade, quote and bar envelopes preserve provider identity, venue where supplied, original event-time precision, backend receipt and ingestion clocks, and quality metadata. Missing source fields stay unknown. Bars are normalized and counted without being presented as individual trades in the blotter.
+- **Integrity and lifecycle:** bounded recent-event deduplication, out-of-order tracking, exponential reconnect backoff with jitter, handshake deadlines, bounded client buffering, heartbeats and disconnect cleanup. Browser delivery has no guaranteed replay or complete gap count.
+- **Explicit fallback:** `/api/live` snapshot polling remains available every 15 seconds while streaming is unavailable. Each selected observation identifies its transport and provenance; a successful HTTP request does not establish freshness. DEMO remains synthetic and HISTORY retains separate IEX/SIP labels.
+- **Feed health:** provider/feed, single-venue scope, connection/transport, exchange and ingestion timestamps, wall-clock age, counters, discarded duplicates and retry status. Quiet/closed markets are not automatically classified as outages; market-session assessment remains unknown.
+- **Saved evidence:** explicitly creating an investigation retains whitelisted market provenance and exact source timestamps. This adds no automatic tick recording or licensed event archive.
+
+See [v0.7 requirements, architecture, resource bounds and Windows verification](docs/V07_MARKET_DATA_INTEGRITY.md) and the [executed verification report and changed files](docs/V07_VERIFICATION.md). Node 22.16+ and the local `.env` workflow are preserved, with no runtime dependencies added. Without local Alpaca credentials, authenticated live streaming and provider entitlement remain unverified; automated tests use controlled mock providers.
 
 ## v0.6 — Professional terminal and research copilot
 
