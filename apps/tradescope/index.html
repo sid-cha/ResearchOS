@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0d10">
+<meta name="description" content="TradeScope Terminal — synthetic market surveillance and explainable transaction blotter demo.">
+<title>TradeScope Terminal — Market Surveillance Workstation</title>
+<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./intelligence.css">
+</head>
+<body>
+<div class="terminal" id="terminal">
+  <header class="global-header">
+    <div class="brand"><div class="brand-glyph">T<span>.</span></div><div class="brand-name">TRADE<span>SCOPE</span><small>MARKET INTELLIGENCE</small></div></div>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <button type="button" class="nav-link active" data-nav="monitor">MONITOR</button>
+      <button type="button" class="nav-link" data-nav="blotter">TRADE BLOTTER</button>
+      <button type="button" class="nav-link" data-nav="signals">SIGNALS <span class="nav-counter" id="navCount">00</span></button>
+      <button type="button" class="nav-link" data-nav="replay">REPLAY LAB</button>
+      <button type="button" class="nav-link" data-nav="intel">EVENT INTELLIGENCE</button>
+    </nav>
+    <div class="global-actions"><span class="env-badge"><i></i> SYNTHETIC DATA</span><span class="utc-clock" id="clock">UTC 14:32:08</span><button id="export" type="button" class="header-action" title="Export visible events to CSV">↓ EXPORT</button></div>
+  </header>
+  <div class="ticker-tape" aria-label="Synthetic watchlist prices" id="tickerTape"></div>
+  <main>
+    <div class="command-header">
+      <div class="command-title"><div class="path">WORKSPACES <span>›</span> SURVEILLANCE <span>›</span> <strong>MARKET MONITOR</strong></div><div class="headline"><h1>Market surveillance</h1><span class="release">WORKSTATION / 02</span></div><p>Event monitoring, abnormal-flow detection and transaction reconstruction</p></div>
+      <div class="command-actions"><div class="stream-state"><span class="stream-ring"></span><span><strong id="streamState">REPLAY PAUSED</strong><small id="streamProgress">68 / 128 EVENTS</small></span></div><button type="button" class="button button-outline" id="reset">↺ RESET</button><select aria-label="Replay speed" id="speed" class="speed-select"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select><button type="button" class="button button-amber" id="play">▶ RUN REPLAY</button></div>
+    </div>
+    <div class="disclaimer"><span class="disclaimer-icon">SIM</span><span><strong>SIMULATED DATA ENVIRONMENT</strong> <span id="sourceWarning">The trading blotter begins in synthetic mode; switch its connector for authenticated IEX observations. The independent Event Intelligence workspace can load separate official/news records. Source labels in each panel apply independently.</span> Surveillance rules are illustrative, not misconduct determinations.</span><span class="data-source">SOURCE: SYNTHETIC_FIXTURE_V2</span></div>
+    <section class="data-connector" aria-label="Market data connection">
+      <div class="mode-options"><button id="modeDemo" class="mode-button active" type="button">DEMO REPLAY</button><button id="modeLive" class="mode-button" type="button">LIVE IEX · POLLED</button><button id="modeHistory" class="mode-button" type="button">HISTORICAL TRADES</button></div>
+      <div class="historical-controls" id="historyControls" hidden><label for="historySymbol">SYMBOL</label><select id="historySymbol"><option>AAPL</option><option>NVDA</option><option>TSLA</option><option>MSFT</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select><label for="historyFeed">FEED</label><select id="historyFeed"><option value="sip">SIP · PREVIOUS DAYS</option><option value="iex">IEX · ANY SESSION</option></select><label for="historyDate">SESSION DATE</label><input type="date" id="historyDate"><button id="loadHistory" type="button">LOAD REAL TRADES</button></div>
+      <div id="connectionStatus" class="connection-status" role="status" aria-live="polite">DEMO / NO PROVIDER CONNECTION</div>
+    </section>
+    <section class="kpi-grid" aria-label="Surveillance key metrics">
+      <div class="kpi"><div class="kpi-label">EVENTS INGESTED <span>01 / 05</span></div><div class="kpi-main"><strong id="metricEvents">68</strong><svg viewBox="0 0 80 30" class="micro-chart" aria-hidden="true"><polyline points="0,25 12,21 24,23 36,15 48,18 60,9 72,11 80,3"/></svg></div><div class="kpi-foot"><span class="accent-teal">↑ 12.8%</span> vs. earlier replay segment</div></div>
+      <div class="kpi"><div class="kpi-label">FLAGGED EVENTS <span>02 / 05</span></div><div class="kpi-main"><strong id="metricAlerts">00</strong><span class="kpi-tag amber">RULE TRIGGERS</span></div><div class="kpi-foot" id="metricAlertRate">0% of observed events</div></div>
+      <div class="kpi"><div class="kpi-label">HIGH PRIORITY <span>03 / 05</span></div><div class="kpi-main"><strong id="metricCritical">00</strong><span class="red-pulse"></span></div><div class="kpi-foot"><span class="accent-red">ACTION REQUIRED</span> / manual review</div></div>
+      <div class="kpi"><div class="kpi-label">AVG. ANOMALY SCORE <span>04 / 05</span></div><div class="kpi-main"><strong id="metricScore">00<span class="muted-fraction">/100</span></strong><div class="score-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="kpi-foot">Deterministic risk indicator</div></div>
+      <div class="kpi"><div class="kpi-label">DATA COVERAGE <span>05 / 05</span></div><div class="kpi-main coverage-value"><strong>10</strong><span>SYMBOLS</span><span class="coverage-led"></span></div><div class="kpi-foot">Simulated venues / US equities</div></div>
+    </section>
+    <section class="terminal-grid">
+      <div class="column left-column">
+        <section class="panel watchlist-panel"><div class="panel-titlebar"><div><span class="panel-index">01</span><h2>MARKET WATCH</h2></div><span class="panel-meta">10 ASSETS <b>▼</b></span></div><div class="watch-head"><span>SYMBOL</span><span>LAST</span><span>CHG %</span></div><div id="watchRows" class="watch-rows"></div></section>
+        <section class="panel heatmap-panel"><div class="panel-titlebar"><div><span class="panel-index">02</span><h2>PERFORMANCE MAP</h2></div><span class="panel-meta">SYNTHETIC</span></div><div class="heatmap" id="heatmap"></div><div class="panel-note">Click a tile to filter the blotter and chart.</div></section>
+        <section class="panel mini-flow-panel"><div class="panel-titlebar"><div><span class="panel-index">03</span><h2>FLOW COMPOSITION</h2></div><span class="panel-meta">EVENT MIX</span></div><div class="flow-content" id="eventMix"></div></section>
+      </div>
+      <div class="column center-column">
+        <section class="panel chart-panel"><div class="panel-titlebar chart-title"><div><span class="panel-index">04</span><h2>PRICE & ACTIVITY</h2><span class="chart-symbol" id="chartSymbol">NVDA</span></div><div class="chart-tabs"><button class="active" type="button" data-range="1M">1M</button><button type="button" data-range="5M">5M</button><button type="button" data-range="15M">15M</button><button type="button" data-range="1H">1H</button></div></div><div class="chart-info"><div><strong id="chartPrice">$190.43</strong><span id="chartChange" class="accent-teal">+1.42%</span><small>SIMULATED MID / USD</small></div><div class="chart-legend"><span><i class="legend-line"></i> LAST PRICE</span><span><i class="legend-bar"></i> EVENT VOLUME</span></div></div><div class="market-chart" id="marketChart"></div></section>
+        <section class="panel events-panel" id="blotterPanel"><div class="panel-titlebar blotter-title"><div><span class="panel-index">05</span><h2>EVENT BLOTTER</h2><span class="count-pill" id="blotterCount">68 EVENTS</span></div><div class="panel-tools"><button type="button" class="tool-button active" id="allEvents">ALL EVENTS</button><button type="button" class="tool-button" id="flaggedOnly">FLAGGED ONLY</button></div></div>
+          <div class="filters"><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Search symbol, event ID, venue..." aria-label="Search blotter events"></div><select id="symbolFilter" aria-label="Symbol filter"><option value="ALL">ALL SYMBOLS</option></select><select id="eventFilter" aria-label="Event type filter"><option value="ALL">ALL EVENTS</option><option value="TRADE">TRADES</option><option value="QUOTE">QUOTES</option><option value="ADD">ORDER ADDS</option><option value="CANCEL">CANCELLATIONS</option></select><button type="button" id="clearFilters" class="clear-button">CLEAR</button></div>
+          <div class="blotter-scroll"><table aria-label="Synthetic market event blotter"><thead><tr><th>TIME <span>ET</span></th><th>SYMBOL</th><th>TYPE</th><th class="num">PRICE</th><th class="num">SIZE</th><th>VENUE</th><th class="num">SCORE</th><th>RISK</th></tr></thead><tbody id="blotterBody"></tbody></table></div><div class="table-status"><span id="rowCount">0 EVENTS</span><span class="legend"><i class="legend-red"></i> HIGH <i class="legend-yellow"></i> MED <i class="legend-green"></i> NORMAL</span><span class="keyboard-hint">SELECT ROW → INSPECT</span></div>
+        </section>
+        <section class="panel alert-log-panel"><div class="panel-titlebar"><div><span class="panel-index">06</span><h2>RECENT SURVEILLANCE ALERTS</h2></div><span class="panel-meta">LATEST FIRST</span></div><div class="alert-stream" id="alertStream"></div></section>
+      </div>
+      <div class="column right-column">
+        <section class="panel signals-panel"><div class="panel-titlebar"><div><span class="panel-index">07</span><h2>SIGNAL MONITOR</h2></div><span class="panel-meta" id="signalCount">00 ACTIVE</span></div><div class="signals-subhead">RULE-BASED OBSERVATIONS <span>SEVERITY</span></div><div class="signal-rows" id="signalRows"></div><div class="signal-action"><button type="button" id="filterSignals">VIEW ALL FLAGGED EVENTS ↗</button></div></section>
+        <section class="panel inspector-panel"><div class="panel-titlebar"><div><span class="panel-index">08</span><h2>EVENT INSPECTOR</h2></div><span class="inspector-status" id="inspectorStatus">AWAITING SELECTION</span></div><div id="inspector" class="inspector-content"></div></section>
+        <section class="panel rule-panel"><div class="panel-titlebar"><div><span class="panel-index">09</span><h2>DETECTION ENGINE</h2></div><span class="healthy-tag"><i></i> ACTIVE</span></div><div class="rule-list"><div><span class="rule-code">VOL-01</span><span>Volume surge</span><span class="rule-on">ON</span></div><div><span class="rule-code">SPR-02</span><span>Spread widening</span><span class="rule-on">ON</span></div><div><span class="rule-code">CAN-03</span><span>Cancel concentration</span><span class="rule-on">ON</span></div><div><span class="rule-code">MOV-04</span><span>Price dislocation</span><span class="rule-on">ON</span></div></div></section>
+      </div>
+    </section>
+
+    <section class="intel-workspace" id="eventIntel" aria-label="Event intelligence and financial research">
+      <div class="intel-heading"><div><span class="intel-overline">WORKSPACE 03 / FUNDAMENTALS + EVENT CONTEXT</span><h2>EVENT INTELLIGENCE <em>/</em> MARKET REACTION</h2><p>Compare timestamped real-world events with exchange observations, company filings and financial indicators.</p></div><div class="intel-metadata"><span class="intel-badge" id="intelMode">SYNTHETIC EXAMPLE</span><span id="intelUpdated">Not connected to an external feed</span></div></div>
+      <div class="intel-bar">
+        <label for="intelSymbol">SECURITY</label><select id="intelSymbol"><option>NVDA</option><option selected>AAPL</option><option>MSFT</option><option>TSLA</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select>
+        <button id="intelNews" class="intel-primary" type="button">↗ ALPACA NEWS</button>
+        <button id="intelFilings" type="button">SEC FILINGS + FUNDAMENTALS</button>
+        <button id="intelTechnical" type="button">TECHNICAL INDICATORS</button>
+        <button id="intelHazards" type="button">USGS / NASA</button>
+        <select id="intelTopic" aria-label="Geopolitical topic"><option value="sanctions">SANCTIONS</option><option value="conflict">CONFLICT</option><option value="supply">SUPPLY CHAIN</option></select>
+        <button id="intelGeo" type="button">GDELT REPORTS</button>
+        <button id="intelDemo" type="button">↺ DEMO</button>
+      </div>
+      <div id="intelStatus" class="intel-status" role="status" aria-live="polite">Research illustration loaded. Select a source to request real, sourced records from the local server.</div>
+      <div class="intel-layout">
+        <section class="intel-pane intel-feed"><div class="intel-panel-head"><h3>01 / EXTERNAL EVENT FEED</h3><span id="intelCount">00 RECORDS</span></div><div class="intel-feed-filters"><select id="intelCategory" aria-label="Event category"><option value="ALL">ALL CATEGORIES</option><option value="CORPORATE">CORPORATE</option><option value="NATURAL">NATURAL</option><option value="GEOPOLITICAL">GEOPOLITICAL</option></select><input id="intelQuery" type="search" placeholder="Filter titles…" aria-label="Filter event titles"/></div><div class="intel-rows" id="intelEventRows"></div></section>
+        <section class="intel-pane intel-analysis"><div class="intel-panel-head"><h3>02 / EVENT INVESTIGATION</h3><span>RELATIONSHIP ≠ CAUSATION</span></div><div id="intelInvestigation"></div><div class="intel-study-head"><b>BENCHMARK-RELATIVE EVENT STUDY</b><button id="intelImpact" type="button">RUN REAL EVENT STUDY</button></div><div class="intel-study" id="intelStudy"><div class="intel-empty">Select an event and run the study to compare completed-session returns against SPY.</div></div></section>
+        <div class="intel-sidebar">
+          <section class="intel-pane"><div class="intel-panel-head"><h3>03 / TECHNICAL SNAPSHOT</h3><span id="intelTechnicalSource">DEMO ONLY</span></div><div class="intel-indicators" id="intelIndicators"></div><div class="intel-forecast" id="intelForecast"></div><div class="intel-panel-foot">SMA20/50 · RSI14 · MACD · ATR14 · Volume/20D. Below: EWMA risk baseline, not a directional forecast.</div></section>
+          <section class="intel-pane"><div class="intel-panel-head"><h3>04 / COMPANY FUNDAMENTALS</h3><span id="intelFinancialSource">DEMO ONLY</span></div><div id="intelFundamentals" class="intel-fundamentals"></div><div class="intel-panel-foot">SEC XBRL data is fiscal-period based; incomplete fields are shown as unavailable.</div></section>
+          <section class="intel-pane"><div class="intel-panel-head"><h3>05 / QUARTERLY REPORTS & FILINGS</h3><span>SEC EDGAR</span></div><div class="intel-filings" id="intelFilingRows"></div></section>
+        </div>
+      </div>
+      <div class="intel-footer">DATA PROVENANCE: EACH RECORD SHOWS SOURCE + TIMESTAMP. PUBLIC NEWS LINKS ARE RESEARCH POINTERS; MARKET MOVEMENTS ARE NOT ATTRIBUTED TO EVENTS WITHOUT INDEPENDENT EVIDENCE. NO TRADE EXECUTION.</div>
+    </section>
+
+    <footer class="statusbar"><span><i class="status-led"></i> LOCAL REPLAY ENGINE <b id="footerEngine">READY</b></span><span>RULESET <b>V2.1</b></span><span>EVENT SOURCE <b>SYNTHETIC</b></span><span>DETECTION <b>DETERMINISTIC</b></span><span class="status-end">TRADESCOPE TERMINAL · RESEARCH DEMO · NOT INVESTMENT ADVICE</span></footer>
+  </main>
+</div>
+<script src="./app.js"></script>
+<script src="./live-adapter.js"></script>
+<script src="./event-workspace.js"></script>
+</body>
+</html>

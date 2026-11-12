@@ -1,0 +1,14 @@
+{
+  "name": "tradescope-event-intelligence",
+  "private": true,
+  "version": "0.4.0",
+  "description": "Event-linked market intelligence terminal with SEC fundamentals, external hazards, news, technical analytics and risk baselines",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
