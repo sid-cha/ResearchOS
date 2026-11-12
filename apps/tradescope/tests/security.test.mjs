@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {readFile, readdir} from 'node:fs/promises';
+import {dirname, join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const PUBLIC = ['index.html','styles.css','app.js','live-adapter.js','event-workspace.js','intelligence.css'];
+test('static preview packages only public files and never .env or server code', async () => {
+  execFileSync(process.execPath, [join(ROOT,'scripts/build-static.mjs')], {cwd:ROOT, stdio:'pipe'});
+  const files=(await readdir(join(ROOT,'dist'))).sort();
+  assert.deepEqual(files,[...PUBLIC].sort());
+  assert(!files.some(f => f.startsWith('.env') || f.includes('server') || f.includes('secret')));
+});
+test('local and Vercel ignore rules exclude private environment files', async () => {
+  const git=await readFile(join(ROOT,'.gitignore'),'utf8');
+  const vercel=await readFile(join(ROOT,'.vercelignore'),'utf8');
+  assert.match(git,/^\.env$/m);assert.match(git,/^\.env\.\*$/m);
+  assert.match(vercel,/^\.env$/m);assert.match(vercel,/^\.env\.\*$/m);
+});

@@ -18,6 +18,28 @@ Open **http://127.0.0.1:8000**, click **EVENT INTELLIGENCE**, and use the source
 
 Do **not** open `index.html` directly when testing actual APIs; use the local Node server. Its API binds to loopback by default. Do not expose the server to the public internet without authentication, per-user rate limits, licensing review and other security work.
 
+## API secrets, local development, and Vercel deployment protection
+
+**Do not commit Alpaca key IDs or secrets, even to a private repository.** Create a local-only `.env` from `.env.example` and paste your **rotated** paper-account credentials there. Key IDs and secrets use `APCA_API_KEY_ID` and `APCA_API_SECRET_KEY`. The paper-trading endpoint (`https://paper-api.alpaca.markets/v2`) is for order/account APIs; this read-only research app sends market-data requests to `https://data.alpaca.markets`.
+
+Defense in depth:
+- `.gitignore` excludes `.env` and `.env.*` (except the harmless template).
+- `.vercelignore` excludes environment files from **Vercel CLI** uploads; that configuration does **not** protect arbitrary manually created ZIP archives.
+- The local HTTP server serves only an explicit list of public assets, so `.env` cannot be requested over HTTP.
+- `npm run build:static` generates **only** six allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
+- This static demo cannot execute the local `/api` endpoints. To offer live data on Vercel, deploy a secured backend, store credentials in server-side environment variables, and review market-data licensing and access controls first.
+
+On Windows PowerShell, create and edit the local credentials file:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+npm test
+npm run build:static
+```
+
+Never share the real `.env` file or include it in screenshots, bug reports, downloadable ZIPs, or Vercel Drop uploads. If a key was exposed in a conversation or log, revoke/rotate it in Alpaca before continuing.
+
 ## Sprint 1 — Company, news, filings and fundamentals
 
 - `/api/intelligence/news?symbol=AAPL`: Alpaca News (timestamped linked headlines and original article URLs).

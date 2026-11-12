@@ -1,0 +1,9 @@
+# Fallback for deployments from monorepo root.
+# Project-level apps/tradescope/.vercelignore takes precedence when it is the Vercel root.
+.env
+.env.*
+**/.env
+**/.env.*
+**/.envrc
+node_modules/
+**/node_modules/
