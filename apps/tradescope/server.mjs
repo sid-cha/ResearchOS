@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {makeSources} from './lib/sources.mjs';
 import {createIntelligenceApi} from './lib/api.mjs';
 import {createCaseApi} from './lib/case-api.mjs';
+import {createAssistantApi} from './lib/assistant-api.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -16,7 +17,9 @@ const DEFAULT_SYMBOLS = ['NVDA','AAPL','MSFT','TSLA','SPY','AMD','QQQ','META','A
 const MIME = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
 let cachedSnapshot = {expires:0, value:null};
 const handleIntelligence = createIntelligenceApi(makeSources());
-const handleCases = createCaseApi({filename: process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json')});
+const caseFile = process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json');
+const handleCases = createCaseApi({filename:caseFile});
+const handleAssistant = createAssistantApi({filename:caseFile});
 
 function json(res,status,body){
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'none'});
@@ -44,6 +47,7 @@ export function createServer(){return http.createServer(async(req,res)=>{
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
     if(await handleCases(req,res,u))return;
+    if(await handleAssistant(req,res,u))return;
     if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
     if(await handleIntelligence(req,res,u))return;
     if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
@@ -62,7 +66,7 @@ export function createServer(){return http.createServer(async(req,res)=>{
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);

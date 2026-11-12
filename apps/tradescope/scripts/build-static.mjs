@@ -9,7 +9,8 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEST = join(ROOT, 'dist');
 export const PUBLIC_ASSETS = Object.freeze([
   'index.html', 'styles.css', 'app.js', 'live-adapter.js',
-  'event-workspace.js', 'intelligence.css', 'case-workspace.js', 'cases.css'
+  'event-workspace.js', 'intelligence.css', 'case-workspace.js', 'cases.css',
+  'assistant-workspace.js', 'theme-controls.js', 'terminal-theme.css', 'workspace-nav.js'
 ]);
 await rm(DEST, {recursive: true, force: true});
 await mkdir(DEST, {recursive: true});

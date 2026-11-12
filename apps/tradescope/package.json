@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.5.0",
-  "description": "TradeScope Event Investigation Workbench with local-first evidence cases, live market data and SEC fundamentals",
+  "version": "0.6.0",
+  "description": "TradeScope professional light/dark workstation with source-grounded investigation copilot",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",

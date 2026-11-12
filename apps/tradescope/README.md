@@ -1,6 +1,6 @@
-# TradeScope AI v0.5 — Event Investigation Workbench + Market Intelligence
+# TradeScope AI v0.6 — Professional Terminal + Evidence-Grounded Analyst Assistant
 
-**Status:** Sprints 1–3 plus a local-first investigation workflow; local preview, **not** an institutional surveillance release or public licensed data product.
+**Status:** Sprints 1–3, a local-first investigation workflow, and professional light/dark workspaces; local preview, **not** an institutional surveillance release or public licensed data product.
 
 Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The prior synthetic trade blotter, historical-trade playback, and IEX snapshot polling remain intact. New Event Intelligence adds corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
 
@@ -39,6 +39,17 @@ npm run build:static
 ```
 
 Never share the real `.env` file or include it in screenshots, bug reports, downloadable ZIPs, or Vercel Drop uploads. If a key was exposed in a conversation or log, revoke/rotate it in Alpaca before continuing.
+
+## v0.6 — Professional terminal and research copilot
+
+- **Dark / light themes:** toolbar toggle, follows OS preference by default, persists user preference in the browser. High-contrast neutral surfaces; cyan is for focus/actions, green/red for signed movement (always accompanied by plus/minus or explicit text), amber for review attention.
+- **Comfortable / compact density:** adjust market rows and event/case spacing without rebuilding the app. Switch via the header.
+- **Dedicated workspaces:** Monitor, Event Intelligence, and Investigations occupy the same professional desktop shell without a continuous page of unrelated panels. Signals, Blotter and Replay remain market-monitor subviews.
+- **Evidence Assistant:** while reviewing a saved investigation, choose Brief / Market & Financials / Evidence Gaps / Sources. Ask a case-scoped question and copy a sourced briefing. The default deterministic analysis uses ONLY saved case context; missing evidence and synthetic data are explicitly identified. It never claims event-to-price causation.
+- **Optional generative model:** set `OPENAI_API_KEY` and optionally `OPENAI_MODEL=gpt-6-luna` in the local-only `.env` to enable short model-assisted interpretations of the existing evidence brief. The API key is never sent to the browser. If the model is unavailable, the assistant falls back to the deterministic brief. **The selected evidence brief and user question are sent to the model provider when this is configured**; do not enable it for confidential customer data without a privacy review. This provider integration is covered by mocked tests, not an authenticated production test.
+- **API:** `GET /api/assistant/cases/:id/brief?focus=overview|market|gaps|sources` and `POST /api/assistant/cases/:id/ask` (JSON `{ "question": "..." }`). Single-user local scope only.
+- **Research-based design:** see `docs/V06_VISUAL_DESIGN.md` for references, palettes, contrast checks and future usability tests.
+- **Static preview:** `npm run build:static` contains the theme and assistant interface but not the backend; local case actions and assistant answers need the running Node server.
 
 ## v0.5 — End-to-end investigation workbench
 

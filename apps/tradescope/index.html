@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-workspace="monitor">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="./styles.css">
 <link rel="stylesheet" href="./intelligence.css">
 <link rel="stylesheet" href="./cases.css">
+<link rel="stylesheet" href="./terminal-theme.css">
 </head>
 <body>
 <div class="terminal" id="terminal">
@@ -22,7 +23,7 @@
       <button type="button" class="nav-link" data-nav="intel">EVENT INTELLIGENCE</button>
       <button type="button" class="nav-link" data-nav="cases">INVESTIGATIONS <span class="nav-counter" id="caseNavCount">0</span></button>
     </nav>
-    <div class="global-actions"><span class="env-badge"><i></i> SYNTHETIC DATA</span><span class="utc-clock" id="clock">UTC 14:32:08</span><button id="export" type="button" class="header-action" title="Export visible events to CSV">↓ EXPORT</button></div>
+    <div class="global-actions"><button type="button" id="assistOpen" class="header-action assist-jump" title="Open Evidence Assistant">✦ ASSIST</button><button type="button" id="densityToggle" class="header-action preference-button" aria-label="Change display density">▤ COMPACT</button><button type="button" id="themeToggle" class="header-action preference-button" aria-label="Switch display theme">☀ LIGHT</button><span class="env-badge"><i></i> SYNTHETIC DATA</span><span class="utc-clock" id="clock">UTC 14:32:08</span><button id="export" type="button" class="header-action" title="Export visible events to CSV">↓ EXPORT</button></div>
   </header>
   <div class="ticker-tape" aria-label="Synthetic watchlist prices" id="tickerTape"></div>
   <main>
@@ -104,6 +105,11 @@
         <div><small>CLOSED</small><strong id="caseMetricClosed">0</strong></div>
         <div class="case-strip-note">Persisted on this machine · Single analyst preview · No automated compliance verdicts</div>
       </div>
+      <section id="assistPanel" class="assist-panel" aria-label="TradeScope analyst assistant">
+        <div class="assist-top"><div><span class="assist-eyebrow">✦ TRADESCOPE / RESEARCH COPILOT</span><h3>EVIDENCE ASSISTANT</h3><p>Structured interpretation of recorded events, quantitative context and source gaps. No investment recommendations.</p></div><div class="assist-head-right"><span id="assistMode" class="assist-mode">EVIDENCE ENGINE · NO AI KEY</span><span id="assistContext" class="assist-context">NO INVESTIGATION SELECTED</span></div></div>
+        <div class="assist-tabs" role="group" aria-label="Assistant analysis focus"><button type="button" class="is-active" data-assist-focus="overview">01 / BRIEF</button><button type="button" data-assist-focus="market">02 / MARKET & FINANCIALS</button><button type="button" data-assist-focus="gaps">03 / EVIDENCE GAPS</button><button type="button" data-assist-focus="sources">04 / SOURCES</button></div>
+        <div class="assist-grid"><div class="assist-main"><div class="assist-section-heading"><h4 id="assistTitle">Investigation briefing</h4><span>CASE-GROUNDED</span></div><div id="assistModelAnswer" class="assist-model-answer" hidden></div><div id="assistObservations" class="assist-observations"><div class="assist-placeholder">Open an investigation to generate an evidence brief.</div></div><form id="assistAskForm" class="assist-query"><label for="assistQuestion">ASK ABOUT THE SELECTED CASE</label><div><input type="text" id="assistQuestion" maxlength="600" placeholder="What are the missing corroborating signals?" aria-label="Question about this investigation" required><button type="submit" id="assistAsk">ANALYZE ↗</button></div><small>Uses the local evidence engine by default. An optional server-side AI model can be configured separately.</small></form></div><div class="assist-side"><div class="assist-section-heading"><h4>EVIDENCE GAPS</h4><span>CHECKLIST</span></div><div id="assistGaps" class="assist-gaps"></div><div class="assist-section-heading"><h4>NEXT INVESTIGATION STEPS</h4></div><div id="assistNext" class="assist-steps"></div></div></div><div class="assist-bottom"><div><b>SOURCE REFERENCES</b><div id="assistRefs" class="assist-refs"></div></div><button type="button" class="case-button" id="assistCopy">COPY BRIEF</button></div><div class="assist-method" id="assistMethod">Rule-grounded evidence brief</div><div class="assist-note" id="assistCaution">An observed market association does not establish causation.</div><div id="assistError" class="assist-error" role="status" aria-live="polite"></div>
+      </section>
       <div id="caseFeedback" class="case-feedback" aria-live="polite">Choose an event in Event Intelligence and click OPEN INVESTIGATION, or reopen an existing case.</div>
       <div class="cases-layout">
         <section class="case-pane case-list-panel" aria-label="Saved investigations">
@@ -141,9 +147,12 @@
     <footer class="statusbar"><span><i class="status-led"></i> LOCAL REPLAY ENGINE <b id="footerEngine">READY</b></span><span>RULESET <b>V2.1</b></span><span>EVENT SOURCE <b>SYNTHETIC</b></span><span>DETECTION <b>DETERMINISTIC</b></span><span class="status-end">TRADESCOPE TERMINAL · RESEARCH DEMO · NOT INVESTMENT ADVICE</span></footer>
   </main>
 </div>
+<script src="./theme-controls.js"></script>
 <script src="./app.js"></script>
 <script src="./live-adapter.js"></script>
 <script src="./event-workspace.js"></script>
 <script src="./case-workspace.js"></script>
+<script src="./assistant-workspace.js"></script>
+<script src="./workspace-nav.js"></script>
 </body>
 </html>
