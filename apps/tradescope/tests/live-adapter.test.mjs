@@ -27,7 +27,8 @@ function harness({fetchImpl=async()=>response(snapshot()),withApp=false}={}) {
     focus(){}
   }
   const getElement = id => {if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
-  const document={getElementById:getElement,createElement:()=>new Element(),querySelectorAll:()=>[],querySelector:selector=>{if(!selectors.has(selector))selectors.set(selector,new Element());return selectors.get(selector);}};
+  const navigation=['monitor','blotter','signals','replay','intel','cases'].map(name=>{const button=getElement('nav'+name[0].toUpperCase()+name.slice(1));button.dataset.nav=name;return button;});
+  const document={getElementById:getElement,createElement:()=>new Element(),querySelectorAll:selector=>selector==='.nav-link'?navigation:[],querySelector:selector=>{if(!selectors.has(selector))selectors.set(selector,new Element());return selectors.get(selector);}};
   getElement('historySymbol').value='AAPL';getElement('historyFeed').value='sip';
   class EventSource {
     constructor(url){this.url=url;this.handlers=new Map();this.closed=false;streams.push(this);}
@@ -52,6 +53,60 @@ function harness({fetchImpl=async()=>response(snapshot()),withApp=false}={}) {
   return {element:getElement,selector:selector=>document.querySelector(selector),streams,requests,calls,advance,window,
     click:async id=>{getElement(id).click();await flush();},latest:()=>calls.at(-1)};
 }
+
+const observedRows=(count,symbol='AAPL')=>Array.from({length:count},(_,index)=>({
+  id:`observed-${index}`,eventTime:'2026-11-12T19:59:59Z',time:'14:59:59',symbol,
+  type:'TRADE',price:255,quantity:20,venue:'V',source:'ALPACA_IEX',sequence:index,
+  score:0,severity:'low',findings:[],volumeRatio:0,spreadRatio:0,cancelRatio:0,priceMove:0
+}));
+
+test('SIGNALS exposes its flag filter and returning to MONITOR or BLOTTER restores unflagged rows',async()=>{
+  const h=harness({withApp:true});
+  h.window.TradeScope.setDataset('LIVE',observedRows(17),{AAPL:{price:255,change:0}},{transport:'polling',feed:'iex'});
+  assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
+  await h.click('navSignals');
+  assert.equal(h.element('rowCount').textContent,'0 / 17 EVENTS SHOWN · FLAGS ONLY');
+  assert.match(h.element('blotterBody').innerHTML,/No flagged observations/);
+  assert.match(h.element('blotterBody').innerHTML,/ALL EVENTS or MONITOR/);
+  await h.click('navMonitor');
+  assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
+  assert(h.element('allEvents').classes.has('active'));
+  await h.click('navSignals');await h.click('navBlotter');
+  assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
+});
+
+test('navigation clears only the inherited flag filter and preserves deliberate symbol, type and search filters',async()=>{
+  const h=harness({withApp:true});
+  h.window.TradeScope.setDataset('LIVE',[...observedRows(16),{...observedRows(1,'MSFT')[0],id:'msft-1'}],{}, {transport:'polling',feed:'iex'});
+  for(const [id,event,value] of [['symbolFilter','change','MSFT'],['eventFilter','change','TRADE'],['search','input','msft']]){
+    const element=h.element(id);element.value=value;element.listeners.get(event)({target:element});
+  }
+  assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
+  await h.click('navSignals');await h.click('navMonitor');
+  assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
+  assert.equal(h.element('symbolFilter').value,'MSFT');assert.equal(h.element('eventFilter').value,'TRADE');assert.equal(h.element('search').value,'msft');
+  await h.click('navSignals');await h.click('navBlotter');
+  assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
+  await h.click('clearFilters');assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
+});
+
+test('signal diagnostics distinguish synthetic, LIVE and historical scope and explain baseline readiness',async()=>{
+  const h=harness({withApp:true});
+  assert.match(h.selector('.signals-subhead').innerHTML,/SYNTHETIC RULE EXAMPLES/);
+  const search=h.element('search');search.value='no-such-event';search.listeners.get('input')({target:search});await h.click('flaggedOnly');
+  assert.match(h.element('blotterBody').innerHTML,/synthetic replay/);
+  h.window.TradeScope.setDataset('LIVE',observedRows(17),{},{transport:'streaming',feed:'iex'});
+  assert.match(h.element('signalRows').innerHTML,/NO FLAGS IN LIVE IEX OBSERVATIONS/);
+  assert.doesNotMatch(h.element('signalRows').innerHTML,/REPLAY/);
+  assert.match(h.element('signalRows').innerHTML,/0\/10 symbols have 20 observed trades/);
+  assert.match(h.element('signalRows').innerHTML,/above 3× the median/);
+  assert.match(h.element('signalRows').innerHTML,/zero flags do not establish low risk/);
+  assert.match(h.selector('.signals-subhead').innerHTML,/OBSERVED SIZE \/ EXPLORATORY/);
+  h.window.TradeScope.setDataset('HISTORY',observedRows(21),{},{transport:'historical',feed:'sip',source:'ALPACA_SIP_HISTORY'});
+  assert.match(h.element('signalRows').innerHTML,/NO FLAGS IN SIP HISTORICAL SAMPLE/);
+  assert.match(h.element('signalRows').innerHTML,/1\/10 symbols have 20 observed trades/);
+  assert.match(h.element('alertStream').innerHTML,/NO RULE ALERTS IN SIP HISTORICAL SAMPLE/);
+});
 
 test('returning from LIVE to DEMO selects an already visible synthetic replay event',async()=>{
   const h=harness({withApp:true});await h.click('modeLive');

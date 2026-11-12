@@ -6,11 +6,11 @@ Verified November 12, 2026 in Linux, starting from `feature/tradescope-ai-showca
 
 | Check | Actual result |
 |---|---|
-| Full Node test suite, Node 24.22.1 | 63 passed, 0 failed, 0 skipped |
-| Full Node test suite, Node 22.16.0 | 63 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 24.22.1 | 75 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 22.16.0 | 75 passed, 0 failed, 0 skipped |
 | `npm run build:static` | Passed; exactly 12 allowlisted public assets |
 | `git diff --check` | Passed |
-| Chromium browser smoke checks | Nine scenarios passed; no page JavaScript errors |
+| Chromium browser smoke checks | Fifteen scenarios passed; no page JavaScript errors |
 
 The suite includes all pre-existing case/assistant/intelligence/security tests plus canonical trade/quote/bar validation, exact large trade IDs, nanosecond timestamps, malformed payloads, bounded deduplication, out-of-order observations, authentication/subscription failures, retry/timeout/shutdown lifecycle, SSE framing and client cleanup, slow clients, source labels, mode cancellation, snapshot/stream overlap and selected-case provenance.
 
@@ -29,8 +29,16 @@ Headless Chromium loaded the actual local HTML/CSS/scripts with the existing Con
 7. A mocked historical SIP response shows historical source labels and preserves the original nanosecond event time.
 8. Returning to DEMO selects an already visible synthetic event; independent Event Intelligence can create a synthetic investigation.
 9. Leaving LIVE stops the last subscriber's upstream connector; health responses contain no mock credentials.
+10. SIGNALS explicitly exposes its flagged filter; returning to MONITOR restores unflagged observations.
+11. Loading real technical bars preserves synthetic event examples with independent source labels.
+12. Partial SEC failure details remain visible alongside successfully fetched fundamentals.
+13. Changing security clears the previous issuer's financial/technical context.
+14. Selecting a sourced event and requesting a mocked benchmark-relative study renders observed and pending horizons.
+15. An empty real event source shows an explicit count and loading/demo instructions without inventing events.
 
 Browser checks found and prompted fixes for poll/stream overlap, missing polling/history case instrument identifiers, and DEMO selection outside the revealed replay window. Regression tests cover these cases. Exchange/ingestion times now update from received browser observations between health heartbeats; backend counters remain the latest backend report.
+
+The owner's empty-tab report also prompted fixes for an inherited flagged-only navigation filter, misleading LIVE replay text, technical requests erasing event examples, prior-company research remaining after a security change, and overwritten partial-provider errors. Twelve additional automated regressions cover these navigation/source-state cases, including cancellation of old requests. See [feature status](FEATURE_STATUS.md) for implemented versus proposed tools and prediction limits.
 
 ## Changed files
 
@@ -39,10 +47,11 @@ Browser checks found and prompted fixes for poll/stream overlap, missing polling
 | Canonical model and provider | `lib/market-events.mjs`, `lib/alpaca-stream.mjs` |
 | Delivery and existing REST fallback | `lib/market-sse.mjs`, `server.mjs` |
 | Browser and source display | `live-adapter.js`, `app.js`, `index.html`, `terminal-theme.css` |
+| Event Intelligence source-state fixes | `event-workspace.js` |
 | Selected investigation lineage | `case-workspace.js`, `lib/cases.mjs` |
-| New regression tests | `tests/market-events.test.mjs`, `tests/alpaca-stream.test.mjs`, `tests/market-sse.test.mjs`, `tests/market-flow.test.mjs`, `tests/market-security.test.mjs`, `tests/live-adapter.test.mjs`, `tests/market-case.test.mjs` |
+| New regression tests | `tests/market-events.test.mjs`, `tests/alpaca-stream.test.mjs`, `tests/market-sse.test.mjs`, `tests/market-flow.test.mjs`, `tests/market-security.test.mjs`, `tests/live-adapter.test.mjs`, `tests/market-case.test.mjs`, `tests/event-workspace.test.mjs` |
 | Existing test additions | `tests/server.test.mjs` |
-| Version and documentation | `package.json`, `README.md`, `docs/SPRINTS.md`, `docs/V07_MARKET_DATA_INTEGRITY.md`, this report |
+| Version and documentation | `package.json`, `README.md`, `docs/SPRINTS.md`, `docs/V07_MARKET_DATA_INTEGRITY.md`, `docs/FEATURE_STATUS.md`, this report |
 
 ## Remaining verification and boundaries
 

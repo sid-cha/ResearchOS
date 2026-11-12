@@ -4,6 +4,8 @@
 
 Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The synthetic trade blotter, historical-trade playback, and IEX snapshot API remain available. Event Intelligence includes corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
 
+For the distinction between implemented tools and the proposed screeners, SignalDock-style research, advanced heatmaps and prediction work, see [feature status and where to find each tool](docs/FEATURE_STATUS.md).
+
 ## Quick start — Windows PowerShell
 
 ```powershell
