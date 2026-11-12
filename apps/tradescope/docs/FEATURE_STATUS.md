@@ -21,6 +21,8 @@ This is an implementation inventory, not a claim that the full proposed Research
 | Market Atlas / advanced heatmaps | **Not implemented** | The existing small watchlist performance map is not a market-cap-weighted sector/industry atlas, full-market breadth product, factor matrix or event-overlay engine. |
 | Event-conditioned directional prediction | **Not implemented or validated** | A historical comparison is descriptive evidence. An actual predictor needs many comparable point-in-time events, appropriately licensed history, pre-event features and expectations, costs/corporate-action handling, chronological out-of-sample tests and comparison with simple baselines. |
 
+The current integrity follow-up shows uncomputed real-data metrics as unavailable/NOT ASSESSED, preserves genuine evaluated zero values, exposes selected-observation age and snapshot-fetch timing, and checks compatible SEC ratio periods. The technical API rejects malformed numeric OHLCV and identifies its existing rolling RSI/simple ATR methods. Broader metrics, alert families and analogue retrieval remain proposed in [the next build specification](NEXT_RESEARCH_INTELLIGENCE.md), informed by [official-platform research](PLATFORM_RESEARCH_2026-11-12.md).
+
 ## Reading an empty screen
 
 - **Events ingested > 0 but blotter rows = 0:** inspect flags-only, symbol, type and search filters. In the older UI, visiting SIGNALS and then MONITOR can leave an inherited flags-only filter. TRADE BLOTTER or CLEAR restores the unflagged rows; the review branch corrects navigation and empty-state guidance.

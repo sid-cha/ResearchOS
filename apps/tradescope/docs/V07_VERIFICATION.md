@@ -6,11 +6,11 @@ Verified November 12, 2026 in Linux, starting from `feature/tradescope-ai-showca
 
 | Check | Actual result |
 |---|---|
-| Full Node test suite, Node 24.22.1 | 76 passed, 0 failed, 0 skipped |
-| Full Node test suite, Node 22.16.0 | 76 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 24.22.1 | 92 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 22.16.0 | 92 passed, 0 failed, 0 skipped |
 | `npm run build:static` | Passed; exactly 12 allowlisted public assets |
 | `git diff --check` | Passed |
-| Chromium browser smoke checks | Fifteen scenarios passed; no page JavaScript errors |
+| Chromium browser smoke checks | Twenty-one scenarios passed; no page JavaScript errors |
 
 The suite includes all pre-existing case/assistant/intelligence/security tests plus canonical trade/quote/bar validation, exact large trade IDs, nanosecond timestamps, malformed payloads, bounded deduplication, out-of-order observations, authentication/subscription failures, retry/timeout/shutdown lifecycle, SSE framing and client cleanup, slow clients, source labels, mode cancellation, snapshot/stream overlap and selected-case provenance.
 
@@ -35,10 +35,18 @@ Headless Chromium loaded the actual local HTML/CSS/scripts with the existing Con
 13. Changing security clears the previous issuer's financial/technical context.
 14. Selecting a sourced event and requesting a mocked benchmark-relative study renders observed and pending horizons.
 15. An empty real event source shows an explicit count and loading/demo instructions without inventing events.
+16. Blocking browser SSE still permits explicitly labeled successful snapshot fallback using controlled data.
+17. Warm-up metrics show NOT ASSESSED and cannot become flags or dilute assessed averages.
+18. A selected old trade shows its own age even when another quote makes the global feed appear fresh.
+19. Snapshot fetch time is labeled separately from the original event time and measured network latency.
+20. Disabled/uncomputed price and size comparisons show unavailable values rather than fabricated zeros; source event IDs replace internal identities in the inspector.
+21. Navigating through SIGNALS preserves zero true flags and restores loaded observations on MONITOR.
 
 Browser checks found and prompted fixes for poll/stream overlap, missing polling/history case instrument identifiers, and DEMO selection outside the revealed replay window. Regression tests cover these cases. Exchange/ingestion times now update from received browser observations between health heartbeats; backend counters remain the latest backend report.
 
 The owner's empty-tab report also prompted fixes for an inherited flagged-only navigation filter, misleading LIVE replay text, technical requests erasing event examples, prior-company research remaining after a security change, and overwritten partial-provider errors. Thirteen additional automated regressions cover these navigation/source-state cases, including cancellation of old requests and rejecting studies for a previously selected event. See [feature status](FEATURE_STATUS.md) for implemented versus proposed tools and prediction limits.
+
+The expanded research discussion prompted sixteen further automated regressions for unassessed versus genuine-zero measurements, selected-observation age, public source identifiers, fiscal-period/unit-compatible margins, revenue-tag changes and strict noncoercing OHLCV validation. Indicator methods and input-quality counts are additive API metadata; valid-input RSI/ATR formulas were not changed. Proposed metrics/alerts/analogue features remain in [the next-increment specification](NEXT_RESEARCH_INTELLIGENCE.md), with [official platform references](PLATFORM_RESEARCH_2026-11-12.md); the proposal is not an implementation claim.
 
 ## Changed files
 
@@ -48,10 +56,11 @@ The owner's empty-tab report also prompted fixes for an inherited flagged-only n
 | Delivery and existing REST fallback | `lib/market-sse.mjs`, `server.mjs` |
 | Browser and source display | `live-adapter.js`, `app.js`, `index.html`, `terminal-theme.css` |
 | Event Intelligence source-state fixes | `event-workspace.js` |
+| Calculation integrity | `lib/analysis.mjs`, `lib/fundamentals.mjs` |
 | Selected investigation lineage | `case-workspace.js`, `lib/cases.mjs` |
-| New regression tests | `tests/market-events.test.mjs`, `tests/alpaca-stream.test.mjs`, `tests/market-sse.test.mjs`, `tests/market-flow.test.mjs`, `tests/market-security.test.mjs`, `tests/live-adapter.test.mjs`, `tests/market-case.test.mjs`, `tests/event-workspace.test.mjs` |
+| New regression tests | `tests/market-events.test.mjs`, `tests/alpaca-stream.test.mjs`, `tests/market-sse.test.mjs`, `tests/market-flow.test.mjs`, `tests/market-security.test.mjs`, `tests/live-adapter.test.mjs`, `tests/market-case.test.mjs`, `tests/event-workspace.test.mjs`, `tests/fundamentals-integrity.test.mjs`, `tests/technical-integrity.test.mjs` |
 | Existing test additions | `tests/server.test.mjs` |
-| Version and documentation | `package.json`, `README.md`, `docs/SPRINTS.md`, `docs/V07_MARKET_DATA_INTEGRITY.md`, `docs/FEATURE_STATUS.md`, this report |
+| Version and documentation | `package.json`, `README.md`, `docs/SPRINTS.md`, `docs/V07_MARKET_DATA_INTEGRITY.md`, `docs/FEATURE_STATUS.md`, `docs/NEXT_RESEARCH_INTELLIGENCE.md`, `docs/PLATFORM_RESEARCH_2026-11-12.md`, this report |
 
 ## Remaining verification and boundaries
 

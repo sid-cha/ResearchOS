@@ -6,6 +6,8 @@ Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https:/
 
 For the distinction between implemented tools and the proposed screeners, SignalDock-style research, advanced heatmaps and prediction work, see [feature status and where to find each tool](docs/FEATURE_STATUS.md).
 
+The [next research-intelligence proposal](docs/NEXT_RESEARCH_INTELLIGENCE.md) maps the expanded metrics, alerts and historical-event requirements to bounded work packages. The [official-platform research comparison](docs/PLATFORM_RESEARCH_2026-11-12.md) records external references and their practical implications. These are proposed future capabilities, separate from the implemented v0.7 fixes.
+
 ## Quick start — Windows PowerShell
 
 ```powershell
