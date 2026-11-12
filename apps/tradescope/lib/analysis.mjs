@@ -4,15 +4,24 @@ const round = (n, places=4) => valid(n) ? Number(n.toFixed(places)) : null;
 function sma(xs,n){return xs.length>=n? xs.slice(-n).reduce((a,b)=>a+b,0)/n:null;}
 function emaSeries(xs,n){if(xs.length<n)return [];const k=2/(n+1);let out=xs.slice(0,n).reduce((a,b)=>a+b,0)/n;const series=[out];for(let i=n;i<xs.length;i++){out=xs[i]*k+out*(1-k);series.push(out);}return series;}
 export function technicalIndicators(raw){
-  const bars=[...raw].filter(x=>valid(Number(x.c))&&Number(x.c)>0&&valid(Number(x.h))&&valid(Number(x.l))&&valid(Number(x.v))).sort((a,b)=>String(a.t).localeCompare(String(b.t)));
-  const c=bars.map(b=>Number(b.c)), v=bars.map(b=>Number(b.v));
+  const received=Array.isArray(raw)?raw:[];
+  const usable=bar=>bar&&typeof bar==='object'&&!Array.isArray(bar)&&
+    ['c','h','l'].every(key=>valid(bar[key])&&bar[key]>0)&&valid(bar.v)&&bar.v>=0&&
+    bar.h>=bar.l&&bar.c>=bar.l&&bar.c<=bar.h&&
+    (!Object.hasOwn(bar,'o')||(valid(bar.o)&&bar.o>0&&bar.o>=bar.l&&bar.o<=bar.h));
+  const bars=received.filter(usable).sort((a,b)=>String(a.t).localeCompare(String(b.t)));
+  const inputQuality={validation:!Array.isArray(raw)?'invalid-input':bars.length<received.length?'partial':'valid',receivedBars:received.length,usableBars:bars.length,rejectedBars:received.length-bars.length};
+  const methodology={version:'technical-snapshot-v1',
+    rsi14:{period:14,averaging:'simple-rolling-gains-losses',wilderSmoothing:false},
+    atr14:{period:14,averaging:'simple-mean-of-true-range',wilderSmoothing:false}};
+  const c=bars.map(b=>b.c), v=bars.map(b=>b.v);
   let rsi=null;
   if(c.length>=15){let gains=0,losses=0;for(let i=c.length-14;i<c.length;i++){const d=c[i]-c[i-1];gains+=Math.max(0,d);losses+=Math.max(0,-d);}rsi=losses===0?(gains===0?50:100):100-100/(1+gains/losses);}
   let macd=null,signal=null;
   if(c.length>=35){const fast=emaSeries(c,12),slow=emaSeries(c,26);const offset=26-12;const diff=slow.map((s,i)=>fast[i+offset]-s);const sig=emaSeries(diff,9);macd=diff.at(-1);signal=sig.at(-1);}
-  let atr=null;if(bars.length>=15){const ranges=[];for(let i=1;i<bars.length;i++){const b=bars[i],prior=Number(bars[i-1].c);ranges.push(Math.max(Number(b.h)-Number(b.l),Math.abs(Number(b.h)-prior),Math.abs(Number(b.l)-prior)));}atr=sma(ranges,14);}
+  let atr=null;if(bars.length>=15){const ranges=[];for(let i=1;i<bars.length;i++){const b=bars[i],prior=bars[i-1].c;ranges.push(Math.max(b.h-b.l,Math.abs(b.h-prior),Math.abs(b.l-prior)));}atr=sma(ranges,14);}
   const previous=v.length>=21?sma(v.slice(0,-1),20):null;
-  return {asOf:bars.at(-1)?.t??null,barsCount:bars.length,close:round(c.at(-1)),sma20:round(sma(c,20)),sma50:round(sma(c,50)),rsi14:round(rsi,2),macd:round(macd),macdSignal:round(signal),atr14:round(atr),volumeRatio20:round(previous>0?v.at(-1)/previous:null,2),coverage:'Price/volume indicators calculated from provider bars; feed coverage may be incomplete.'};
+  return {asOf:bars.at(-1)?.t??null,barsCount:bars.length,close:round(c.at(-1)),sma20:round(sma(c,20)),sma50:round(sma(c,50)),rsi14:round(rsi,2),macd:round(macd),macdSignal:round(signal),atr14:round(atr),volumeRatio20:round(previous>0?v.at(-1)/previous:null,2),inputQuality,methodology,coverage:'Price/volume indicators calculated from usable provider bars; rejected bars create incomplete coverage. RSI/ATR use the stated simple averaging methods, not Wilder smoothing.'};
 }
 function dayET(iso){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(iso));}
 function dateKey(bar){return String(bar.t).slice(0,10);}

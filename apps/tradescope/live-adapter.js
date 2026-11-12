@@ -51,12 +51,17 @@
   function scoreEvents(rows) {
     const samples = new Map();
     return rows.map((event, sequence) => {
-      const row = {...event,sequence,score:0,severity:'low',findings:[],volumeRatio:0,spreadRatio:0,cancelRatio:0,priceMove:0};
-      if (row.type === 'TRADE' && row.quantity > 0) {
-        const previous = samples.get(row.symbol) || [];
+      const row = {...event,sequence,score:null,severity:'unassessed',findings:[],volumeRatio:null,spreadRatio:null,cancelRatio:null,priceMove:null,
+        evaluation:{rule:'VOL-01',status:rowTypeStatus(event),baselineCount:0,minimumBaseline:20}};
+      const previous = samples.get(row.symbol) || [];
+      if (row.type === 'TRADE') row.evaluation.baselineCount = Math.min(previous.length,50);
+      if (row.type === 'TRADE' && Number.isFinite(row.quantity) && row.quantity > 0) {
         if (previous.length >= 20) {
           const baseline = median(previous.slice(-50));
-          const ratio = baseline > 0 ? row.quantity / baseline : 0;
+          const ratio = row.quantity / baseline;
+          row.evaluation.status = 'evaluated';
+          row.score = 0;
+          row.severity = 'low';
           row.volumeRatio = ratio;
           if (ratio > 3) {
             row.severity = ratio >= 6 ? 'high' : 'medium';
@@ -69,6 +74,10 @@
       }
       return row;
     });
+  }
+  function rowTypeStatus(event) {
+    if (event.type !== 'TRADE') return 'not_applicable';
+    return Number.isFinite(event.quantity) && event.quantity > 0 ? 'warming_up' : 'missing_data';
   }
   function tradeEvent(trade, transport='polling') {
     if (!trade || !symbols.includes(trade.symbol) || !validTime(trade.time) || !Number.isFinite(trade.price) || trade.price <= 0) return null;
@@ -320,6 +329,7 @@
         setStatus('IEX SERVER HEARTBEAT OVERDUE · REST POLLING FALLBACK','failed');
       }
       renderHealth();
+      window.TradeScope.refreshObservationAge?.();
     },5000);
     renderHealth();
   }

@@ -249,3 +249,67 @@ test('nanosecond event order is independent of source fractional formatting',asy
   const sourceIds=h.latest().entries.filter(row=>row.transport==='streaming').map(row=>row.marketData.sourceEventId);
   assert.deepEqual(Array.from(sourceIds),['earlier','later']);
 });
+
+test('real observations distinguish baseline warmup, evaluated zero and the unchanged size alert',async()=>{
+  const h=harness({fetchImpl:async()=>response({snapshots:{}})});await h.click('modeLive');h.streams[0].emit('health',health());
+  for(let i=0;i<20;i++)h.streams[0].emit('observation',observation({sourceEventId:'baseline-'+i,exchangeEventTime:new Date(baseTime-30000+i*1000).toISOString(),trade:{price:255,size:100,conditions:['@']}}));
+  const normal=observation({sourceEventId:'normal',exchangeEventTime:'2026-11-12T19:59:50Z',trade:{price:255,size:100,conditions:['@']}});
+  const large=observation({sourceEventId:'large',exchangeEventTime:'2026-11-12T19:59:51Z',trade:{price:255,size:400,conditions:['@']}});
+  h.streams[0].emit('observation',normal);h.streams[0].emit('observation',large);await h.advance(250);
+  const rows=h.latest().entries;
+  for(const [i,row] of rows.slice(0,20).entries()){
+    assert.equal(row.score,null);assert.equal(row.severity,'unassessed');assert.equal(row.volumeRatio,null);assert.equal(row.priceMove,null);
+    assert.equal(row.evaluation.status,'warming_up');assert.equal(row.evaluation.baselineCount,i);
+  }
+  assert.equal(rows[20].evaluation.status,'evaluated');assert.equal(rows[20].evaluation.baselineCount,20);
+  assert.equal(rows[20].volumeRatio,1);assert.equal(rows[20].score,0);assert.equal(rows[20].findings.length,0);
+  assert.equal(rows[21].volumeRatio,4);assert.equal(rows[21].score,70);assert.equal(rows[21].severity,'medium');
+  assert.equal(rows[21].findings[0].code,'VOL-01');assert.equal(rows[21].spreadRatio,null);assert.equal(rows[21].cancelRatio,null);assert.equal(rows[21].priceMove,null);
+});
+
+test('quotes and unavailable trade sizes are unassessed rather than fabricated zero-risk measurements',async()=>{
+  const h=harness({fetchImpl:async()=>response({snapshots:{}})});await h.click('modeLive');h.streams[0].emit('health',health());
+  h.streams[0].emit('observation',observation({eventType:'quote',sourceEventId:null,trade:null,quote:{bidPrice:255,askPrice:256,bidSize:10,askSize:12,bidExchange:'V',askExchange:'V'}}));
+  h.streams[0].emit('observation',observation({sourceEventId:'missing-size',exchangeEventTime:'2026-11-12T20:00:01Z',trade:{price:255,size:null,conditions:['@']}}));
+  await h.advance(250);
+  const rows=h.latest().entries;
+  assert.equal(rows[0].evaluation.status,'not_applicable');assert.equal(rows[1].evaluation.status,'missing_data');
+  for(const row of rows){assert.equal(row.score,null);assert.equal(row.severity,'unassessed');assert.equal(row.volumeRatio,null);assert.equal(row.priceMove,null);assert.equal(row.findings.length,0);}
+});
+
+test('unassessed UI rows have no low-risk assertion, no flags and do not dilute assessed averages',async()=>{
+  const h=harness({withApp:true});
+  const unknown={...observedRows(1)[0],score:null,severity:'unassessed',volumeRatio:null,spreadRatio:null,cancelRatio:null,priceMove:null,evaluation:{rule:'VOL-01',status:'warming_up',baselineCount:3,minimumBaseline:20}};
+  h.window.TradeScope.setDataset('LIVE',[unknown],{}, {transport:'polling',feed:'iex'});
+  assert.equal(h.element('metricScore').innerHTML,'—');assert.match(h.element('blotterBody').innerHTML,/NOT ASSESSED/);
+  assert.match(h.element('inspector').innerHTML,/3 are available/);assert.doesNotMatch(h.element('inspector').innerHTML,/No active detection rules were exceeded|\+0\.00%|0\.00×/);
+  assert.equal(h.element('metricAlerts').textContent,'00');await h.click('navSignals');assert.match(h.element('rowCount').textContent,/0 \/ 1 EVENTS/);
+  const evaluated={...unknown,id:'assessed-size-flag',score:70,severity:'medium',volumeRatio:4,evaluation:{...unknown.evaluation,status:'evaluated',baselineCount:20},findings:[{code:'VOL-01',level:'medium',observed:'4× earlier observed trade size'}]};
+  h.window.TradeScope.setDataset('LIVE',[unknown,evaluated],{}, {transport:'polling',feed:'iex'});
+  assert.match(h.element('metricScore').innerHTML,/^70</);assert.equal(h.element('metricAlerts').textContent,'01');
+  assert.match(h.element('rowCount').textContent,/1 \/ 2 EVENTS/);assert.match(h.selector('.kpi-grid .kpi:nth-child(4) .kpi-foot').textContent,/1\/2 assessed/);
+});
+
+test('selected observation age stays visible when the global feed has a newer quote',async()=>{
+  const h=harness({withApp:true,fetchImpl:async()=>response({snapshots:{}})});await h.click('modeLive');
+  h.streams[0].emit('health',health({lastExchangeEventTime:'2026-11-12T20:00:00Z',lastIngestedAt:'2026-11-12T20:00:00Z'}));await h.advance(250);
+  const old={...observedRows(1)[0],id:'old-trade',eventTime:'2026-11-12T19:39:50Z',time:'14:39:50',score:null,severity:'unassessed',volumeRatio:null,priceMove:null,transport:'polling',evaluation:{status:'warming_up',baselineCount:0,minimumBaseline:20},marketData:{provider:'alpaca',feed:'iex',coverage:'single-venue',exchangeEventTime:'2026-11-12T19:39:50Z',ingestedAt:'2026-11-12T20:00:00Z'}};
+  h.window.TradeScope.setDataset('LIVE',[old],{}, {transport:'streaming',feed:'iex'});
+  h.window.TradeScope.setDataset('LIVE',[old,{...old,id:'fresh-quote',type:'QUOTE',eventTime:'2026-11-12T20:00:00Z'}],{}, {transport:'streaming',feed:'iex'});
+  assert.equal(h.window.TradeScope.getSelection().id,'old-trade');assert.match(h.element('feedFreshness').textContent,/0s wall age/);
+  assert.match(h.element('inspector').innerHTML,/BACKEND SNAPSHOT FETCH/);assert.match(h.element('inspector').innerHTML,/20m 10s wall age · session status unknown/);
+  assert.match(h.element('inspector').innerHTML,/AGE AT FETCH/);assert.doesNotMatch(h.element('inspector').innerHTML,/provider outage|feed outage/i);
+  await h.advance(5000);assert.match(h.element('inspector').innerHTML,/20m 15s wall age/);
+  h.window.TradeScope.setDataset('HISTORY',[old],{}, {transport:'historical',feed:'iex'});
+  assert.match(h.element('inspector').innerHTML,/Historical observation; not a live freshness assessment/);
+  assert.doesNotMatch(h.element('inspector').innerHTML,/20m 15s wall age/);
+});
+
+test('inspector shows the provider event identifier while internal identity remains available for selection',async()=>{
+  const h=harness({withApp:true,fetchImpl:async()=>response({snapshots:{}})});await h.click('modeLive');
+  h.streams[0].emit('health',health());h.streams[0].emit('observation',observation({sourceEventId:'210686'}));await h.advance(250);
+  assert.equal(h.element('inspectorStatus').textContent,'AAPL TRADE 210686');
+  assert.match(h.element('inspector').innerHTML,/SOURCE EVENT ID<\/small><b>210686<\/b>/);
+  assert(!h.element('inspector').innerHTML.includes('[&quot;iex&quot;'));
+  assert.match(h.window.TradeScope.getSelection().id,/210686/);
+});
