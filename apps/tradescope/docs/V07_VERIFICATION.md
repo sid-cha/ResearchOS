@@ -6,8 +6,8 @@ Verified November 12, 2026 in Linux, starting from `feature/tradescope-ai-showca
 
 | Check | Actual result |
 |---|---|
-| Full Node test suite, Node 24.22.1 | 75 passed, 0 failed, 0 skipped |
-| Full Node test suite, Node 22.16.0 | 75 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 24.22.1 | 76 passed, 0 failed, 0 skipped |
+| Full Node test suite, Node 22.16.0 | 76 passed, 0 failed, 0 skipped |
 | `npm run build:static` | Passed; exactly 12 allowlisted public assets |
 | `git diff --check` | Passed |
 | Chromium browser smoke checks | Fifteen scenarios passed; no page JavaScript errors |
@@ -38,7 +38,7 @@ Headless Chromium loaded the actual local HTML/CSS/scripts with the existing Con
 
 Browser checks found and prompted fixes for poll/stream overlap, missing polling/history case instrument identifiers, and DEMO selection outside the revealed replay window. Regression tests cover these cases. Exchange/ingestion times now update from received browser observations between health heartbeats; backend counters remain the latest backend report.
 
-The owner's empty-tab report also prompted fixes for an inherited flagged-only navigation filter, misleading LIVE replay text, technical requests erasing event examples, prior-company research remaining after a security change, and overwritten partial-provider errors. Twelve additional automated regressions cover these navigation/source-state cases, including cancellation of old requests. See [feature status](FEATURE_STATUS.md) for implemented versus proposed tools and prediction limits.
+The owner's empty-tab report also prompted fixes for an inherited flagged-only navigation filter, misleading LIVE replay text, technical requests erasing event examples, prior-company research remaining after a security change, and overwritten partial-provider errors. Thirteen additional automated regressions cover these navigation/source-state cases, including cancellation of old requests and rejecting studies for a previously selected event. See [feature status](FEATURE_STATUS.md) for implemented versus proposed tools and prediction limits.
 
 ## Changed files
 

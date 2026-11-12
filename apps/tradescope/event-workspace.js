@@ -149,6 +149,7 @@ $('intelImpact').addEventListener('click',()=>run('intelImpact',async context=>{
  const event=selected();if(!event||event.id.startsWith('hypo:'))throw Error('First load a real news, filing, hazard or geopolitical record');
  const when=eventTime(event);if(!when)throw Error('Event lacks a usable publication or occurrence timestamp');
  const data=await request(`/api/intelligence/impact?symbol=${context.symbol}&eventTime=${encodeURIComponent(when)}&feed=iex`,context);
+ if(state.selection!==event.id)throw Error('The selected event changed while the study loaded. Run the study again for the selected event.');
  state.study=data;
  return {message:data.study?.status==='observed'?`Historical event study loaded for ${context.symbol}: completed-session comparisons against SPY, not a prediction.`:`Historical event study unavailable: ${data.study?.reason||'insufficient completed matching sessions'}`};
 }));

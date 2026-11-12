@@ -16,9 +16,13 @@ const hazard={id:'usgs:1',category:'NATURAL',type:'EARTHQUAKE',source:'USGS',hea
 function harness(fetchImpl=async()=>response({})){
  const elements=new Map(),requests=[];
  class Element{
-  constructor(){this.handlers=new Map();this.textContent='';this.innerHTML='';this.value='';this.disabled=false;this.className='';this.classList={toggle(){}};}
+  constructor(){this.handlers=new Map();this.textContent='';this.innerHTML='';this.value='';this.disabled=false;this.className='';this.dataset={};this.children=[];this.classList={toggle(){}};}
   addEventListener(name,handler){this.handlers.set(name,handler);}
-  querySelectorAll(){return [];}
+  querySelectorAll(selector){
+   if(selector!=='[data-intel-id]')return [];
+   this.children=[...this.innerHTML.matchAll(/data-intel-id="([^"]+)"/g)].map(([,id])=>{const child=new Element();child.dataset.intelId=id;return child;});
+   return this.children;
+  }
   scrollIntoView(){}
  }
  const element=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
@@ -31,6 +35,7 @@ function harness(fetchImpl=async()=>response({})){
  vm.runInContext(source,context,{filename:'event-workspace.js'});
  return {element,requests,selection:()=>window.TradeScopeIntel.getSelection(),
   click:id=>Promise.resolve(element(id).handlers.get('click')?.()),
+  clickEvent:id=>Promise.resolve(element('intelEventRows').children.find(child=>child.dataset.intelId===id)?.handlers.get('click')?.()),
   change:(id,value)=>{element(id).value=value;return element(id).handlers.get('change')?.({target:{value}});},
   input:(id,value)=>{element(id).value=value;return element(id).handlers.get('input')?.({target:{value}});}};
 }
@@ -113,6 +118,19 @@ test('DEMO reset cancels source requests and late data cannot replace restored e
  pending.resolve(response({symbol:'AAPL',source:'ALPACA_NEWS',events:[news]}));await request;
  assert.equal(h.element('intelCount').textContent,'4 / 4 RECORDS');assert.equal(h.element('intelMode').textContent,'SYNTHETIC EXAMPLE');
  assert.match(h.element('intelStatus').textContent,/Synthetic scenarios restored/);assert.equal(h.selection().technical,null);
+});
+
+test('a historical study completing after event selection changes cannot attach to another headline',async()=>{
+ const pending=deferred();
+ const other={...news,id:'alpaca:2',headline:'Different sourced event fixture',publishedAt:'2026-11-09T14:00:00Z'};
+ const h=harness(url=>url.includes('/impact')?pending.promise:Promise.resolve(response({symbol:'AAPL',source:'ALPACA_NEWS',events:[news,other]})));
+ await h.click('intelNews');assert.equal(h.selection().event.id,'alpaca:1');
+ const study=h.click('intelImpact');
+ await h.clickEvent('alpaca:2');assert.equal(h.selection().event.id,'alpaca:2');
+ pending.resolve(response({symbol:'AAPL',source:'ALPACA_IEX',study:{status:'observed',horizons:[]}}));await study;
+ assert.equal(h.selection().study,null);
+ assert.match(h.element('intelStatus').textContent,/selected event changed.*Run the study again/);
+ assert.match(h.element('intelStudy').innerHTML,/Event study not run/);
 });
 
 test('empty successful feed and filtering loaded records have different actionable states',async()=>{
