@@ -9,3 +9,5 @@ node_modules/
 tests/
 dist/
 *.zip
+
+.local-data/

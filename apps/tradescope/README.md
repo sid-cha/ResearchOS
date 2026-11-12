@@ -1,6 +1,6 @@
-# TradeScope AI v0.4 — Event Intelligence + Market Surveillance Workstation
+# TradeScope AI v0.5 — Event Investigation Workbench + Market Intelligence
 
-**Status:** Three vertically integrated research sprints; local preview, **not** an institutional surveillance release or public licensed data product.
+**Status:** Sprints 1–3 plus a local-first investigation workflow; local preview, **not** an institutional surveillance release or public licensed data product.
 
 Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The prior synthetic trade blotter, historical-trade playback, and IEX snapshot polling remain intact. New Event Intelligence adds corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
 
@@ -26,7 +26,7 @@ Defense in depth:
 - `.gitignore` excludes `.env` and `.env.*` (except the harmless template).
 - `.vercelignore` excludes environment files from **Vercel CLI** uploads; that configuration does **not** protect arbitrary manually created ZIP archives.
 - The local HTTP server serves only an explicit list of public assets, so `.env` cannot be requested over HTTP.
-- `npm run build:static` generates **only** six allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
+- `npm run build:static` generates **only** eight allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
 - This static demo cannot execute the local `/api` endpoints. To offer live data on Vercel, deploy a secured backend, store credentials in server-side environment variables, and review market-data licensing and access controls first.
 
 On Windows PowerShell, create and edit the local credentials file:
@@ -39,6 +39,23 @@ npm run build:static
 ```
 
 Never share the real `.env` file or include it in screenshots, bug reports, downloadable ZIPs, or Vercel Drop uploads. If a key was exposed in a conversation or log, revoke/rotate it in Alpaca before continuing.
+
+## v0.5 — End-to-end investigation workbench
+
+The **INVESTIGATIONS** workspace adds a persistent, single-analyst review process on top of v0.4's market-data and company-intelligence features.
+
+- Select an event in **EVENT INTELLIGENCE**, then click **OPEN INVESTIGATION**. Or select a trade/quote in the market blotter and click **INVESTIGATE**.
+- Save the event's original source, timestamp fields, symbol relationship, and any observed technical, SEC fundamental or completed-session study values that are already loaded in the event workspace. Synthetic examples are explicitly tagged.
+- Track **OPEN**, **IN REVIEW**, **NEEDS EVIDENCE**, **CLOSED** statuses, case priority, analyst, conclusion, and written assessment. A causal finding is never inferred automatically.
+- Attach independent source URLs, enter analyst notes, export the case as JSON, and inspect the chronological source/audit timeline.
+- Cases persist across local server restarts in **`.local-data/cases.json`**. This path is excluded from Git and Vercel uploads. To use a different local path, set `CASE_STORE_PATH=/absolute/path/cases.json` in `.env`.
+- Case updates require matching revision numbers; conflicting writes receive HTTP 409 rather than silently overwriting another update. The store writes atomically to a temporary file before renaming.
+
+API routes: `GET/POST /api/cases`, `GET/PATCH /api/cases/:id`, `POST /api/cases/:id/notes`, `POST /api/cases/:id/evidence`, and `GET /api/cases/:id/export`.
+
+**Boundary:** This is a local, single-user JSON store for product validation, not PostgreSQL multi-user case management. No authentication, workflow automation, facility exposure inference, automated misconduct determination, or validated event-causation model is implemented. A static Vercel frontend will render the UI, but case actions require a deployed backend; no local case history is uploaded to Vercel.
+
+**Suggested manual smoke test:** `npm start` → EVENT INTELLIGENCE → select synthetic scenario → OPEN INVESTIGATION → edit assessment → save note and evidence → restart server → INVESTIGATIONS → reopen case → export JSON. Run `npm test` for repeatable backend API, persistence and regression checks.
 
 ## Sprint 1 — Company, news, filings and fundamentals
 

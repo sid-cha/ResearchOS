@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {makeSources} from './lib/sources.mjs';
 import {createIntelligenceApi} from './lib/api.mjs';
+import {createCaseApi} from './lib/case-api.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -15,6 +16,7 @@ const DEFAULT_SYMBOLS = ['NVDA','AAPL','MSFT','TSLA','SPY','AMD','QQQ','META','A
 const MIME = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
 let cachedSnapshot = {expires:0, value:null};
 const handleIntelligence = createIntelligenceApi(makeSources());
+const handleCases = createCaseApi({filename: process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json')});
 
 function json(res,status,body){
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'none'});
@@ -39,9 +41,10 @@ function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
 export function createServer(){return http.createServer(async(req,res)=>{
-  if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
+    if(await handleCases(req,res,u))return;
+    if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
     if(await handleIntelligence(req,res,u))return;
     if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
     if(u.pathname==='/api/live'){
@@ -59,7 +62,7 @@ export function createServer(){return http.createServer(async(req,res)=>{
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
