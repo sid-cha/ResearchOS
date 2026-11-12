@@ -14,15 +14,27 @@ export function buildBrief(c,focus='overview'){
  const refs=(c.evidence||[]).filter(e=>url(e.url)).map((e,i)=>({id:`REF-${i+1}`,title:plain(e.label,110),url:url(e.url),kind:plain(e.kind,30)}));
  if(url(event.sourceUrl))refs.unshift({id:'EVENT',title:plain(event.source,90)||'Original event source',url:url(event.sourceUrl),kind:'ORIGINAL'});
  const observations=[]; const gaps=[]; const next=[];
+ const research=Array.isArray(context.research?.observations)?context.research.observations:[];
+ const availableResearch=research.filter(metric=>metric.status==='available'&&(finite(metric.value)||typeof metric.value==='boolean'));
+ const hasMarketResearch=availableResearch.some(metric=>metric.id.startsWith('price.')||metric.id.startsWith('technical.'));
+ const hasFinancialResearch=availableResearch.some(metric=>metric.id.startsWith('financial.')||metric.id.startsWith('valuation.'));
  const synthetic=Boolean(event.synthetic || String(event.id||'').startsWith('hypo:'));
- observations.push({type:synthetic?'scenario':'source',text:synthetic?'This is a synthetic scenario; no genuine news or market event is asserted.':`Event record from ${plain(event.source,80)||'unidentified provider'}. Publication time: ${plain(event.publishedAt)||'unavailable'}.`});
- if(!synthetic && !event.publishedAt)gaps.push('First public publication time is missing; a post-event study cannot be time-aligned confidently.');
+ const derived=event.evidenceLevel==='derived_metric_condition';
+ observations.push({type:synthetic?'scenario':'source',text:synthetic?'This is a synthetic scenario; no genuine news or market event is asserted.':derived?'Captured research condition derived from sourced metrics. This does not assert an external economic event.':`Event record from ${plain(event.source,80)||'unidentified provider'}. Publication time: ${plain(event.publishedAt)||'unavailable'}.`});
+ if(!synthetic && !derived && !event.publishedAt)gaps.push('First public publication time is missing; a post-event study cannot be time-aligned confidently.');
  if(!event.sourceUrl && !refs.length)gaps.push('No original external source link is attached for independent verification.');
  if((c.relationship||'UNVERIFIED')==='UNVERIFIED'||(!event.symbols?.includes(c.symbol)&&event.category!=='MARKET'))gaps.push(`Economic link between ${plain(c.symbol,15)} and this event has not been verified.`);
  if(finite(t.close)){observations.push({type:'market',text:`${/synthetic|demo/i.test(context.technicalSource||'')?'Illustrative price-bar close':'Captured IEX price-bar close'}: $${fmt(t.close)}${finite(t.rsi14)?`; RSI(14): ${fmt(t.rsi14,1)}`:''}${finite(t.volumeRatio20)?`; relative IEX volume: ${fmt(t.volumeRatio20)}×`:''}.`});}
- else gaps.push('No actual technical-bar snapshot is attached to this case.');
+ else if(!hasMarketResearch)gaps.push('No actual technical-bar snapshot is attached to this case.');
  if(finite(q.revenue?.value)){observations.push({type:'filing',text:`${/synthetic|demo/i.test(context.financialSource||'')?'Illustrative quarterly revenue':'SEC-reported quarterly revenue'}: $${(q.revenue.value/1e9).toFixed(2)}B${finite(q.revenue?.yoyPct)?`; YoY growth ${fmt(q.revenue.yoyPct,1)}%`:''}; reporting period end ${q.revenue.periodEnd||'unknown'}.`});}
- else gaps.push('No comparable SEC quarterly financial snapshot is attached.');
+ else if(!hasFinancialResearch)gaps.push('No comparable SEC quarterly financial snapshot is attached.');
+ for(const metric of availableResearch.slice(0,10)){
+  observations.push({type:metric.id.startsWith('financial.')||metric.id.startsWith('valuation.')?'filing':'market',
+   text:`Captured research metric ${plain(metric.id,100)}: ${typeof metric.value==='number'?fmt(metric.value,4):String(metric.value)} ${plain(metric.unit,40)}; source ${plain(metric.source,100)||'unavailable'}; as of ${plain(metric.asOf,45)||'unavailable'}; method ${plain(metric.methodVersion,100)||'unavailable'}.`});
+ }
+ const unavailableResearch=research.filter(metric=>metric.status!=='available');
+ if(unavailableResearch.length)gaps.push(`${unavailableResearch.length} captured research metrics were unavailable or warming up; they must not be treated as zero.`);
+ if(context.research?.ruleId)observations.push({type:'study',text:`Research condition ${plain(context.research.ruleId,100)}, method ${plain(context.research.ruleVersion,100)||'unavailable'}. A condition match is not a directional forecast.`});
  const horizons=Array.isArray(study?.horizons)?study.horizons.filter(x=>x.status==='observed'&&finite(x.relativeReturnPct)):[];
  if(horizons.length){const h=horizons[0];observations.push({type:'study',text:`${h.sessions}-session stock return relative to SPY: ${h.relativeReturnPct>0?'+':''}${fmt(h.relativeReturnPct)} percentage points (descriptive, not causal).`});}
  else gaps.push('No completed-session benchmark-relative event study is available.');

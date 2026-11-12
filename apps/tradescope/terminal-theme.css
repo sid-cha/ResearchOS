@@ -155,6 +155,9 @@ button,select,input,textarea{color:var(--text)}
 [data-workspace=monitor] .command-header,[data-workspace=monitor] .kpi-grid,[data-workspace=monitor] .terminal-grid{display:flex}
 [data-workspace=monitor] .kpi-grid,[data-workspace=monitor] .terminal-grid{display:grid}
 [data-workspace=monitor] .command-header{display:flex}
+[data-workspace=research] .command-header,[data-workspace=research] .disclaimer,[data-workspace=research] .data-connector,[data-workspace=research] .feed-health,[data-workspace=research] .kpi-grid,[data-workspace=research] .terminal-grid,[data-workspace=research] .intel-workspace,[data-workspace=research] .cases-workspace{display:none!important}
+[data-workspace=research] .research-workspace{display:block}
+[data-workspace=monitor] .research-workspace,[data-workspace=intel] .research-workspace,[data-workspace=cases] .research-workspace{display:none!important}
 
 .assist-next{display:flex;align-items:flex-start;gap:8px;line-height:1.5;margin:6px 0}.assist-next>span:first-child{flex:0 0 18px;color:var(--accent);font-weight:800}.assist-next>span:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
 

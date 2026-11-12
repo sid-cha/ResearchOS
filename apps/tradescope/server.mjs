@@ -8,6 +8,8 @@ import {createCaseApi} from './lib/case-api.mjs';
 import {createAssistantApi} from './lib/assistant-api.mjs';
 import {createMarketStream} from './lib/alpaca-stream.mjs';
 import {createMarketDelivery} from './lib/market-sse.mjs';
+import {createResearchApi} from './lib/research-api.mjs';
+import {createCaseStore} from './lib/cases.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -20,8 +22,9 @@ const MIME = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8
 let cachedSnapshot = {expires:0, value:null};
 const handleIntelligence = createIntelligenceApi(makeSources());
 const caseFile = process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json');
-const handleCases = createCaseApi({filename:caseFile});
-const handleAssistant = createAssistantApi({filename:caseFile});
+const defaultCaseStore = createCaseStore(caseFile);
+const researchFile=process.env.RESEARCH_STORE_PATH||path.join(ROOT,'.local-data','research.json');
+const handleResearch=createResearchApi({filename:researchFile});
 
 function json(res,status,body){
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'none'});
@@ -49,16 +52,18 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = handleResearch, intelligenceApi = handleIntelligence, caseStore = defaultCaseStore} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
+ const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
     if(delivery.handle(req,res,u))return;
+    if(await researchApi(req,res,u))return;
     if(await handleCases(req,res,u))return;
     if(await handleAssistant(req,res,u))return;
     if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
-    if(await handleIntelligence(req,res,u))return;
+    if(await intelligenceApi(req,res,u))return;
     if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketData:marketStream.getHealth(),marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
     if(u.pathname==='/api/live'){
       if(Date.now()<cachedSnapshot.expires&&cachedSnapshot.value){json(res,200,{...cachedSnapshot.value,cacheHit:true});return;}
@@ -75,7 +80,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);

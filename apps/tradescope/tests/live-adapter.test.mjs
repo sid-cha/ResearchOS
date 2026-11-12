@@ -60,18 +60,18 @@ const observedRows=(count,symbol='AAPL')=>Array.from({length:count},(_,index)=>(
   score:0,severity:'low',findings:[],volumeRatio:0,spreadRatio:0,cancelRatio:0,priceMove:0
 }));
 
-test('SIGNALS exposes its flag filter and returning to MONITOR or BLOTTER restores unflagged rows',async()=>{
+test('the Monitor flag shortcut filters observations and returning to MONITOR or BLOTTER restores unflagged rows',async()=>{
   const h=harness({withApp:true});
   h.window.TradeScope.setDataset('LIVE',observedRows(17),{AAPL:{price:255,change:0}},{transport:'polling',feed:'iex'});
   assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
-  await h.click('navSignals');
+  await h.click('filterSignals');
   assert.equal(h.element('rowCount').textContent,'0 / 17 EVENTS SHOWN · FLAGS ONLY');
   assert.match(h.element('blotterBody').innerHTML,/No flagged observations/);
   assert.match(h.element('blotterBody').innerHTML,/ALL EVENTS or MONITOR/);
   await h.click('navMonitor');
   assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
   assert(h.element('allEvents').classes.has('active'));
-  await h.click('navSignals');await h.click('navBlotter');
+  await h.click('filterSignals');await h.click('navBlotter');
   assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
 });
 
@@ -82,10 +82,10 @@ test('navigation clears only the inherited flag filter and preserves deliberate 
     const element=h.element(id);element.value=value;element.listeners.get(event)({target:element});
   }
   assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
-  await h.click('navSignals');await h.click('navMonitor');
+  await h.click('filterSignals');await h.click('navMonitor');
   assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
   assert.equal(h.element('symbolFilter').value,'MSFT');assert.equal(h.element('eventFilter').value,'TRADE');assert.equal(h.element('search').value,'msft');
-  await h.click('navSignals');await h.click('navBlotter');
+  await h.click('filterSignals');await h.click('navBlotter');
   assert.equal(h.element('rowCount').textContent,'1 / 17 EVENTS SHOWN');
   await h.click('clearFilters');assert.equal(h.element('rowCount').textContent,'17 / 17 EVENTS SHOWN');
 });
@@ -283,7 +283,7 @@ test('unassessed UI rows have no low-risk assertion, no flags and do not dilute 
   h.window.TradeScope.setDataset('LIVE',[unknown],{}, {transport:'polling',feed:'iex'});
   assert.equal(h.element('metricScore').innerHTML,'—');assert.match(h.element('blotterBody').innerHTML,/NOT ASSESSED/);
   assert.match(h.element('inspector').innerHTML,/3 are available/);assert.doesNotMatch(h.element('inspector').innerHTML,/No active detection rules were exceeded|\+0\.00%|0\.00×/);
-  assert.equal(h.element('metricAlerts').textContent,'00');await h.click('navSignals');assert.match(h.element('rowCount').textContent,/0 \/ 1 EVENTS/);
+  assert.equal(h.element('metricAlerts').textContent,'00');await h.click('filterSignals');assert.match(h.element('rowCount').textContent,/0 \/ 1 EVENTS/);
   const evaluated={...unknown,id:'assessed-size-flag',score:70,severity:'medium',volumeRatio:4,evaluation:{...unknown.evaluation,status:'evaluated',baselineCount:20},findings:[{code:'VOL-01',level:'medium',observed:'4× earlier observed trade size'}]};
   h.window.TradeScope.setDataset('LIVE',[unknown,evaluated],{}, {transport:'polling',feed:'iex'});
   assert.match(h.element('metricScore').innerHTML,/^70</);assert.equal(h.element('metricAlerts').textContent,'01');

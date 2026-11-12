@@ -1,6 +1,6 @@
-# Next research-intelligence increment — proposal for review
+# Research intelligence — requirements and delivery boundary
 
-Prepared November 12, 2026. This document turns the owner's expanded requirements into bounded work packages. It is a planning proposal, not approval or a claim that these features have shipped.
+Prepared November 12, 2026; updated for `feature/tradescope-research-intelligence`. This document retains the broader requirements and records the bounded implementation now present. **Built** means implemented in this branch, subject to final integration checks and local provider verification; **limited** means a narrower pilot than the full requirement; **pending** means no shipped implementation. The full proposed roadmap has not shipped. See [the implementation guide](RESEARCH_INTELLIGENCE_FOUNDATION.md) and [feature inventory](FEATURE_STATUS.md).
 
 The owner's follow-up request for internet research is addressed in [the public-platform comparison](PLATFORM_RESEARCH_2026-11-12.md), using official documentation for Reflexivity, TradingView, Koyfin, RavenPack, AlphaSense, Dataminr, S&P Global and USGS. Those sources inform the proposed workflow; they do not validate our forecasting capability.
 
@@ -8,9 +8,30 @@ The owner's follow-up request for internet research is addressed in [the public-
 
 Inputs reviewed: the supplied startup brief, engineering handoff, reconstructed conversation history, current source, and the owner's MSFT/SEC/Signal Monitor examples. The history references a consolidated roadmap DOCX, but that DOCX was not supplied and is not represented as reviewed here.
 
-The current application has IEX observations and fallback, a small technical/SEC snapshot, filing metadata, official hazard/media discovery, daily stock-versus-SPY event comparisons, and manually saved investigations. It has no general screen engine, historical analogue catalog, verified company exposure graph, or validated event-conditioned forecast.
+The application retains IEX observations/fallback, event discovery, the earlier technical/SEC snapshot, daily event studies and local investigations. The new foundation adds a shared 65-definition catalog (33 technical/price and 32 financial), company research, a reusable safe rule/screen engine, manual signal evaluation, saved screens/alerts, extractive filing evidence and bounded retrospective earthquake retrieval/outcomes. Coverage remains ten US-listed pilot instruments and eight mapped SEC companies. Catalog definitions can be unavailable or unsupported; no verified company exposure graph or validated event-conditioned forecast exists.
 
-The original proposed sequence is v0.7 data integrity, v0.8 Java/PostgreSQL integration and common research/instrument APIs, then macro/Market Atlas, corporate metrics, event exposure and broader screening. The owner now requests more analyst-visible value. Pulling a bounded metrics/alerts slice forward is recommended **alongside the v0.8 foundation**, because those features exercise the same dated metric, instrument, event and alert contracts. This does not silently replace the roadmap or authorize implementing every later module.
+The original sequence proposed Java/PostgreSQL integration after v0.7, then macro/Market Atlas, corporate metrics, event exposure and broader screening. The owner's request to finish useful pending work brings the bounded research slice forward. It exercises common instrument, dated metric, rule and alert contracts in the locally runnable Node workstation; **full Java/PostgreSQL integration is still pending**. The remainder of the roadmap remains visible below rather than being represented as delivered.
+
+## Current delivery against work packages
+
+| Package | Current branch status | Remaining boundary |
+|---|---|---|
+| RI-101 | **Limited:** local pilot instrument catalog, dated observations and `/api/research` boundary | Authoritative security master, broader coverage, persistent observation repositories and Java/PostgreSQL integration |
+| RI-102 | **Built pilot:** 65 versioned definitions and explicit availability/reasons | Additional factors and provider-dependent metrics; forward P/E, PEG and EV/EBITDA are unsupported definitions |
+| RI-103 | **Built pilot:** bounded paginated daily history, completed prior sessions, declared split/all adjustment paths | Complete market calendar, licensed wider history and retained point-in-time corporate-action/revision data |
+| RI-104 | **Built pilot:** compatible reported SEC cash flow/balance sheet/TTM, ROE and supported valuation | Custom tags, broader accounting regimes, ROIC/ROCE, consensus and ambiguous share classes |
+| RI-105 | **Built:** grouped company research with methods, source dates, quality and unavailable states | Peer/sector comparisons and broader universe |
+| RI-106 | **Limited:** shared condition engine, nine built-ins, manual evaluation, saved deduplicated alert lifecycle | Scheduled/background scanning, quote/price alert families, external/corporate alert ingestion and notifications |
+| RI-107 | **Built pilot:** three presets, custom ALL/ANY screens, manual scans and revision-checked local persistence | Full-market scan service, database-backed multi-user operation and scheduling |
+| RI-108 | **Limited:** selected fixed-host primary filing reader, recognized headings and source-linked extractive passages | Exhibit/transcript crawling, structured earnings/guidance history and comprehensive semantic classification |
+| HA-201 | **Limited:** official current catalog/detail plus earlier bounded historical query; unknown historical publication remains null | Persisted original revisions and known-at-time historical archive |
+| HA-202 | **Pending:** exposures explicitly unverified | Sourced facility/port/supplier/issuer/sector/region graph with effective dates |
+| HA-203 | **Limited:** retrospective selected US-security/SPY daily 1/5/20-session outcomes with pre-event reference | Point-in-time knowledge, complete calendars, broad asset classes and licensed global outcomes |
+| HA-204 | **Limited:** transparent magnitude/depth/distance ranking, prior-only candidates, aftershock grouping, capped five matches | Verified exposure/pre-event economic context and evaluated cohort representativeness |
+| HA-205 | **Limited:** historical analogue workspace, selected-case outcomes and investigation evidence actions | Verified impact-channel view and fully reproducible historical source/revision snapshots |
+| Increment 3 | **Pending:** no calibrated event forecast | Chronological evaluation, baseline comparison, point-in-time features, uncertainty and abstention methodology |
+
+Saved screens/alerts use bounded `.local-data/research.json`; cases use `.local-data/cases.json`. These local single-user files are not PostgreSQL, a raw data archive, scheduled monitoring or a deployment. Preserve both `.env` and `.local-data` during Windows folder/ZIP updates.
 
 ## Priority 0 — finish truthful v0.7 behavior
 
@@ -53,7 +74,9 @@ Each definition identifies formula/version, unit, supported instrument/accountin
 
 Research pages should group metrics into Overview, Technicals, Valuation, Growth, Profitability, Cash Flow and Financial Health. The compact current sidebar can remain a summary; the expanded catalog needs a readable detail view, definitions and coverage indicators.
 
-| Family | Existing subset | Proposed next slice | Additional dependencies / later scope |
+The following table preserves the metric requirements behind the work packages; the delivery table above identifies the implemented subset and remaining limitations.
+
+| Family | Earlier subset | Requirement / expanded slice | Additional dependencies / later scope |
 |---|---|---|---|
 | Trend/momentum | SMA20/50, RSI14, MACD/signal | SMA200, distance from moving averages, defined crossing conditions | Adequate completed bars; explicit RSI smoothing method |
 | Volatility/price activity | ATR14, EWMA baseline, relative daily volume | ATR-normalized movement, prior-close gaps, defined rolling highs/lows and breakouts | Same-feed/session inputs; corporate-action and adjustment policy |
@@ -64,7 +87,7 @@ Research pages should group metrics into Overview, Technicals, Valuation, Growth
 | Financial health | Not exposed | Cash, debt, equity and supported leverage/liquidity ratios | Classified balance-sheet inputs; missing/custom tags remain unavailable |
 | Expectations | Not implemented | Display unsupported until a source is integrated | Forward P/E, PEG, consensus, surprises and implied earnings moves need suitable estimates/options sources |
 
-The current endpoint requests 260 **calendar** days, producing approximately 181 sessions in the owner's example. SMA200 requires 200 valid trading observations; a 52-week range needs the defined session/year coverage. Increase the requested range and handle pagination, but never label a shorter sample a completed long-horizon metric.
+The earlier snapshot endpoint requests about 260 **calendar** days, producing approximately 181 sessions in the owner's example. The new company research path requests about 800 calendar days with bounded pagination and partial-history disclosure. SMA200 still requires 200 valid completed observations; the defined 252-session metrics require their full window. A shorter sample remains unavailable rather than being labeled complete.
 
 RSI currently uses a simple 14-period gain/loss average; ATR uses a simple average of true ranges. Other platforms may use Wilder smoothing. Preserve or explicitly version a method change rather than presenting incompatible values as identical indicators.
 
@@ -97,13 +120,15 @@ Default thresholds are documented and versioned. Add configurable conditions thr
 
 ### Filing intelligence beyond a filing title
 
-The existing SEC list is metadata: accession, form, acceptance/filing date and URL. It does not read an 8-K or know the economic event described inside it.
+The EVENT INTELLIGENCE SEC list remains metadata: accession, form, acceptance/filing date and URL. The new FILING READER adds bounded extractive document evidence; a generic list title alone still does not classify the economic event.
 
-RI-108 should fetch fixed-host SEC documents/exhibits safely, normalize text, preserve document/section identifiers and classify supported 8-K items or reported 10-Q facts. Provide extractive summaries and source passages first. Optional model-generated summaries must cite those passages and abstain when the document cannot support a claim.
+RI-108 now fetches a supported primary SEC filing selected from the issuer's official list, normalizes text and preserves section/evidence identifiers with extractive passages. Exhibit traversal and comprehensive economic fact classification remain pending. Optional later model-generated summaries must cite those passages and abstain when the document cannot support a claim.
 
 Retain occurrence date only when explicitly established, document publication/acceptance date, local ingestion time and the time/version available to the application. An unknown occurrence time remains unknown; a generic 8-K label is not an earnings or loss event by itself.
 
 ### Increment 1 acceptance
+
+These are acceptance targets for the broader package, not a statement that every later data family or background service has shipped. Use the current delivery table and final executed checks for the bounded branch.
 
 1. Every displayed metric has a definition/version, source, period/as-of time and supported/unavailable status.
 2. An insufficient SMA200 sample explicitly reports the missing coverage, rather than a guessed number.
@@ -118,7 +143,7 @@ Retain occurrence date only when explicitly established, document publication/ac
 
 ### Bounded outcome
 
-For one supported event class, show similar earlier events, why they match, what was known then, which exposures are evidenced, and measured subsequent outcomes. Start with earthquakes in a bounded geography and a small verified exposure inventory. A tsunami-warning adapter and broader hazard classes are separate additions; an earthquake does not itself establish that a damaging tsunami occurred.
+The full requirement is to show similar earlier events, why they match, what was known then, evidenced exposures and measured outcomes. The current earthquake MVP implements physical-feature comparison and selected-security outcomes only. It labels current catalog versions retrospective, original knowledge unknown, exposures unverified and forecasts unavailable. A verified exposure inventory, historical knowledge archive, tsunami-warning adapter and broader hazard classes remain separate additions; an earthquake does not itself establish that a damaging tsunami occurred.
 
 ```text
 Official event and revisions
@@ -143,11 +168,11 @@ A similarity query can use event class, magnitude/intensity/depth, geography/phy
 
 Group related aftershocks and repeated media records so a single disaster is not counted as many independent examples or split across training/evaluation periods. Where available, attributed USGS ShakeMap/PAGER products can provide physical-impact estimates with their original versions and uncertainty; they do not supply verified company loss or security-return predictions.
 
-The current USGS adapter uses an update timestamp as publication metadata. A latest catalog response does not establish the time of the original alert or reconstruct what an analyst first knew. Store available revisions/knowledge timestamps going forward, obtain a suitable historical revision source, or explicitly mark point-in-time availability unknown. Never replace an unknown historical first-seen time with today's ingestion time or a later revision date.
+The older event-discovery USGS representation includes an update timestamp in publication metadata. The new analogue path instead preserves `updatedAt` separately and leaves original publication/first-seen/known-at-time fields null. A latest catalog response does not reconstruct what an analyst first knew. Persist available revisions going forward or obtain a suitable historical revision source before claiming historical point-in-time replay; today's retrieval and a later revision are not substitutes.
 
 Retrieve by the event's actual historical window, not the current endpoint's trailing 260-day sample. Respect data retention/redistribution rights and preserve corporate actions, session alignment, missing coverage and overlapping-event confounders. Daily bar results remain daily approximations; intraday event reactions require suitable intraday data.
 
-The existing study uses the event-day close as its reference, which can already include an intraday event reaction. That retrospective reference must not be reused as a pre-event feature or baseline in a predictive backtest. Define a reference observable before the event/knowledge cutoff and the available first post-event execution/bar window separately.
+The existing EVENT INTELLIGENCE study uses the event-day close as its reference, which can already include an intraday reaction. The new analogue outcome path uses a completed pre-event stock/SPY reference and 1/5/20-session horizons; unavailable matches stay pending. Both remain retrospective daily approximations, with the current ET date excluded and no complete holiday/early-close calendar reconstructed. Neither supplies point-in-time event knowledge or an executable intraday predictive backtest.
 
 Outcomes may include supported equity/sector/country returns, relative returns, volatility, volume and drawdown. Currency, interest rates, commodities, shipping measures and macroeconomic outcomes require separate provider/series adapters; the current ten-symbol IEX feed cannot supply them by inference.
 
@@ -168,6 +193,8 @@ For example, a coastal earthquake may suggest investigating ports, manufacturing
 LLMs can help retrieve and summarize evidence or describe competing scenarios. They cannot supply missing facility links, historical data, numerical confidence or a validated causal effect. Source reliability, exposure evidence, similarity quality and predictive uncertainty are separate quantities.
 
 ### Increment 2 acceptance
+
+The full historical-knowledge/exposure acceptance below is **not met by the retrospective MVP**. Physical-feature rankings and supported outcomes are available; original revision replay, verified exposure edges and complete historical snapshots remain pending.
 
 1. Historical replay at a chosen knowledge cutoff excludes later information and shows event revisions.
 2. Every linked issuer/facility/asset has a sourced effective exposure edge; candidate-only links remain explicitly unverified.
@@ -198,4 +225,4 @@ Keep analyst scenarios separate from forecasts: plausible pathways can be useful
 | Options, CFTC/positioning and cross-asset intelligence | Separate licensed/official datasets, schemas, update cadence and methodology |
 | CPZAI-style reproducibility and agents | Versioned evidence, calculations, rules, saved studies and evaluation; no broker execution implied |
 
-Version numbers after v0.7 remain proposals. Review the current integrity corrections, then select the bounded Research Intelligence Foundation slice and its data dependencies. Do not represent the complete forecasting/screener/SignalDock backlog as one completed or approved sprint.
+The Research Intelligence Foundation is implemented as the bounded pilot recorded above. Full Java integration, macro/SignalDock coverage, Market Atlas, exposure intelligence and forecasting remain separate pending work. Version labels alone must not imply those requirements are complete; use the delivered scope and final verification evidence.

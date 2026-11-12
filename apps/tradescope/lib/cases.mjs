@@ -34,6 +34,28 @@ function normalizeMarketData(input) {
   exchangeEventTime:time(input.exchangeEventTime),receivedAt:time(input.receivedAt),ingestedAt:time(input.ingestedAt)};
 }
 
+function normalizeResearchEvidence(input) {
+ if(!input||typeof input!=='object'||Array.isArray(input)||
+  !(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(input.metricId))return null;
+ const scalar=value=>typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value);
+ const text=(value,max)=>typeof value==='string'?value.slice(0,max):null;
+ const metric=value=>typeof value==='string'&&(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(value)?value:null;
+ return {
+  metricId:input.metricId,operator:text(input.operator,30),value:scalar(input.value)?input.value:null,
+  threshold:scalar(input.threshold)?input.threshold:null,otherMetricId:metric(input.otherMetricId),
+  previousValue:scalar(input.previousValue)?input.previousValue:null,previousThreshold:scalar(input.previousThreshold)?input.previousThreshold:null,
+  passed:typeof input.passed==='boolean'?input.passed:null,status:text(input.status,40),reason:text(input.reason,180),message:text(input.message,500),
+  source:text(input.source,100),asOf:text(input.asOf,45),availableAt:text(input.availableAt,45),unit:text(input.unit,40),
+  periodStart:text(input.periodStart,45),periodEnd:text(input.periodEnd,45),
+  freshnessAsOf:text(input.freshnessAsOf,45),freshnessBasis:text(input.freshnessBasis,30),priceAsOf:text(input.priceAsOf,45),
+  methodVersion:text(input.methodVersion,100),sampleCount:Number.isFinite(input.sampleCount)?input.sampleCount:null,
+  requiredCount:Number.isFinite(input.requiredCount)?input.requiredCount:null,
+  comparisonSource:text(input.comparisonSource,100),comparisonAsOf:text(input.comparisonAsOf,45),
+  comparisonFreshnessAsOf:text(input.comparisonFreshnessAsOf,45),comparisonPriceAsOf:text(input.comparisonPriceAsOf,45),
+  comparisonPeriodStart:text(input.comparisonPeriodStart,45),comparisonPeriodEnd:text(input.comparisonPeriodEnd,45),
+ };
+}
+
 // Save only numeric market measurements, dated filing facts and bounded study outcomes.
 // Never store raw provider responses, opaque tokens or arbitrary untrusted client objects.
 function normalizeContext(input) {
@@ -47,7 +69,22 @@ function normalizeContext(input) {
  const rawStudy=input.study?.study;
  let study=null;
  if(rawStudy && typeof rawStudy==='object')study={study:{status:string(rawStudy.status,40),referenceSession:string(rawStudy.referenceSession,20),horizons:Array.isArray(rawStudy.horizons)?rawStudy.horizons.slice(0,5).map(h=>({sessions:Number.isInteger(h.sessions)?h.sessions:null,status:string(h.status,40),...numerical(h,['relativeReturnPct','stockReturnPct','benchmarkReturnPct'])})):[]}};
- return {capturedAt:new Date().toISOString(),technical:Object.keys(technical).length?technical:null,technicalSource:string(input.technicalSource,100),financialSource:string(input.financialSource,100),fundamentals,study};
+ let research=null;
+ if(input.research&&typeof input.research==='object'&&!Array.isArray(input.research)){
+  const r=input.research;
+  const observations=Array.isArray(r.observations)?r.observations.slice(0,100).flatMap(value=>{
+   if(!value||typeof value!=='object'||!(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(value.id))return [];
+   return [{id:value.id,value:typeof value.value==='boolean'||typeof value.value==='number'&&Number.isFinite(value.value)?value.value:null,
+    status:string(value.status,40),reason:string(value.reason,500),unit:string(value.unit,40),source:string(value.source,100),
+    asOf:string(value.asOf,45),availableAt:validTime(value.availableAt),periodStart:string(value.periodStart,45),periodEnd:string(value.periodEnd,45),
+    methodVersion:string(value.methodVersion,100),sampleCount:Number.isFinite(value.sampleCount)?value.sampleCount:null,
+    requiredCount:Number.isFinite(value.requiredCount)?value.requiredCount:null}];
+  }):[];
+  const evidence=Array.isArray(r.evidence)?r.evidence.slice(0,20).map(normalizeResearchEvidence).filter(Boolean):[];
+  research={schemaVersion:1,ruleId:string(r.ruleId,100),ruleVersion:string(r.ruleVersion,100),
+   screenId:string(r.screenId,100),description:string(r.description,1200),observations,evidence};
+ }
+ return {capturedAt:new Date().toISOString(),technical:Object.keys(technical).length?technical:null,technicalSource:string(input.technicalSource,100),financialSource:string(input.financialSource,100),fundamentals,study,research};
 }
 
 
@@ -92,7 +129,7 @@ export function createCaseStore(filename) {
    const symbol=nonempty(input?.symbol,12,'Symbol').toUpperCase();if(!allowSymbol(symbol))throw err('Invalid symbol');
    const event=normalizeEvent(input?.event);const now=new Date().toISOString();
    const id=`CASE-${randomUUID()}`;
-   const relationship=event.synthetic?'SYNTHETIC_ONLY':event.symbols.includes(symbol)?'PROVIDER_TAGGED':'UNVERIFIED';
+   const relationship=event.synthetic?'SYNTHETIC_ONLY':event.evidenceLevel==='derived_metric_condition'?'DERIVED_RESEARCH':event.symbols.includes(symbol)?'PROVIDER_TAGGED':'UNVERIFIED';
    const context=normalizeContext(input?.context);
    const item={id,title:string(input?.title,220)||event.headline,symbol,context,priority:'MEDIUM',status:'OPEN',relationship,assignee:'Unassigned',conclusion:'UNDETERMINED',summary:'',event,createdAt:now,updatedAt:now,revision:1,evidence:[],notes:[],audit:[audit('CASE_CREATED',`From ${event.source} event ${event.id}; relationship ${relationship}`,now)]};
    if(event.sourceUrl)item.evidence.push({id:randomUUID(),kind:'SOURCE',label:`Original ${event.source} record`,url:event.sourceUrl,source:event.source,claimedAt:event.publishedAt||event.occurredAt,addedAt:now});

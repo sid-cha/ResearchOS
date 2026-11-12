@@ -83,7 +83,6 @@
     document.querySelector('.kpi-grid .kpi:nth-child(4) .kpi-foot').textContent=demo?'Synthetic rule illustration':`${scored.length}/${events.length} assessed · heuristic, not probability`;
     document.querySelector('.blotter-scroll th:last-child').textContent=demo?'RISK':'SIZE RULE';
     el('metricAlertRate').textContent=`${Math.round(alerts.length/(events.length||1)*100)}% of observed events`;
-    el('navCount').textContent=String(alerts.length).padStart(2,'0');
     el('signalCount').textContent=String(alerts.length).padStart(2,'0')+' ACTIVE';
     el('streamProgress').textContent=`${events.length} / ${fixture.length} EVENTS`;
     el('blotterCount').textContent=events.length+' EVENTS';
@@ -190,7 +189,7 @@
   function schedule(){stop();if(!state.running||state.revealed>=fixture.length)return;state.timer=setInterval(()=>{state.revealed=Math.min(fixture.length,state.revealed+1);if(state.revealed===fixture.length){state.running=false;stop();}render();},Math.max(100,550/state.speed));}
   function reset(){if(state.mode!=='DEMO')return;stop();state.revealed=68;state.running=false;state.selectedId=now().filter(e=>e.severity==='high').at(-1)?.id||now().at(-1)?.id;state.reviewed.clear();render();}
   function exportCsv(){const head=['id','time_et','symbol','event_type','price_usd','quantity','venue','anomaly_score','severity','trigger_codes','reviewed','source'];const items=filtered().map(x=>[x.id,x.time,x.symbol,x.type,x.price.toFixed(4),x.quantity,x.venue,x.score,x.severity,x.findings.map(f=>f.code).join('|'),state.reviewed.has(x.id)?'yes':'no',x.source]);const csv=[head,...items].map(row=>row.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='tradescope-terminal-'+state.mode.toLowerCase()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),250);}
-  function activateNav(v){state.nav=v;document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));if(v==='signals'){state.flagsOnly=true;updateToggle();renderTable();el('blotterPanel').scrollIntoView({behavior:'smooth',block:'center'});}else if(v==='blotter'||v==='monitor'){state.flagsOnly=false;updateToggle();renderTable();if(v==='blotter')el('blotterPanel').scrollIntoView({behavior:'smooth',block:'center'});else window.scrollTo({top:0,behavior:'smooth'});}else if(v==='replay'){el('play').focus();}else{window.scrollTo({top:0,behavior:'smooth'});}}
+  function activateNav(v){state.nav=v;document.querySelectorAll('.nav-link').forEach(b=>b.classList.toggle('active',b.dataset.nav===v));if(v==='blotter'||v==='monitor'){state.flagsOnly=false;updateToggle();renderTable();if(v==='blotter')el('blotterPanel').scrollIntoView({behavior:'smooth',block:'center'});else window.scrollTo({top:0,behavior:'smooth'});}else if(v==='replay'){el('play').focus();}else{window.scrollTo({top:0,behavior:'smooth'});}}
   tickers.forEach(t=>{const option=document.createElement('option');option.value=t.symbol;option.textContent=t.symbol;el('symbolFilter').appendChild(option);});
   el('search').addEventListener('input',e=>{state.search=e.target.value.trim().toLowerCase();renderTable();});
   el('symbolFilter').addEventListener('change',e=>{state.symbolFilter=e.target.value;if(state.symbolFilter!=='ALL')state.symbol=state.symbolFilter;render();});
@@ -198,7 +197,7 @@
   el('clearFilters').addEventListener('click',()=>{state.symbolFilter='ALL';state.eventFilter='ALL';state.search='';state.flagsOnly=false;el('symbolFilter').value='ALL';el('eventFilter').value='ALL';el('search').value='';render();});
   el('allEvents').addEventListener('click',()=>{state.flagsOnly=false;render()});
   el('flaggedOnly').addEventListener('click',()=>{state.flagsOnly=true;render()});
-  el('filterSignals').addEventListener('click',()=>activateNav('signals'));
+  el('filterSignals').addEventListener('click',()=>{document.querySelector('[data-nav="blotter"]')?.click();state.flagsOnly=true;updateToggle();renderTable();el('blotterPanel').scrollIntoView({behavior:'smooth',block:'center'});});
   el('speed').addEventListener('change',e=>{state.speed=Number(e.target.value);schedule()});
   el('play').addEventListener('click',()=>{if(state.mode!=='DEMO')return;if(state.revealed===fixture.length){reset();}state.running=!state.running;renderMetrics();schedule()});
   el('reset').addEventListener('click',reset);

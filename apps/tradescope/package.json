@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.7.0",
-  "description": "TradeScope IEX streaming, market-data integrity and source-grounded investigation workstation",
+  "version": "0.8.0",
+  "description": "TradeScope research metrics, screens, alerts and source-grounded event investigations",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",

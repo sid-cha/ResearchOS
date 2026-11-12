@@ -1,12 +1,12 @@
-# TradeScope AI v0.7 — Market Data Integrity + Evidence-Grounded Research
+# TradeScope AI v0.8 — Research Intelligence Foundation
 
 **Status:** Local-first research workstation with server-side IEX streaming, snapshot fallback, investigations and professional light/dark workspaces. Authenticated live streaming requires local provider verification; this is **not** an institutional surveillance release or public licensed data product.
 
 Built as the `apps/tradescope` bounded-context prototype in [ResearchOS](https://github.com/sid-cha/ResearchOS). The synthetic trade blotter, historical-trade playback, and IEX snapshot API remain available. Event Intelligence includes corporate news, SEC filings, fundamental financial data, natural hazards, geopolitical media coverage, technical indicators, and benchmark-relative event studies.
 
-For the distinction between implemented tools and the proposed screeners, SignalDock-style research, advanced heatmaps and prediction work, see [feature status and where to find each tool](docs/FEATURE_STATUS.md).
+The **RESEARCH** workspace adds 65 metric definitions, explainable conditions, saved screens, persistent research alerts, an extractive SEC filing reader and historical earthquake comparisons. Availability depends on actual provider inputs; unsupported metrics stay unavailable. See [feature status and where to find each tool](docs/FEATURE_STATUS.md).
 
-The [next research-intelligence proposal](docs/NEXT_RESEARCH_INTELLIGENCE.md) maps the expanded metrics, alerts and historical-event requirements to bounded work packages. The [official-platform research comparison](docs/PLATFORM_RESEARCH_2026-11-12.md) records external references and their practical implications. These are proposed future capabilities, separate from the implemented v0.7 fixes.
+The [foundation implementation and remaining requirements](docs/RESEARCH_INTELLIGENCE_FOUNDATION.md) and [next research-intelligence work](docs/NEXT_RESEARCH_INTELLIGENCE.md) distinguish delivered features from the broader roadmap. The [official-platform research comparison](docs/PLATFORM_RESEARCH_2026-11-12.md) records external references and their practical implications.
 
 ## Quick start — Windows PowerShell
 
@@ -18,7 +18,9 @@ notepad .env         # replace API credentials and SEC contact address
 npm start
 ```
 
-Open **http://127.0.0.1:8000**, click **EVENT INTELLIGENCE**, and use the source buttons. With no keys, the app opens an obviously labeled synthetic scenario, and USGS/NASA/GDELT may be queried independently. SEC requires a declared `SEC_USER_AGENT` with a real contact email. Alpaca News, indicators and event studies require Alpaca paper-data keys. Run `npm test` (zero npm dependencies).
+Open **http://127.0.0.1:8000**, click **RESEARCH**, select a company and choose **LOAD COMPANY RESEARCH**. Open its Signals, Screener, Filing Reader and Historical Analogues tabs for the new tools. **EVENT INTELLIGENCE** retains news, hazards and earlier event studies. With no keys, Monitor opens a labeled synthetic replay; Research reports missing inputs. SEC requires a declared `SEC_USER_AGENT` with a real contact email. Alpaca News, market indicators and event outcomes require Alpaca paper-data keys. Run `npm test` (zero npm dependencies).
+
+When updating a ZIP installation, stop the old server, extract the new ZIP into a new folder, and copy your local `apps/tradescope/.env` and `apps/tradescope/.local-data/` into the new installation before starting it. This preserves cases, screens and alerts. A Git checkout can switch branches in place; these local files are ignored by Git.
 
 Do **not** open `index.html` directly when testing actual APIs; use the local Node server. Its API binds to loopback by default. Do not expose the server to the public internet without authentication, per-user rate limits, licensing review and other security work.
 
@@ -30,7 +32,7 @@ Defense in depth:
 - `.gitignore` excludes `.env` and `.env.*` (except the harmless template).
 - `.vercelignore` excludes environment files from **Vercel CLI** uploads; that configuration does **not** protect arbitrary manually created ZIP archives.
 - The local HTTP server serves only an explicit list of public assets, so `.env` cannot be requested over HTTP.
-- `npm run build:static` generates **only** twelve allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
+- `npm run build:static` generates **only** fourteen allowlisted HTML/CSS/JS files into `dist/`; it never packages `.env`, server source, or secrets. **Deploy the `dist/` content only for a static UI preview**, not the entire project directory.
 - This static demo cannot execute the local `/api` endpoints. To offer live data on Vercel, deploy a secured backend, store credentials in server-side environment variables, and review market-data licensing and access controls first.
 
 On Windows PowerShell, create and edit the local credentials file:
@@ -43,6 +45,17 @@ npm run build:static
 ```
 
 Never share the real `.env` file or include it in screenshots, bug reports, downloadable ZIPs, or Vercel Drop uploads. If a key was exposed in a conversation or log, revoke/rotate it in Alpaca before continuing.
+
+## v0.8 — Research Intelligence Foundation
+
+- **Company Research:** 33 technical/price and 32 financial/valuation definitions, with units, method, fiscal dates, source, readiness and explicit missing reasons. Longer completed-session history supports SMA200, EMA, momentum, volatility, volume and return metrics; SEC facts support conservative cash-flow, balance-sheet, profitability and valuation calculations.
+- **Signals:** nine manual research rules show ready, triggered, warming-up and unavailable results. Saved alerts support acknowledgement, resolution, cooldown and investigation capture. This is manual evaluation, not an unattended alert service.
+- **Screener:** three presets and editable saved conditions evaluate up to the ten pilot symbols. Every result includes condition evidence. Saved criteria and alerts use `.local-data/research.json`, optionally changed with `RESEARCH_STORE_PATH`.
+- **Filing Reader:** supported SEC 8-K/10-Q/10-K sections, extractive summaries and linked passages; no economic occurrence time is inferred from a filing date.
+- **Historical Analogues:** bounded regional USGS earthquake comparisons with explained similarity, followed by available 1/5/20-session security-versus-SPY returns. Similarity is not a probability; the tool does not infer issuer exposure or forecast political, social or economic impacts.
+- **Review safeguards:** stale report/price guards, compatible fiscal periods and revenue scopes, unknown values preserved, bounded same-origin APIs, whitelisted case evidence, and a shared investigation/assistant store.
+
+Whole-market instruments, Java/Postgres research integration, background monitoring, consensus/options feeds, authoritative exposure mapping and calibrated forecasting remain pending. See the [verification report](docs/V08_VERIFICATION.md).
 
 ## v0.7 — Market Data Integrity
 
