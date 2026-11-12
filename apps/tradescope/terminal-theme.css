@@ -159,3 +159,13 @@ button,select,input,textarea{color:var(--text)}
 .assist-next{display:flex;align-items:flex-start;gap:8px;line-height:1.5;margin:6px 0}.assist-next>span:first-child{flex:0 0 18px;color:var(--accent);font-weight:800}.assist-next>span:last-child{flex:1;min-width:0;overflow-wrap:anywhere}
 
 .assist-steps{display:grid;gap:8px}.assist-steps .assist-next{display:flex;margin:0}.assist-steps .assist-next>span:last-child{color:var(--text);font-weight:400}
+
+/* Compact feed-health readout shares both themes and remains outside research workspaces. */
+.feed-health{margin:0 0 12px;border:1px solid var(--border);background:var(--panel)}
+.feed-health-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.feed-health-heading h2{font:700 10px var(--mono);letter-spacing:.055em;color:var(--head-text);margin:0}.feed-health-heading h2 span{color:var(--muted);font-weight:400}.feed-health-heading>strong{font:700 10px var(--mono);color:var(--accent);text-align:right}
+.feed-health-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0}.feed-health-grid>div{padding:10px 13px;min-width:0;border-right:1px solid var(--border-soft)}
+.feed-health-grid dt,.market-provenance dt{font:9px var(--mono);letter-spacing:.035em;color:var(--muted);margin-bottom:5px}.feed-health-grid dd,.market-provenance dd{margin:0;font:11px var(--mono);font-variant-numeric:tabular-nums;color:var(--text);overflow-wrap:anywhere;line-height:1.5}.feed-health>p{margin:0;padding:8px 13px;border-top:1px solid var(--border-soft);color:var(--muted);font-size:10px;line-height:1.55}
+.market-provenance{padding:12px;background:var(--surface-2);border:1px solid var(--border-soft);margin:12px 0}.market-provenance>strong{font:700 10px var(--mono);color:var(--accent)}.market-provenance dl{display:grid;gap:10px;margin:12px 0 0}
+[data-workspace=intel] .feed-health,[data-workspace=cases] .feed-health{display:none!important}
+@media(max-width:1000px){.feed-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.feed-health-heading{align-items:flex-start;flex-direction:column}.feed-health-heading>strong{text-align:left}.feed-health-grid>div{padding:8px}.feed-health-grid dd{font-size:10px}}

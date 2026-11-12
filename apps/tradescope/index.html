@@ -33,9 +33,23 @@
     </div>
     <div class="disclaimer"><span class="disclaimer-icon">SIM</span><span><strong>SIMULATED DATA ENVIRONMENT</strong> <span id="sourceWarning">The trading blotter begins in synthetic mode; switch its connector for authenticated IEX observations. The independent Event Intelligence workspace can load separate official/news records. Source labels in each panel apply independently.</span> Surveillance rules are illustrative, not misconduct determinations.</span><span class="data-source">SOURCE: SYNTHETIC_FIXTURE_V2</span></div>
     <section class="data-connector" aria-label="Market data connection">
-      <div class="mode-options"><button id="modeDemo" class="mode-button active" type="button">DEMO REPLAY</button><button id="modeLive" class="mode-button" type="button">LIVE IEX · POLLED</button><button id="modeHistory" class="mode-button" type="button">HISTORICAL TRADES</button></div>
+      <div class="mode-options"><button id="modeDemo" class="mode-button active" type="button">DEMO REPLAY</button><button id="modeLive" class="mode-button" type="button">LIVE IEX · STREAM / FALLBACK</button><button id="modeHistory" class="mode-button" type="button">HISTORICAL TRADES</button></div>
       <div class="historical-controls" id="historyControls" hidden><label for="historySymbol">SYMBOL</label><select id="historySymbol"><option>AAPL</option><option>NVDA</option><option>TSLA</option><option>MSFT</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select><label for="historyFeed">FEED</label><select id="historyFeed"><option value="sip">SIP · PREVIOUS DAYS</option><option value="iex">IEX · ANY SESSION</option></select><label for="historyDate">SESSION DATE</label><input type="date" id="historyDate"><button id="loadHistory" type="button">LOAD REAL TRADES</button></div>
       <div id="connectionStatus" class="connection-status" role="status" aria-live="polite">DEMO / NO PROVIDER CONNECTION</div>
+    </section>
+    <section class="feed-health" aria-labelledby="feedHealthTitle">
+      <div class="feed-health-heading"><h2 id="feedHealthTitle">FEED HEALTH <span>/ SOURCE INTEGRITY</span></h2><strong id="feedTransport">DEMO · SYNTHETIC</strong></div>
+      <dl class="feed-health-grid">
+        <div><dt>PROVIDER / COVERAGE</dt><dd id="feedProvider">SYNTHETIC FIXTURE</dd></div>
+        <div><dt>UPSTREAM CONNECTION</dt><dd id="feedConnection">No provider connection</dd></div>
+        <div><dt>LAST EXCHANGE OBSERVATION</dt><dd id="feedExchangeTime">—</dd></div>
+        <div><dt>LAST BACKEND INGESTION</dt><dd id="feedIngestedTime">—</dd></div>
+        <div><dt>OBSERVATION FRESHNESS</dt><dd id="feedFreshness">Synthetic observations</dd></div>
+        <div><dt>OBSERVATIONS</dt><dd id="feedCounts">—</dd></div>
+        <div><dt>STREAM DUPLICATES / RECONNECTS</dt><dd id="feedDuplicates">—</dd></div>
+        <div><dt>GAPS / CONTINUITY</dt><dd id="feedContinuity">Deterministic demo replay</dd></div>
+      </dl>
+      <p>IEX is one venue. Idle observations can be normal outside trading sessions; session and holiday status is not inferred. A connected feed does not guarantee fresh data or complete coverage.</p>
     </section>
     <section class="kpi-grid" aria-label="Surveillance key metrics">
       <div class="kpi"><div class="kpi-label">EVENTS INGESTED <span>01 / 05</span></div><div class="kpi-main"><strong id="metricEvents">68</strong><svg viewBox="0 0 80 30" class="micro-chart" aria-hidden="true"><polyline points="0,25 12,21 24,23 36,15 48,18 60,9 72,11 80,3"/></svg></div><div class="kpi-foot"><span class="accent-teal">↑ 12.8%</span> vs. earlier replay segment</div></div>

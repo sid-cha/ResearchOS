@@ -6,6 +6,8 @@ import {makeSources} from './lib/sources.mjs';
 import {createIntelligenceApi} from './lib/api.mjs';
 import {createCaseApi} from './lib/case-api.mjs';
 import {createAssistantApi} from './lib/assistant-api.mjs';
+import {createMarketStream} from './lib/alpaca-stream.mjs';
+import {createMarketDelivery} from './lib/market-sse.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -34,27 +36,34 @@ async function alpacaGet(endpoint){
   const ctrl=new AbortController();const timeout=setTimeout(()=>ctrl.abort(),12000);
   try{
     const r=await fetch(url,{method:'GET',headers:{'APCA-API-KEY-ID':KEY,'APCA-API-SECRET-KEY':SECRET,'Accept':'application/json'},signal:ctrl.signal});
-    const raw=await r.text();let payload;try{payload=JSON.parse(raw)}catch{payload={message:'Invalid upstream response'}}
-    if(!r.ok)throw Object.assign(new Error(`${payload.message||'Market data request failed'} (HTTP ${r.status})`),{status:r.status===429?429:502});
+    // Never echo arbitrary provider error bodies: they can contain credentials.
+    if(!r.ok){await r.body?.cancel();throw Object.assign(new Error(r.status===401||r.status===403?'Market data authentication or entitlement failed':`Market data request failed (HTTP ${r.status})`),{status:r.status===429?429:502});}
+    const raw=await r.text();let payload;try{payload=JSON.parse(raw)}catch{throw Object.assign(new Error('Invalid market data response'),{status:502});}
     return payload;
   }catch(e){if(e.name==='AbortError')throw Object.assign(new Error('Market data provider timed out'),{status:504});throw e;}finally{clearTimeout(timeout)}
 }
-function publicTrade(symbol,t){if(!t||typeof t.p!=='number'||typeof t.t!=='string')return null;return {symbol,sourceId:String(t.i??t.t),time:t.t,price:t.p,quantity:Number(t.s)||0,venue:t.x||'IEX',conditions:Array.isArray(t.c)?t.c:[]};}
-function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:Number(q.bp)||0,ask:Number(q.ap)||0,bidSize:Number(q.bs)||0,askSize:Number(q.as)||0,bidVenue:q.bx||'IEX',askVenue:q.ax||'IEX'};}
+const numberOrNull=value=>typeof value==='number'&&Number.isFinite(value)?value:null;
+const quantityOrNull=value=>numberOrNull(value)!==null&&value>=0?value:null;
+const venueOrNull=value=>typeof value==='string'&&/^[A-Za-z0-9@#*?._:+/-]{1,32}$/.test(value)?value:null;
+function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t.t!=='string')return null;return {symbol,sourceId:typeof t.i==='string'||Number.isSafeInteger(t.i)?String(t.i):null,time:t.t,price:t.p,quantity:quantityOrNull(t.s),venue:venueOrNull(t.x),conditions:Array.isArray(t.c)?t.c.filter(c=>typeof c==='string'&&/^[A-Za-z0-9@#*?._:+/-]{1,32}$/.test(c)).slice(0,32):null};}
+function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer(){return http.createServer(async(req,res)=>{
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}} = {}){
+ const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
+ const server=http.createServer(async(req,res)=>{
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
+    if(delivery.handle(req,res,u))return;
     if(await handleCases(req,res,u))return;
     if(await handleAssistant(req,res,u))return;
     if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
     if(await handleIntelligence(req,res,u))return;
-    if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
+    if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketData:marketStream.getHealth(),marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
     if(u.pathname==='/api/live'){
       if(Date.now()<cachedSnapshot.expires&&cachedSnapshot.value){json(res,200,{...cachedSnapshot.value,cacheHit:true});return;}
       const symbols=DEFAULT_SYMBOLS.join(',');const response=await alpacaGet(`/v2/stocks/snapshots?symbols=${symbols}&feed=iex`);
-      const output={source:'ALPACA_IEX',mode:'LATEST_AVAILABLE',fetchedAt:new Date().toISOString(),snapshots:sanitizeSnapshots(response)};
+      const output={source:'ALPACA_IEX',mode:'LATEST_AVAILABLE',transport:'snapshot-polling',provider:'alpaca',feed:'iex',coverage:'single-venue',fetchedAt:new Date().toISOString(),snapshots:sanitizeSnapshots(response)};
       cachedSnapshot={expires:Date.now()+14000,value:output};json(res,200,{...output,cacheHit:false});return;
     }
     if(u.pathname==='/api/history'){
@@ -71,8 +80,16 @@ export function createServer(){return http.createServer(async(req,res)=>{
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
   }catch(e){const status=e.status||500;json(res,status,{error:status===500?'Local data service error':e.message});}
-});}
+ });
+ // Close delivery before HTTP shutdown because SSE connections are long-lived.
+ server.closeMarketData=()=>delivery.close();
+ server.once('close',()=>delivery.close());
+ return server;
+}
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  createServer().listen(PORT,HOST,()=>{console.log(`TradeScope local: http://${HOST}:${PORT}`);console.log(`Alpaca credentials: ${KEY&&SECRET?'configured':'missing (demo is still available)'}`);});
+  const server=createServer();
+  server.listen(PORT,HOST,()=>{console.log(`TradeScope local: http://${HOST}:${PORT}`);console.log(`Alpaca credentials: ${KEY&&SECRET?'configured':'missing (demo is still available)'}`);});
+  const shutdown=()=>{server.closeMarketData();server.close();};
+  process.once('SIGINT',shutdown);process.once('SIGTERM',shutdown);
 }
 export {isoDateValid,sanitizeSnapshots,publicTrade,publicQuote};

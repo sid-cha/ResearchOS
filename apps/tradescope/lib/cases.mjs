@@ -4,6 +4,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {validEventTimestamp} from './market-events.mjs';
 
 const STATUSES = new Set(['OPEN','IN_REVIEW','NEEDS_EVIDENCE','CLOSED']);
 const PRIORITIES = new Set(['LOW','MEDIUM','HIGH']);
@@ -18,6 +19,20 @@ const audit = (action,details='',timestamp=new Date().toISOString()) => ({id:ran
 const allowSymbol = s => /^(?:[A-Z][A-Z0-9.-]{0,11})$/.test(s);
 const nonempty = (v,max,label) => {const result=string(v,max);if(!result)throw err(`${label} is required`);return result;};
 const pickRevision = (input,current) => {if(input?.expectedRevision !== current.revision)throw err(`Case was updated elsewhere; refresh and retry (revision ${current.revision})`,409);};
+
+// A selected observation's lineage is saved only when an analyst creates a case.
+// This is neither a tick archive nor permission to retain raw licensed feeds.
+function normalizeMarketData(input) {
+ if(!input || typeof input!=='object' || Array.isArray(input) || input.schemaVersion!==1)return null;
+ const token=(value,max=40)=>typeof value==='string' && value.length<=max && /^[A-Za-z0-9@#*?._:+/-]+$/.test(value)?value:null;
+ const symbol=typeof input.symbol==='string' && allowSymbol(input.symbol)?input.symbol:null;
+ const provider=token(input.provider),feed=token(input.feed),coverage=token(input.coverage),instrumentId=token(input.instrumentId,80);
+ if(!symbol || !provider || !feed || !coverage || !instrumentId || !['trade','quote','bar'].includes(input.eventType) || !['LIVE','HISTORY','SYNTHETIC'].includes(input.mode))return null;
+ const time=value=>validEventTimestamp(value)?value:null;
+ return {schemaVersion:1,provider,feed,coverage,mode:input.mode,instrumentId,symbol,eventType:input.eventType,
+  sourceEventId:token(input.sourceEventId,128),exchange:token(input.exchange,32),
+  exchangeEventTime:time(input.exchangeEventTime),receivedAt:time(input.receivedAt),ingestedAt:time(input.ingestedAt)};
+}
 
 // Save only numeric market measurements, dated filing facts and bounded study outcomes.
 // Never store raw provider responses, opaque tokens or arbitrary untrusted client objects.
@@ -63,8 +78,11 @@ export function createCaseStore(filename) {
   const id=nonempty(input.id,160,'Event ID');
   const source=nonempty(input.source,120,'Source');
   const synthetic=/^hypo:/i.test(id) || /SYNTHETIC|DEMO/i.test(source) || input.synthetic===true;
-  const publishedAt=validTime(input.publishedAt),occurredAt=validTime(input.occurredAt);
-  return {id,headline:nonempty(input.headline,350,'Event headline'),category:string(input.category,40)||'OTHER',type:string(input.type,70)||'UNCLASSIFIED',source,sourceUrl:validUrl(input.sourceUrl),publishedAt,occurredAt,providerFirstSeenAt:validTime(input.providerFirstSeenAt),ingestedAt:validTime(input.ingestedAt),evidenceLevel:string(input.evidenceLevel,70)||'unclassified',symbols:Array.isArray(input.symbols)?[...new Set(input.symbols.map(x=>string(x,20).toUpperCase()).filter(allowSymbol))].slice(0,20):[],summary:string(input.summary,1200),synthetic};
+  const symbols=Array.isArray(input.symbols)?[...new Set(input.symbols.map(x=>string(x,20).toUpperCase()).filter(allowSymbol))].slice(0,20):[];
+  const lineage=normalizeMarketData(input.marketData);
+  const marketData=lineage && symbols.includes(lineage.symbol) && (synthetic?lineage.mode==='SYNTHETIC':lineage.mode!=='SYNTHETIC')?lineage:null;
+  const publishedAt=validTime(input.publishedAt),occurredAt=marketData?marketData.exchangeEventTime:validTime(input.occurredAt);
+  return {id,headline:nonempty(input.headline,350,'Event headline'),category:string(input.category,40)||'OTHER',type:string(input.type,70)||'UNCLASSIFIED',source,sourceUrl:validUrl(input.sourceUrl),publishedAt,occurredAt,providerFirstSeenAt:validTime(input.providerFirstSeenAt),ingestedAt:marketData?marketData.ingestedAt:validTime(input.ingestedAt),evidenceLevel:string(input.evidenceLevel,70)||'unclassified',symbols,summary:string(input.summary,1200),synthetic,...(marketData?{marketData}:{})};
  }
  return {
   async list({status='ALL',search=''}={}){return read(d=>d.cases.filter(c=>(status==='ALL'||c.status===status)&&`${c.title} ${c.symbol} ${c.event.source} ${c.id}`.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,event,assignee})=>({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,assignee,source:event.source,synthetic:event.synthetic,eventHeadline:event.headline})));},
