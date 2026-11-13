@@ -65,16 +65,16 @@ export function rankThematicAnalogues(events,{eventId,theme,limit=5,now=Date.now
    'Similarity is a descriptive ranking, never a calibrated likelihood of direction, magnitude or causation.']};
 }
 export function createThematicResearch({sources,now=Date.now}={}){
- if(!sources||typeof sources.filings!=='function'||typeof sources.news!=='function'||typeof sources.hazards!=='function'||typeof sources.geopolitics!=='function')throw new TypeError('Thematic research requires existing source adapters');
+ if(!sources||typeof sources.filings!=='function')throw new TypeError('Thematic research requires a sourced SEC adapter');
  async function list({theme='corporate',symbol='AAPL',topic='sanctions'}={}){
   if(!THEMES.includes(theme))throw fail('Unsupported research event theme.');
   if(!validSymbol(symbol))throw fail('Choose a supported uppercase instrument symbol.');
   if(!TOPICS.includes(topic))throw fail('Choose a supported geopolitical topic.');
   let data,items;
   if(theme==='corporate'){data=await sources.filings(symbol);items=data.filings;}
-  else if(theme==='news'){data=await sources.news(symbol,30);items=data.events;}
-  else if(theme==='natural'){data=await sources.hazards('all');items=data.events;}
-  else{data=await sources.geopolitics(topic);items=data.events;}
+  else if(theme==='news'){if(typeof sources.news!=='function')throw fail('Company news source is not configured.',503);data=await sources.news(symbol,30);items=data.events;}
+  else if(theme==='natural'){if(typeof sources.hazards!=='function')throw fail('Natural hazard source is not configured.',503);data=await sources.hazards('all');items=data.events;}
+  else{if(typeof sources.geopolitics!=='function')throw fail('Geopolitical media source is not configured.',503);data=await sources.geopolitics(topic);items=data.events;}
   const instant=Number(now());
   const normalized=(Array.isArray(items)?items:[]).slice(0,100).map(item=>normalize(item,theme)).filter(item=>item&&Date.parse(item.comparisonTime)<=instant)
    .sort((a,b)=>b.comparisonTime.localeCompare(a.comparisonTime)||a.id.localeCompare(b.id));
@@ -85,9 +85,8 @@ export function createThematicResearch({sources,now=Date.now}={}){
  }
  async function analogues(options={}){
   const data=await list(options);
-  return {...rankThematicAnalogues(data.events,{theme:data.theme,eventId:options.eventId,limit:options.limit??5,now:now()}),
-   source:data.source,coverage:{...rankThematicAnalogues(data.events,{theme:data.theme,eventId:options.eventId,limit:options.limit??5,now:now()}).coverage,
-    provider:data.source,receivedCount:data.coverage.receivedCount}};
+  const ranked=rankThematicAnalogues(data.events,{theme:data.theme,eventId:options.eventId,limit:options.limit??5,now:now()});
+  return {...ranked,source:data.source,coverage:{...ranked.coverage,provider:data.source,receivedCount:data.coverage.receivedCount}};
  }
  return {list,analogues};
 }
