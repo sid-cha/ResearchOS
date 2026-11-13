@@ -112,7 +112,7 @@ export function normalizeFaaAirportEvents(raw,{fetchedAt=new Date().toISOString(
   caveat:'A current airport-level status snapshot is not an archival national ground-stop notice. Empty results do not certify no disruption; the source is time-varying.'};
 }
 export function buildEventCase({asOf=null,now=new Date().toISOString()}={}){
- if(asOf!==null&&(!isAsOf(asOf)||asOf>now))throw new TypeError('Use an existing UTC asOf timestamp YYYY-MM-DDTHH:MM:SSZ');
+ if(asOf!==null&&(!isAsOf(asOf)||Date.parse(asOf)>Date.parse(now)||Date.parse(asOf)>=Date.parse(CASE.eventTime)))throw new TypeError('Historical replay requires a valid pre-event UTC cutoff');
  const historical=asOf!==null;
  const evidence=EVIDENCE.filter(e=>!historical||atDayEnd(e.publishedOn)<=asOf).map(e=>({
   ...e,availability:historical?'DATE_GATED_NOT_ARCHIVED':'DATED_PUBLICATION',

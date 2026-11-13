@@ -46,7 +46,7 @@ test('current retrospective case presents candidate pathways, explicit unknown l
 });
 
 test('historical checkpoints enforce UTC second precision and reject future cutoffs',()=>{
- for(const asOf of ['2026-11-13','garbage','2026-11-14T00:00:00Z','2026-11-13T20:53:00+00:00','2026-02-31T00:00:00Z']){
+ for(const asOf of ['2026-11-13','garbage','2026-11-14T00:00:00Z','2026-11-13T20:53:00+00:00','2026-11-13T20:54:00Z','2026-11-13T20:55:00Z','2026-02-31T00:00:00Z']){
   assert.throws(()=>buildEventCase({asOf,now:'2026-11-13T23:00:00Z'}));
  }
 });

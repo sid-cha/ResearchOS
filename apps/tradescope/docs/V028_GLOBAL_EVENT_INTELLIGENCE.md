@@ -51,3 +51,5 @@ The GAO evidence was published ahead of the event but the **true first-seen cloc
 - Multi-tenant authentication, durable backed-up archival service, source contracts, rate limits and hosted deployment. No autonomous trades.
 
 The goal is **discoverable precursor risk**, not a post-hoc claim that the system predicted a one-off failure. An actionable prospective warning requires stronger evidence than thematic proximity or shared event categories.
+
+**Cutoff contract:** The `asOf` API only supports timestamps strictly before 2026-11-13T20:54:00Z; post-event investigation must use the current retrospective mode. This prevents mislabeling after-event information as pre-event evidence.
