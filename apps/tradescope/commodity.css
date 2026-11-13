@@ -50,3 +50,5 @@ h1{font-size:clamp(29px,4vw,49px);line-height:1.1;letter-spacing:-.04em;margin:1
 
 .evidence-edge{border-left:3px solid #319aa6;background:#0f2733;padding:9px 12px;margin:12px 0;color:#a4e7e1;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 .evidence-edge small{color:#8dafbd;line-height:1.4}
+
+.verified-excerpt{border:1px solid #365264;background:#132c3b;color:#bdcfdc;padding:10px;margin:9px 0 0;border-radius:6px;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
