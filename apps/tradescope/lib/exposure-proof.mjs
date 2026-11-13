@@ -145,7 +145,7 @@ export function createExposureCasebook({filename,now=()=>new Date(),maxEntries=1
    openedAs:'SOURCE_REFERENCED_OPERATOR_HYPOTHESIS',operatorVerified:false,issuerVerified:false});
  };
  const addSource=async(id,data)=>{
-  if(!data||typeof data!=='object'||Object.keys(data).some(x=>!['epa','sec','status'].includes(x)))
+  if(!data||typeof data!=='object'||Object.keys(data).some(x=>!['epa','sec','status','snapshotHash','previousSnapshotHash','changedFromPriorCapture','independentIssuerLinkVerified','pointInTimeEligible'].includes(x)))
    throw fail('Source snapshot is server-owned only');
   return append(id,'SOURCE_CAPTURED',data);
  };
