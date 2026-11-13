@@ -211,17 +211,77 @@
       return '<div><strong>'+esc(def.label||metricId||item.label||'Source evidence')+'</strong> '+esc(format(actual,obs.unit||def.unit,metricId))+(comparison?' · '+esc(comparison):'')+'<small>'+esc(message(item.reason)||item.message||item.status||'')+'</small><small>'+esc(obs.source||item.source||'Source not supplied')+' · '+esc(time(obs.asOf||item.asOf))+(Number.isFinite(obs.sampleCount)?' · '+esc(readiness(obs,def)):'')+'</small></div>';
     }).join('')+'</div>';
   }
+  function signalStatus(value){
+    return ['triggered','ready','warming_up','unavailable','missing_data','period_mismatch','insufficient_data','unsupported'].includes(value)?value:'unavailable';
+  }
+  function signalGroup(value){
+    const s=signalStatus(value);
+    return s==='triggered'?'triggered':s==='ready'?'ready':s==='warming_up'?'warming_up':'unavailable';
+  }
+  function firstEvidence(values){
+    return evidenceList(values).find(row=>row&&typeof row==='object')||null;
+  }
+  function signalComparison(source){
+    const e=firstEvidence(source),obs=e?.observation||e?.metric||e;
+    if(!e||!obs)return '';
+    const id=e.metricId||obs.id||e.condition?.metricId;
+    const label=definition(id||'').label||id||'Source metric';
+    const unit=obs.unit||definition(id||'').unit;
+    const operator=({gt:'>',gte:'≥',lt:'<',lte:'≤',eq:'=',crosses_above:'crosses above',crosses_below:'crosses below'})[e.operator||e.condition?.operator]||e.operator||e.condition?.operator||'';
+    const target=e.otherMetricId?definition(e.otherMetricId).label:format(e.threshold??e.expected??e.condition?.value,unit,id);
+    return '<div class="signal-comparison"><span>'+esc(label)+'</span><strong>'+esc(format(obs.value??e.observedValue,unit,id))+'</strong><span class="signal-operator">'+esc(operator)+'</span><strong>'+esc(target)+'</strong></div>';
+  }
+  function signalProvenance(source){
+    const e=firstEvidence(source),obs=e?.observation||e?.metric||e;
+    if(!obs)return '';
+    const def=definition(e?.metricId||obs.id||'');
+    return '<div class="signal-provenance"><span>'+esc(obs.source||e.source||'Source unavailable')+'</span><span>AS OF '+esc(time(obs.asOf||e.asOf))+'</span>'+(Number.isFinite(obs.sampleCount)?'<span>'+esc(readiness(obs,def))+'</span>':'')+'</div>';
+  }
   function renderEvaluations() {
-    const rows=array(state.evaluations);
-    const triggered=rows.filter(row=>row.triggered||row.status==='triggered').length;
-    $('researchEvaluationSummary').textContent=rows.length?rows.length+' conditions evaluated for '+state.symbol+' · '+triggered+' triggered. Readiness, source coverage and rule results are distinct from prediction confidence.':'No research rules evaluated for this security. Choose EVALUATE SELECTED SECURITY.';
-    $('researchEvaluations').innerHTML=rows.length?rows.map((row,index)=>'<article class="research-evaluation"><div class="research-evaluation-heading"><h4>'+esc(row.name||row.ruleName||row.ruleId||'Research condition')+'</h4>'+stateBadge(row.status||(row.triggered?'triggered':'unavailable'))+'</div><p>'+esc(message(row.reason)||row.description||'Review the inputs and rule readiness.')+'</p>'+evidenceHtml(row.evidence||row.conditions)+'<p>'+esc(row.ruleVersion||row.version||'')+(row.asOf?' · '+esc(time(row.asOf)):'')+'</p>'+((row.triggered||row.status==='triggered')?'<button type="button" data-research-investigate-evaluation="'+index+'">OPEN INVESTIGATION ↗</button>':'')+'</article>').join(''):'<div class="research-empty">No condition results loaded. Conditions without sufficient history remain unavailable or warming up.</div>';
+    const rows=array(state.evaluations),statuses=rows.map(row=>signalGroup(row.status||(row.triggered?'triggered':'unavailable')));
+    const counts=Object.fromEntries(['triggered','ready','warming_up','unavailable'].map(key=>[key,statuses.filter(value=>value===key).length]));
+    $('researchEvaluationSummary').textContent=rows.length?rows.length+' conditions evaluated for '+state.symbol+' · '+counts.triggered+' triggered. Rule matches are not forecast probabilities.':'No research rules evaluated for this security. Choose EVALUATE SELECTED SECURITY.';
+    const overview=$('researchSignalOverview');
+    if(overview)overview.innerHTML=rows.length?[
+      ['triggered','Triggered',counts.triggered,'Rule conditions matched'],
+      ['ready','Not triggered',counts.ready,'Calculated and did not match'],
+      ['warming_up','Warming up',counts.warming_up,'Requires more observations'],
+      ['unavailable','Unavailable',counts.unavailable,'Missing or unsupported inputs']
+    ].map(([key,label,count,description])=>'<div class="signal-stat signal-stat-'+key+'"><small>'+esc(label)+'</small><strong>'+count+'</strong><span>'+esc(description)+'</span></div>').join(''):'';
+    const filter=$('researchSignalFilter')?.value||'all';
+    const shown=rows.map((row,index)=>({row,index})).filter(({row})=>filter==='all'||signalGroup(row.status||(row.triggered?'triggered':'unavailable'))===filter);
+    $('researchEvaluations').innerHTML=shown.length?shown.map(({row,index})=>{
+      const group=signalGroup(row.status||(row.triggered?'triggered':'unavailable')),inputs=row.evidence||row.conditions;
+      const missing=group==='unavailable'||group==='warming_up';
+      return '<article class="research-evaluation signal-result signal-result-'+group+'"><div class="research-evaluation-heading"><h4>'+esc(row.name||row.ruleName||row.ruleId||'Research condition')+'</h4>'+stateBadge(row.status||(row.triggered?'triggered':'unavailable'))+'</div>'+
+        '<div class="signal-result-message">'+esc(missing?(message(row.reason)||'Insufficient source coverage to evaluate this condition.'):(group==='triggered'?'Condition matched the recorded inputs.':'Condition evaluated; threshold not met.'))+'</div>'+
+        signalComparison(inputs)+signalProvenance(inputs)+
+        '<details class="signal-explain" '+(missing?'open':'')+'><summary>Evidence, readiness and methodology</summary>'+evidenceHtml(inputs)+'<p>'+esc(row.ruleVersion||row.version||'')+(row.asOf?' · '+esc(time(row.asOf)):'')+'</p></details>'+
+        (group==='triggered'?'<button type="button" class="signal-investigate-action" data-research-investigate-evaluation="'+index+'">OPEN INVESTIGATION ↗</button>':'')+'</article>';
+    }).join(''):'<div class="research-empty">'+(rows.length?'No rules match this filter. Other states remain available in All conditions.':'No condition results loaded. Conditions without sufficient history remain unavailable or warming up.')+'</div>';
   }
   function renderAlerts() {
     if(state.alerts===null){$('navCount').textContent='—';$('navCount').setAttribute('title','Saved research alerts have not loaded.');return;}
-    const alerts=array(state.alerts);$('researchAlertCount').textContent=alerts.length+' SAVED / '+alerts.filter(row=>row.status==='active').length+' ACTIVE';
-    $('navCount').textContent=String(alerts.filter(row=>row.status==='active').length).padStart(2,'0');$('navCount').setAttribute('title','Active saved research alerts across supported symbols.');
-    $('researchAlerts').innerHTML=alerts.length?alerts.map((alert,index)=>'<article class="research-alert"><div><h4>'+esc(alert.symbol||'')+' · '+esc(alert.name||alert.ruleName||alert.ruleId||'Research alert')+'</h4><p><span class="research-alert-state">'+stateBadge(alert.status||'active')+'</span>'+esc(message(alert.reason)||alert.description||'Saved rule trigger')+'</p><p>First '+esc(time(alert.firstTriggeredAt||alert.createdAt))+' · Last '+esc(time(alert.lastTriggeredAt||alert.updatedAt||alert.asOf))+'</p>'+evidenceHtml(alert.evidence||alert.evaluation?.evidence)+'</div><div class="research-actions">'+(alert.status==='active'?'<button type="button" data-research-alert-state="acknowledged" data-research-alert-index="'+index+'">ACKNOWLEDGE</button>':'')+(alert.status!=='resolved'?'<button type="button" data-research-alert-state="resolved" data-research-alert-index="'+index+'">RESOLVE</button>':'')+'<button type="button" data-research-investigate-alert="'+index+'">INVESTIGATE ↗</button></div></article>').join(''):'<div class="research-empty">No saved triggers. Normal, unavailable and warming-up conditions are shown above; they are not fabricated into alerts.</div>';
+    const alerts=array(state.alerts),active=alerts.filter(row=>row.status==='active').length;
+    $('researchAlertCount').textContent=alerts.length+' SAVED / '+active+' ACTIVE';
+    $('navCount').textContent=String(active).padStart(2,'0');$('navCount').setAttribute('title','Active saved research alerts across supported symbols.');
+    const filter=$('researchAlertFilter')?.value||'all',search=($('researchAlertSearch')?.value||'').trim().toLowerCase();
+    const shown=alerts.map((alert,index)=>({alert,index})).filter(({alert})=>
+      (filter==='all'||alert.status===filter)&&
+      (!search||[alert.symbol,alert.name,alert.ruleName,alert.ruleId,alert.reason,alert.description].filter(Boolean).join(' ').toLowerCase().includes(search)));
+    $('researchAlerts').innerHTML=shown.length?shown.map(({alert,index})=>{
+      const source=alert.evidence||alert.evaluation?.evidence,kind=alert.status||'active';
+      return '<article class="research-alert signal-alert signal-alert-'+esc(kind)+'"><div class="signal-alert-main">'+
+        '<div class="research-evaluation-heading"><h4>'+esc(alert.symbol||'')+' · '+esc(alert.name||alert.ruleName||alert.ruleId||'Research alert')+'</h4>'+stateBadge(kind)+'</div>'+
+        '<div class="signal-result-message">'+esc(message(alert.reason)||alert.description||'Saved rule trigger')+'</div>'+
+        signalComparison(source)+signalProvenance(source)+
+        '<div class="signal-alert-dates"><span>FIRST OBSERVED '+esc(time(alert.firstTriggeredAt||alert.createdAt))+'</span><span>LATEST OBSERVED '+esc(time(alert.lastTriggeredAt||alert.updatedAt||alert.asOf))+'</span></div>'+
+        '<details class="signal-explain"><summary>Source evidence and rule details</summary>'+evidenceHtml(source)+'</details></div>'+
+        '<div class="research-actions signal-alert-actions">'+
+        (kind==='active'?'<button type="button" class="signal-action-ack" data-research-alert-state="acknowledged" data-research-alert-index="'+index+'" title="Mark this alert as reviewed without closing it">ACKNOWLEDGE</button>':'')+
+        (kind!=='resolved'?'<button type="button" class="signal-action-resolve" data-research-alert-state="resolved" data-research-alert-index="'+index+'" title="Close this saved alert">RESOLVE</button>':'')+
+        '<button type="button" class="signal-action-investigate" data-research-investigate-alert="'+index+'" title="Open a source-grounded investigation">INVESTIGATE ↗</button></div></article>';
+    }).join(''):'<div class="research-empty">'+(alerts.length?'No saved alerts match the selected status or search. The total count above is unchanged.':'No saved triggers. Normal, unavailable and warming-up conditions are shown above; they are not fabricated into alerts.')+'</div>';
   }
   async function evaluate() {
     return action('evaluate','symbol','Evaluating source-backed conditions for '+state.symbol+'…',async context=>{
@@ -496,6 +556,7 @@
   for(const id of ['researchMetricSearch','researchMetricGroup','researchMetricAvailability'])on(id,id==='researchMetricSearch'?'input':'change',renderCompany);
   delegated('researchGroups',data=>{if(data.researchGroup!==undefined){$('researchMetricGroup').value=data.researchGroup;renderCompany();}});
   on('researchEvaluate','click',evaluate);on('researchRefreshAlerts','click',loadAlerts);
+  on('researchSignalFilter','change',renderEvaluations);on('researchAlertFilter','change',renderAlerts);on('researchAlertSearch','input',renderAlerts);
   delegated('researchEvaluations',data=>{if(data.researchInvestigateEvaluation!==undefined)createInvestigation('evaluation',Number(data.researchInvestigateEvaluation));});
   delegated('researchAlerts',data=>{if(data.researchAlertState)void updateAlert(Number(data.researchAlertIndex),data.researchAlertState);else if(data.researchInvestigateAlert!==undefined)createInvestigation('alert',Number(data.researchInvestigateAlert));});
   on('researchScreenSelect','change',event=>selectScreen(event.target.value));
