@@ -219,12 +219,12 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
     respond(res,200,await providerRequest(()=>filingReader.read({filing,symbol}),'SEC'));return true;
    }
    if(method==='GET'&&resource==='theme-events'){
-    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions';
-    respond(res,200,await thematic.list({theme,symbol,topic}));return true;
+    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions',hazardType=url.searchParams.get('hazardType')||'all';
+    respond(res,200,await thematic.list({theme,symbol,topic,hazardType}));return true;
    }
    if(method==='GET'&&resource==='theme-analogues'){
-    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions',eventId=url.searchParams.get('eventId');
-    respond(res,200,await thematic.analogues({theme,symbol,topic,eventId,limit:5}));return true;
+    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions',hazardType=url.searchParams.get('hazardType')||'all',eventId=url.searchParams.get('eventId');
+    respond(res,200,await thematic.analogues({theme,symbol,topic,hazardType,eventId,limit:5}));return true;
    }
    if(method==='GET'&&resource==='earthquakes'){respond(res,200,await providerRequest(()=>earthquakes.recentEvents(),'USGS'));return true;}
    if(method==='GET'&&resource==='analogues'){
