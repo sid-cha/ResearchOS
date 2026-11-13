@@ -110,7 +110,7 @@ function annualFactRows(payload,id,tags,unit,asOf,instant){
  return [...map.values()].sort((a,b)=>a.fiscalEnd.localeCompare(b.fiscalEnd)).slice(-12).map(({rank,...x})=>x);
 }
 export function normalizeCompanyFinancials(raw,{symbol,asOf,now=new Date()}={}){
- if(!EQUITY_SET.has(symbol)||!validDay(asOf)||asOf>todayEt(now))throw fault('Choose a supported issuer and valid as-of date');
+ if(!/^[A-Z][A-Z0-9.-]{0,11}$/.test(symbol)||!validDay(asOf)||asOf>todayEt(now))throw fault('Choose a registered issuer and valid as-of date');
  const payload=raw?.facts||raw;
  if(!payload||typeof payload!=='object')throw fault('Official SEC filing facts are missing',502);
  const series={};
@@ -141,7 +141,7 @@ async function boundedJson(res,max=2100000){
  else{body=await res.text();if(Buffer.byteLength(body)>max)throw fault('Upstream response exceeds bound',502);}
  try{return JSON.parse(body);}catch{throw fault('Upstream returned invalid JSON',502);}
 }
-export function createMarketHub({fetchImpl=fetch,env=process.env,now=()=>new Date(),companyFacts}={}){
+export function createMarketHub({fetchImpl=fetch,env=process.env,now=()=>new Date(),companyFacts,validateSymbol=async symbol=>EQUITY_SET.has(symbol)}={}){
  const cache=new Map(),pending=new Map();
  const cacheRead=async(key,ttl,load)=>{
   const hit=cache.get(key);if(hit?.expires>Date.now())return copy(hit.data);
@@ -157,8 +157,9 @@ export function createMarketHub({fetchImpl=fetch,env=process.env,now=()=>new Dat
   }catch(e){throw errUp(e);}finally{clearTimeout(timer);}
  }
  async function series(symbols,range){
-  if(!Array.isArray(symbols)||symbols.length<1||symbols.length>10||new Set(symbols).size!==symbols.length||symbols.some(s=>!BARS_ALLOWED.has(s))||!Object.hasOwn(RANGE_DAYS,range))
+  if(!Array.isArray(symbols)||symbols.length<1||symbols.length>10||new Set(symbols).size!==symbols.length||symbols.some(s=>typeof s!=='string'||!/^[A-Z][A-Z0-9.-]{0,11}$/.test(s))||!Object.hasOwn(RANGE_DAYS,range))
    throw fault('Choose 1–10 supported symbols and range 1M, 3M, 1Y or 3Y');
+  for(const symbol of symbols)if(!BARS_ALLOWED.has(symbol)&&!await validateSymbol(symbol))throw fault('Register the issuer in TradeScope before requesting its market data');
   if(!env.APCA_API_KEY_ID||!env.APCA_API_SECRET_KEY)throw fault('Configure Alpaca market-data credentials to load completed IEX bars',503);
   const end=todayEt(now()),start=minus(end,RANGE_DAYS[range]);
   const key='bars:'+range+':'+end+':'+[...symbols].sort().join(',');
@@ -178,7 +179,8 @@ export function createMarketHub({fetchImpl=fetch,env=process.env,now=()=>new Dat
   });
  }
  async function financials(symbol,asOf=todayEt(now())){
-  if(!EQUITY_SET.has(symbol)||!validDay(asOf)||asOf>todayEt(now()))throw fault('Choose a supported SEC equity and as-of date');
+  if(typeof symbol!=='string'||!/^[A-Z][A-Z0-9.-]{0,11}$/.test(symbol)||!validDay(asOf)||asOf>todayEt(now()))throw fault('Choose a registered SEC issuer and as-of date');
+  if(!EQUITY_SET.has(symbol)&&!await validateSymbol(symbol))throw fault('Register the issuer in TradeScope before requesting its SEC filing data');
   if(typeof companyFacts!=='function')throw fault('SEC company fact service unavailable',503);
   return cacheRead('sec:'+symbol+':'+asOf,300000,async()=>{
    const raw=await companyFacts(symbol);const normalized=normalizeCompanyFinancials(raw,{symbol,asOf,now:now()});
