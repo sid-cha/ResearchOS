@@ -6,6 +6,7 @@
 import {createTransmissionGraph} from './transmission-graph.mjs';
 import {createRegionalClimate} from './regional-climate.mjs';
 import {companyProfiles} from './commodity-platform.mjs';
+import {SCENARIO_REGISTRY} from './scenario-registry.mjs';
 
 const fail=(reason,status=400)=>Object.assign(new Error(reason),{status});
 const day=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
@@ -13,15 +14,6 @@ const dateOnly=d=>day(d)?d:null;
 const positive=n=>typeof n==='number'&&Number.isFinite(n);
 const safe=x=>String(x??'').trim().slice(0,260);
 const idOf=x=>String(x??'').slice(0,110);
-const SCOPES=Object.freeze({
- 'enso-fertilizer':{title:'ENSO → agriculture → fertilizer',
-  commodities:['potash','urea','phosphate'],regions:['argentina-pampas','brazil-south'],
-  climateNode:'rainfall',issuerNode:'fert_issuer'},
- 'wildfire-insurance':{title:'Wildfire → insurance → reconstruction',
-  commodities:[],regions:['california-foothills'],climateNode:'fire_weather',issuerNode:'wildfire_issuer'},
- 'snow-hydropower':{title:'Snowpack → hydropower → utilities',
-  commodities:[],regions:['colorado-high-country'],climateNode:null,issuerNode:'snow_issuer'}
-});
 const SOURCE_RULES={
  GDELT_DOC_COMMODITY_EXPANDED:{node:null,kind:'MEDIA_CANDIDATE'},
  EIA_API_V2:{node:'fert_industry',kind:'ENERGY_INPUT_CONTEXT'},
@@ -101,7 +93,7 @@ function buildReport(dossier){
   'Research mode: '+dossier.mode,'Commodity: '+(dossier.commodity||'not applicable'),
   'Region: '+dossier.regionId,'Historical year: '+(dossier.year||'not applicable'),
   'Research as-of: '+(dossier.asOf||'not a point-in-time historical replay'),
-  'Created: '+dossier.generatedAt,'',
+  'Created: '+dossier.generatedAt,'Scenario availability: '+(dossier.availability||'RESEARCH_CONTEXT'),'',
   '## Mandatory interpretation',
   'This is a directed chain of hypotheses, not verified causal transmission.',
   'Source observations do NOT establish event-specific loss, market direction, investment opportunity, or predictive performance.',
@@ -126,19 +118,20 @@ function buildReport(dossier){
 }
 export function createTransmissionDossier({
  graph=createTransmissionGraph(),fundamentals,regional=createRegionalClimate(),
- now=()=>new Date(),issuerProfiles=companyProfiles
+ now=()=>new Date(),issuerProfiles=companyProfiles,registry=SCENARIO_REGISTRY
 }={}){
  if(!graph?.graph||!graph?.catalog)throw new TypeError('Economic transmission graph required');
  const catalog=()=>({
-  version:1,method:'EVIDENCE_CONTEXT_ON_UNVALIDATED_TRANSMISSION_GRAPH',
-  scenarios:Object.entries(SCOPES).map(([id,x])=>({id,title:x.title,commodities:[...x.commodities],regions:[...x.regions]})),
+  version:2,method:'DATA_DRIVEN_HYPOTHESIS_REGISTRY_WITH_SOURCE_CONTEXT',
+  scenarios:registry.catalog().scenarios,
+  eventClasses:registry.catalog().eventClasses,
   modes:['current','historical'],historicalAsOfOnly:'enso-fertilizer',
   restrictions:['Historical replay uses NOAA CPC original issue-dated discussion only, not modern-revised annual statistics.',
    'Current-revision NASA POWER / USDA / EIA / trade totals cannot be promoted to historical-as-of indicators.',
    'All transmission edges remain unverified even if both related nodes have source observations.']
  });
  async function analyze({id,commodity='potash',regionId=null,year=null,mode='current',asOf=null}={}){
-  const scenario=SCOPES[id];
+  const scenario=registry.get(id);
   if(!scenario)throw fail('Choose a supported transmission scenario');
   if(!['current','historical'].includes(mode))throw fail('Choose current or historical analysis');
   if(scenario.commodities.length&&!scenario.commodities.includes(commodity))throw fail('Unsupported commodity for this scenario');
@@ -146,13 +139,13 @@ export function createTransmissionDossier({
   if(!scenario.regions.includes(region))throw fail('Unsupported region for this scenario');
   const current=now(),today=current.toISOString().slice(0,10);
   if(mode==='historical'){
-   if(id!=='enso-fertilizer')throw fail('Only ENSO has eligible original issue-dated historical discussion evidence');
+   if(!scenario.historicalMode)throw fail('Only issue-dated supported scenarios can run historical research');
    if(!day(asOf)||asOf<'2001-01-01'||asOf>today)throw fail('A valid past historical asOf date is required');
    if(year!==null&&year!==undefined)throw fail('Historical replay does not accept retrospective meteorology year');
    const g=await graph.graph({id,asOf});
    const enriched=summarize(g,[{source:'NOAA_CPC_ENSO_DIAGNOSTIC_DISCUSSION',
     status:g.datedEvidence?.status||'UNAVAILABLE',eligibleInputRows:g.coverage.sourceDatedClimateNodes}]);
-   const dossier={schemaVersion:1,scenario:{id,title:scenario.title},mode,commodity,regionId:region,year:null,asOf,
+   const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity,regionId:region,year:null,asOf,
     generatedAt:current.toISOString(),sourceStatuses:enriched.sourceStatus,nodes:g.nodes,edges:enriched.edges,
     coverage:enriched.coverage,priorityGaps:enriched.priorityGaps,
     replayEligibility:'ISSUE_DATED_NOAA_TEXT_ONLY_ARCHIVE_REVISION_NOT_VERIFIED',historicalForecastValidated:false,
@@ -165,11 +158,27 @@ export function createTransmissionDossier({
   if(!Number.isInteger(selectedYear)||selectedYear<1981||selectedYear>=current.getUTCFullYear())
    throw fail('Choose a completed retrospective NASA year since 1981');
   const g=await graph.graph({id});
+  if(scenario.currentMode==='TEMPLATE_ONLY'){
+   const statuses=[...new Set(scenario.edges.map(x=>x[4]))].map(source=>({
+    source,status:'NOT_CONNECTED',eligibleInputRows:0}));
+   const summary=summarize(g,statuses);
+   const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:'TEMPLATE_ONLY',
+    mode,commodity:scenario.commodities.length?commodity:null,regionId:region,
+    year:selectedYear,asOf:null,generatedAt:current.toISOString(),nodes:g.nodes,edges:summary.edges,
+    coverage:summary.coverage,priorityGaps:summary.priorityGaps,sourceStatuses:statuses,
+    otherContext:[],replayEligibility:'NOT_HISTORICAL_AS_OF_REPLAY',
+    historicalForecastValidated:false,causalConclusion:false,issuerImpactVerified:false,estimatedReturn:null,
+    limitations:['Scenario graph is a reviewed mechanism template; no source observations were queried.',
+     'No live exposure, event occurrence, forecast or issuer outcome is established.']};
+   return {...dossier,report:buildReport(dossier)};
+  }
   // Never alter original graph topology. Attach separate context payloads with no causal promotion.
-  const work=[
-   {source:'NASA_POWER_MONTHLY_CURRENT_REVISION',task:()=>regional.monthly({regionId:region,year:selectedYear})}
-  ];
-  if(id==='enso-fertilizer'&&fundamentals?.snapshot)
+  const work=[];
+  if(scenario.providerBindings.includes('NASA_POWER_MONTHLY_CURRENT_REVISION'))
+   work.push({source:'NASA_POWER_MONTHLY_CURRENT_REVISION',task:()=>regional.monthly({regionId:region,year:selectedYear})});
+  if(scenario.providerBindings.includes('EIA_API_V2')&&fundamentals?.eia)
+   work.push({source:'EIA_API_V2',task:()=>fundamentals.eia({indicatorId:'henry_hub_spot'})});
+  if(scenario.providerBindings.includes('FERTILIZER_FUNDAMENTALS_SNAPSHOT')&&fundamentals?.snapshot)
    work.push({source:'FERTILIZER_FUNDAMENTALS_SNAPSHOT',task:()=>fundamentals.snapshot({commodity})});
   const settled=await Promise.allSettled(work.map(x=>x.task()));
   const statuses=[],extraContext=[];
@@ -177,7 +186,11 @@ export function createTransmissionDossier({
    const item=settled[i],provider=work[i].source;
    if(item.status==='rejected'){statuses.push({source:provider,status:item.reason?.status===503?'NOT_CONFIGURED':'UNAVAILABLE',eligibleInputRows:0});continue;}
    const data=item.value;
-   if(provider==='NASA_POWER_MONTHLY_CURRENT_REVISION'){
+   if(provider==='EIA_API_V2'){
+    const contextual=pickObservations(data,'ENERGY_INPUT_CONTEXT');
+    statuses.push({source:provider,status:contextual.length?'AVAILABLE':'EMPTY',eligibleInputRows:contextual.length});
+    addEvidence(g,'gas_price',contextual);
+   }else if(provider==='NASA_POWER_MONTHLY_CURRENT_REVISION'){
     const entries=(data.months||[]).filter(x=>positive(x.precipitationMmPerDay)&&positive(x.temperatureC)).slice(0,12);
     statuses.push({source:provider,status:entries.length?'AVAILABLE':'EMPTY',eligibleInputRows:entries.length});
     const evidence=entries.map(x=>({source:provider,sourceStatus:'RETROSPECTIVE_GRID_POINT_CONTEXT',
@@ -185,7 +198,7 @@ export function createTransmissionDossier({
      label:'Model point monthly daily precipitation average; temperature '+x.temperatureC+' °C',
      fetchedAt:data.provenance?.fetchedAt,sourceUrl:safeLink(data.sourceDocumentation),
      publicationTimeVerified:false,dataClass:'CURRENT_REVISED_MONTHLY_NOT_HISTORICAL_AS_OF'}));
-    if(scenario.climateNode)addEvidence(g,scenario.climateNode,evidence);
+    if(scenario.weatherNode)addEvidence(g,scenario.weatherNode,evidence);
     else extraContext.push(...evidence); // Retrospective precipitation is not snow-water equivalent.
    }else if(provider==='FERTILIZER_FUNDAMENTALS_SNAPSHOT'){
     for(const entry of [...(data.sources||[]),...(data.usgs?[data.usgs]:[])]){
@@ -207,7 +220,7 @@ export function createTransmissionDossier({
    }
   }
   const summary=summarize(g,statuses);
-  const dossier={schemaVersion:1,scenario:{id,title:scenario.title},mode,commodity:id==='enso-fertilizer'?commodity:null,
+  const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity:scenario.commodities.length?commodity:null,
    regionId:region,year:selectedYear,asOf:null,generatedAt:current.toISOString(),nodes:g.nodes,
    edges:summary.edges,coverage:summary.coverage,priorityGaps:summary.priorityGaps,sourceStatuses:summary.sourceStatus,
    otherContext:extraContext.slice(0,12),
