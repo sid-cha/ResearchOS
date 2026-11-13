@@ -18,7 +18,7 @@
 <section class="pane brief" id="briefArea"><div class="pane-head"><h2>03 / Research brief</h2><span>EXPORTABLE · CITED</span></div>
 <p class="aside">Select a locally captured official document. A brief combines its source record with SEC business descriptions and explicit evidence gaps.</p>
 <div class="actions"><button type="button" id="briefExport" disabled>Download Markdown brief</button><span id="briefStatus" role="status">No document selected.</span></div>
-<pre id="briefText" class="brief-text">Capture an official source document to generate a research brief.</pre></section>
+<pre id="briefText" class="brief-text">Capture an official source document to generate a research brief.</pre><form id="reviewForm" class="review-form"><h3>Analyst source review · optional</h3><label>Disposition<select name="disposition"><option value="NEEDS_EVIDENCE">Needs more evidence</option><option value="RELEVANT_RESEARCH_CANDIDATE">Relevant research candidate</option><option value="NOT_RELEVANT">Not relevant</option></select></label><label>Source assessment<textarea name="rationale" minlength="20" maxlength="1100" rows="3" placeholder="Explain what the official document actually supports and what remains uncertain..." required></textarea></label><button type="submit">Save append-only analyst assessment</button><span id="reviewStatus" role="status">Review requires a selected captured document. Assessments are local and not independently validated.</span></form></section>
 <div class="columns"><section class="pane"><div class="pane-head"><h2>04 / Pilot monitoring</h2><span>SERVER MUST STAY ON</span></div>
 <form id="watchForm" class="form-row"><label>Monitor name<input name="name" maxlength="80" placeholder="Potash regulation watch"></label>
 <label>Interval <select name="intervalMinutes"><option value="60">Hourly</option><option value="240">Every 4 hours</option><option value="1440">Daily</option></select></label>
@@ -31,5 +31,5 @@
 <label>Source usefulness (1–5)<input name="sourceQuality" type="number" min="1" max="5" required></label>
 <label class="full">Researcher notes<textarea name="notes" rows="2" maxlength="650" placeholder="What was useful? What evidence was missing?"></textarea></label>
 <button type="submit">Save local evaluation</button></form><div id="pilotMetrics" class="metrics-inline"></div><p id="feedbackStatus" role="status"></p></section></div>
-<footer>TRA D E SCOPE · SOURCE-FIRST COMMODITY RESEARCH · LOCAL SINGLE-USER PILOT · NO TRADING RECOMMENDATIONS · NO ESTIMATED STOCK IMPACT</footer>
+<footer>TRADESCOPE · SOURCE-FIRST COMMODITY RESEARCH · LOCAL SINGLE-USER PILOT · NO TRADING RECOMMENDATIONS · NO ESTIMATED STOCK IMPACT</footer>
 </main></div><script src="/commodity.js"></script></body></html>
