@@ -44,7 +44,7 @@ export function createTransmissionGraph({atlas=createCrisisAtlas(),climate=creat
   industry:g.industry,currentMode:g.currentMode,historicalMode:g.historicalMode,
   verifiedEdges:0,verifiedIssuerExposures:0});
  return {
-  catalog(){return {schemaVersion:2,methodVersion:'directed-economic-hypothesis-graph-v2-registry',graphs:[...compiled.values()].map(minimal),
+  catalog(){return {schemaVersion:1,registryVersion:'scenario-registry-v1',methodVersion:'directed-economic-hypothesis-graph-v2-registry',graphs:[...compiled.values()].map(minimal),
    edgeStatus:'HYPOTHESIS_NOT_EMPIRICALLY_VALIDATED',predictionModel:false,probabilitiesAvailable:false,
    limitations:['Source links document candidate mechanisms, not validated edges or company exposures.',
     'Company, physical-asset and financial-return nodes remain unsupported without dated issuer-specific evidence.']};},
