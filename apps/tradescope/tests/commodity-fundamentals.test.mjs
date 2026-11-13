@@ -6,7 +6,7 @@ import path from 'node:path';
 import http from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {classifyGdeltArticle,normalizeGdeltCommodityFeed,corroborateDocuments,gdeltUrl,
- normalizeEiaSeries,eiaKey,normalizeComtrade,comtradeUrl,normalizePsd,psdUrl,usdaKey,
+ normalizeEiaSeries,eiaKey,eiaV2Url,normalizeComtrade,comtradeUrl,normalizePsd,psdUrl,usdaKey,
  normalizeUsgsCapture,createUsgsLedger,createCommodityFundamentals,createCommodityFundamentalsApi} from '../lib/commodity-fundamentals.mjs';
 import {normalizeOfficialDocs,createCommodityWorkbench,createOfficialCommodityFeed} from '../lib/commodity-platform.mjs';
 
@@ -75,21 +75,42 @@ test('GDELT query stays on fixed official host and corroboration remains a calen
 });
 
 test('EIA series are period-dated with missing values explicit and future periods excluded',()=>{
- const series=normalizeEiaSeries({series:[{series_id:'NG.RNGWHHD.M',data:[
+ const series=normalizeEiaSeries({response:{data:[
   {period:'2026-10',value:'3.42'},{period:'2026-11',value:'.'},{period:'2027-01',value:'9.99'},
-  {period:'2026-09',value:3.1}]}]},{indicatorId:'henry_hub_spot',today:'2026-11-13'});
- assert.equal(series.source,'EIA_SERIES_V1');
+  {period:'2026-09',value:3.1}] }},{indicatorId:'henry_hub_spot',today:'2026-11-13'});
+ assert.equal(series.source,'EIA_API_V2');
+ assert.equal(series.apiVersion,'v2');
  assert.equal(series.observations.length,3);
  assert.equal(series.observations[0].period,'2026-11');
  assert.equal(series.observations[0].status,'MISSING_OR_WITHHELD_SOURCE_VALUE');
  assert.equal(series.observations[1].period,'2026-10');
  assert.equal(series.observations[1].value,3.42);
- assert.match(series.limitations.join(' '),/not original intraday publication clocks/);
+ assert.match(series.limitations.join(' '),/original historical publication timestamps/);
  assert.throws(()=>normalizeEiaSeries({series:[{series_id:'OTHER',data:[]}]},{indicatorId:'henry_hub_spot'}),e=>e.status===502);
- assert.throws(()=>normalizeEiaSeries({series:[]},{indicatorId:'nope'}),e=>e.status===502);
+ assert.throws(()=>normalizeEiaSeries({response:{data:[]}},{indicatorId:'nope'}),e=>e.status===502);
  assert.throws(()=>eiaKey({}),e=>e.status===503);
 });
 
+test('EIA v2 fixed routes never use deprecated /series and do not reveal credentials in catalog output',()=>{
+ const env={EIA_API_KEY:'a'.repeat(32)};
+ const henry=eiaV2Url('henry_hub_spot',{env}),dry=eiaV2Url('us_dry_gas_production',{env});
+ assert.equal(henry.origin,'https://api.eia.gov');
+ assert.equal(henry.pathname,'/v2/natural-gas/pri/fut/data/');
+ assert.equal(henry.searchParams.get('frequency'),'monthly');
+ assert.equal(henry.searchParams.get('data[0]'),'value');
+ assert.equal(henry.searchParams.get('facets[series][]'),'RNGWHHD');
+ assert.equal(dry.pathname,'/v2/seriesid/NG.N9070US2.M');
+ assert(!dry.pathname.includes('/series/'));
+ assert.throws(()=>eiaV2Url('not_a_series',{env}),e=>e.status===400);
+ const rows=normalizeEiaSeries({response:{data:[
+  {period:'2026-08',value:'12',series:'N9070US2'},
+  {period:'2026-09',value:'25',series:'NG.N9070US2.M'},
+  {period:'2027-01',value:'200',series:'NG.N9070US2.M'}]}},
+  {indicatorId:'us_dry_gas_production',today:'2026-11-13'});
+ assert.equal(rows.observations.length,1);
+ assert.equal(rows.observations[0].value,25);
+ assert(rows.limitations.some(s=>s.includes('bridge')||s.includes('compatibility')));
+});
 test('Comtrade fertilizer flows are annual totals on the fixed preview host',()=>{
  const url=comtradeUrl('potash','M','842',{period:'2025'});
  assert.match(url,/comtradeapi\.un\.org\/public\/v1\/preview\/C\/A\/HS/);
@@ -164,7 +185,7 @@ test('fundamentals snapshot reports per-source status without inventing data',as
  const snapshot=await noKeys.snapshot({commodity:'potash'});
  const bySource=Object.fromEntries(snapshot.sources.map(s=>[s.source,s.status]));
  assert.equal(bySource.GDELT_DOC_COMMODITY_EXPANDED,'UNAVAILABLE');
- assert.equal(bySource.EIA_SERIES_V1,'NOT_CONFIGURED');
+ assert.equal(bySource.EIA_API_V2,'NOT_CONFIGURED');
  assert.equal(bySource.UN_COMTRADE_PREVIEW,'UNAVAILABLE');
  assert.equal(bySource.USDA_FAS_PSD_API,'NOT_CONFIGURED');
  assert.equal(snapshot.usgs.status,'AVAILABLE');
@@ -174,7 +195,7 @@ test('fundamentals snapshot reports per-source status without inventing data',as
 test('fundamentals API serves catalog, sources, USGS capture and rejects bad writes',async t=>{
  const file=await temp(t);
  const service=createCommodityFundamentals({env:{EIA_API_KEY:'a'.repeat(32)},
-  fetchImpl:fetchOk({series:[{series_id:'NG.RNGWHHD.M',data:[{period:'2026-09',value:'3.10'}]}]}),
+  fetchImpl:fetchOk({response:{data:[{period:'2026-09',value:'3.10'}]}}),
   usgsFile:file,clock:now});
  const api=createCommodityFundamentalsApi({service});
  const {server,url,close}=await listen(async(req,res)=>{const done=await api(req,res,new URL(req.url,'http://x'));if(!done){res.writeHead(404);res.end();}});
