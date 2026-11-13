@@ -1,3 +1,13 @@
+# TradeScope v0.28 — Unified Global Event Intelligence
+
+**New:** [Global Event Intelligence](event-portal.html) · [v0.28 implementation and acceptance](docs/V028_GLOBAL_EVENT_INTELLIGENCE.md) · [FAA original source](https://nasstatus.faa.gov/).
+
+The Event Intelligence portal unifies **8 event families and 13 research pathways** (the existing 12-scenario transmission registry plus a source-linked aviation case). The FAA November 13, 2026 ground-stop case includes dated infrastructure vulnerability leads, conservative pre-event knowledge cutoffs, economic transmission hypotheses, an adversarial challenge queue, and an on-demand bounded official FAA *airport-level* event feed. It does not certify that any prior risk document predicted this incident, that the nationwide stop was caused by the November 10 SMART rollout, or that an issuer suffered a quantified market loss. Live-source validation and hosted deployment remain pending; PR #19 stays draft.
+
+Open `http://127.0.0.1:8000/event-portal.html` after `npm start`; review the [limitations and product backlog](docs/V028_GLOBAL_EVENT_INTELLIGENCE.md).
+
+---
+
 # TradeScope v0.27 — 15-Feature Company Exposure Proof & Research Review Batch
 
 **New:** [Exposure Proof Review](exposure-review.html) · [15-feature technical contract](docs/V027_PROOF_BATCH_15_FEATURES.md) · [Geo Exposure](geo-exposure.html) · [Product backlog](docs/V018_PRIORITIZED_BACKLOG.md) · [Cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).

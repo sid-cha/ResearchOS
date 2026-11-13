@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ResearchOS Event Intelligence: shared cross-domain event research, pre-event evidence, economic transmission and adversarial review.">
+<title>ResearchOS | Global Event Intelligence</title>
+<link rel="stylesheet" href="/event-portal.css"></head>
+<body>
+<header class="topbar">
+ <a class="brand" href="/"><span class="brandmark">R<span>.</span></span><span><strong>RESEARCH<span>OS</span></strong><small>EVENT INTELLIGENCE</small></span></a>
+ <nav aria-label="Product navigation"><a href="/market-hub.html">Markets</a><a href="/transmission-lab.html">Transmission Lab</a><a href="/exposure-review.html">Exposure Proof</a><a href="/evidence-ledger.html">Evidence Ledger</a><a href="/source-control.html">Data Sources</a></nav>
+ <span class="build-tag">v0.28 · RESEARCH PILOT</span>
+</header>
+<main>
+ <section class="hero">
+  <div><div class="eyebrow"><span class="pulse"></span> CROSS-DOMAIN EVENT RESEARCH / SOURCE-FIRST ANALYSIS</div>
+  <h1>One event. <em>Many consequences.</em></h1>
+  <p>Discover precursor evidence before the headline, investigate sector-specific transmission after the event, and challenge every inference. Aviation is one theme in a shared intelligence system.</p>
+  <div class="hero-actions"><a href="#case-study" class="primary-link">Open aviation case <span aria-hidden="true">↗</span></a><a href="#event-library" class="secondary-link">Browse all event types</a></div></div>
+  <div class="hero-stats" aria-label="Catalog scope"><div><strong id="familyCount">8</strong><span>EVENT FAMILIES</span></div><div><strong id="scenarioCount">—</strong><span>RESEARCH PATHWAYS</span></div><div><strong id="verifiedCount">0</strong><span>VALIDATED OUTCOMES IN THIS PILOT</span></div></div>
+ </section>
+ <div class="warning"><strong>Evidence boundary</strong> Vulnerability documents are research leads, not a prediction of any specific disaster. FAA live status is airport-level, not a complete historical archive of nationwide orders. No automated trading or verified company loss forecast.</div>
+ <section id="event-library" class="library-section">
+  <div class="section-title"><div><p class="eyebrow">01 / EVENT UNIVERSE</p><h2>Browse themes and event pathways</h2><p>The event model is universal. Data contracts, failure mechanisms and economic consequences vary by scenario.</p></div><span id="catalogStatus" class="quiet-pill">Loading registry…</span></div>
+  <div class="filterbar"><label for="familyFilter">EVENT FAMILY<select id="familyFilter"><option value="all">All event families</option></select></label><label for="scenarioSearch">SEARCH EVENTS<input id="scenarioSearch" placeholder="Airspace, drought, energy, sanctions…" maxlength="80" autocomplete="off"></label><span id="matches">—</span></div>
+  <div id="scenarioList" class="scenario-grid" aria-live="polite"><p>Loading the integrated research registry…</p></div>
+ </section>
+ <section id="case-study" class="case-section">
+  <div class="section-title"><div><p class="eyebrow">02 / HISTORICAL RESEARCH & LIVE MONITORING</p><h2>FAA ground stop · November 13, 2026</h2><p>Research one event without confusing warnings that existed beforehand with facts learned afterward.</p></div><span class="quiet-pill">CASE: FAA-2026-11-13</span></div>
+  <div class="case-controls">
+   <label for="asOf">KNOWLEDGE CHECKPOINT
+    <select id="asOf">
+     <option value="current">Current retrospective research</option>
+     <option value="2026-11-13T20:53:00Z">Pre-event — Nov 13, 20:53 UTC</option>
+     <option value="2026-11-09T23:59:59Z">Earlier — Nov 9, 23:59 UTC</option>
+     <option value="2026-09-13T23:59:59Z">Earlier — Sep 13, 23:59 UTC</option>
+    </select>
+   </label>
+   <button type="button" id="loadCase" class="action">Run evidence cutoff</button>
+   <button type="button" id="refreshFaa" class="action outline">Refresh live FAA source</button>
+   <span id="caseStatus" role="status" aria-live="polite">Ready to inspect current case</span>
+  </div>
+  <div class="case-overview" id="caseOverview"><p>Retrieving source-gated research summary…</p></div>
+  <div class="insight-grid">
+   <section class="pane">
+    <div class="pane-header"><span>PRECURSOR RADAR</span><span class="minor">Dated evidence ≠ predictive ability</span></div>
+    <div id="precursors" class="pane-content"><p>Loading historical evidence…</p></div>
+   </section>
+   <section class="pane" id="transmissions">
+    <div class="pane-header"><span>ECONOMIC TRANSMISSION</span><span class="minor">Candidate pathways only</span></div>
+    <div id="pathways" class="pane-content"><p>Choose a knowledge checkpoint.</p></div>
+   </section>
+  </div>
+  <div class="insight-grid bottom-grid">
+   <section class="pane"><div class="pane-header"><span>ADVERSARIAL RESEARCH CHALLENGER</span><span class="minor">Rules and independent evidence gaps</span></div><div id="challenges" class="pane-content"></div></section>
+   <section class="pane"><div class="pane-header"><span>HISTORICAL ANALOGUE STUDY</span><span class="minor">Different causes, different outcomes</span></div><div id="analogues" class="pane-content"></div></section>
+  </div>
+  <section class="pane live-pane">
+   <div class="pane-header"><span>OFFICIAL FAA · CURRENT AIRPORT STATUS</span><span class="minor">On-demand read-only provider lookup</span></div>
+   <div id="faaStatus" class="live-status">Select “Refresh live FAA source” to request the current FAA airport-events feed. No cached value is presented as live.</div>
+   <div id="faaResults" class="faa-grid"></div>
+  </section>
+ </section>
+ <footer><span>ResearchOS v0.28 · Local engineering pilot</span><span>All original sources remain independently linked · No prediction probability or financial impact certified</span></footer>
+</main>
+<script src="/event-portal.js" defer></script>
+</body></html>

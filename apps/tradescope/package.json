@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.27.0",
-  "description": "TradeScope 15-feature company exposure proof, source audits, challenge and rebuttal research",
+  "version": "0.28.0",
+  "description": "TradeScope cross-domain Event Intelligence and FAA pre-event evidence research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
