@@ -7,13 +7,19 @@
  <a class="logo" href="/"><span class="logo-mark">T.</span> TRADESCOPE <small>RESEARCHOS</small></a>
  <nav aria-label="Application views"><a href="/market-hub.html">Market Data</a><a href="/commodity.html">Commodity Intelligence</a><a href="/source-control.html">Source Control</a></nav>
  <span class="version">v0.22 · EVIDENCE LAB</span></header>
-<main><div class="intro"><div><p class="eyebrow">ECONOMIC TRANSMISSION RESEARCH / HYPOTHESIS TESTING</p>
+<main><div class="intro"><div><p class="eyebrow">EVENT-TO-ECONOMY INTELLIGENCE / DATA-DRIVEN HYPOTHESES</p>
  <h1>Trace an event.<br><em>Question every link.</em></h1>
- <p>Inspect how a climate signal could propagate through crops, commodities, supply chains and issuer economics. Every arrow remains an unverified hypothesis until actual linked evidence supports it.</p></div>
+ <p>Explore how a climate, energy, credit, geopolitical or other observed event might propagate through commodities, supply chains and issuer economics. Every arrow remains an unverified hypothesis until actual linked evidence supports it.</p></div>
  <div class="truth"><strong>0</strong><span>empirically validated links in this pilot</span><small>Research context is not a trade recommendation.</small></div>
 </div>
-<section class="controls" aria-label="Transmission research parameters">
- <label>RESEARCH SCENARIO<select id="scenario"><option value="enso-fertilizer">ENSO · Fertilizer & Agriculture</option><option value="wildfire-insurance">Wildfire · Insurance & Reconstruction</option><option value="snow-hydropower">Snowpack · Hydropower & Utilities</option></select></label>
+<section class="scenario-directory" aria-label="Scenario registry">
+ <div><strong>Scenario Library · 12 curated research pathways</strong><small>Filter by event type; a template is not a connected data feed.</small></div>
+ <label>Event class<select id="eventClass"><option value="all">All event classes</option></select></label>
+ <label>Find pathway<input id="scenarioSearch" maxlength="65" placeholder="Search industry or event…"></label>
+ <span id="scenarioMaturity" class="registry-status">Select a scenario</span>
+ </section>
+ <section class="controls" aria-label="Transmission research parameters">
+ <label>RESEARCH SCENARIO<select id="scenario"><option value="enso-fertilizer">Loading validated scenario registry…</option></select></label>
  <label>RESEARCH MODE<select id="mode"><option value="current">Retrospective / Current Context</option><option value="historical">Historical · source issue dated</option></select></label>
  <label id="commodityWrap">COMMODITY<select id="commodity"><option value="potash">Potash</option><option value="urea">Urea / Nitrogen</option><option value="phosphate">Phosphate</option></select></label>
  <label>REGION / REPRESENTATIVE POINT<select id="region"></select></label>
