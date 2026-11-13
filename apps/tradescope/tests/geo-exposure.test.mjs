@@ -114,6 +114,13 @@ test('corrupted source store is not silently reset and concurrent writes stay se
  await assert.rejects(registry.list(),e=>e.status===409);
  await assert.rejects(registry.add(claim()),e=>e.status===409);
 });
+test('local asset evidence-hash mismatch is detected before it can be screened',async t=>{
+ const filename=await fixture(t),registry=createExposureRegistry({filename,now});
+ await registry.add(claim());
+ const raw=await fs.readFile(filename,'utf8');
+ await fs.writeFile(filename,raw.replace('Production site','Imaginary production site'),'utf8');
+ await assert.rejects(registry.list(),e=>e.status===409);
+});
 test('haversine geospatial screening reports distance but never creates an impact or historical evidence',()=>{
  assert.equal(greatCircleKm({latitude:0,longitude:0},{latitude:0,longitude:0}),0);
  const event=normalizeUsgsEvents(earthquake()).events[0];
@@ -141,6 +148,8 @@ test('geo research catalog does not quietly convert country-level company disclo
  assert.equal(screening.facilityClaims,0);
  assert.equal(screening.matches.length,0);
  assert.equal(screening.historicalAsOfEligible,false);
+ assert.equal(screening.scenarioStatus,'TEMPLATE_ONLY');
+ await assert.rejects(svc.screen({eventId:'us12345678',asOf:'2020-01-01'}),e=>e.status===400);
  assert.throws(()=>svc.record(claim()),e=>e.status===403);
 });
 test('local evidence HTTP recording requires explicit server enablement and same-origin JSON',async t=>{
