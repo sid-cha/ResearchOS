@@ -128,6 +128,48 @@ test('a changed security aborts earlier company requests and cannot attach late 
  assert.equal(h.element('researchLoad').disabled,false);
 });
 
+test('signal dashboard remains readable, filters preserve original action identity and correctly separate readiness states',async()=>{
+ const signal=(name,status,id)=>({id,name,ruleId:id,status,triggered:status==='triggered',ruleVersion:'research-rule-v1',evidence:[{metricId:'technical.rsi14',value:28,operator:'lt',threshold:30,source:'ALPACA_IEX',asOf:'2026-11-11T05:00:00Z',sampleCount:80,requiredCount:15}]});
+ const data=[
+  signal('RSI under threshold','triggered','oversold'),
+  signal('SMA non-trigger','ready','sma'),
+  signal('Unready rule','warming_up','warm'),
+  signal('Absent fiscal metric','unavailable','missing')
+ ];
+ const alerts=[
+  {...alert,id:'alert:nvda',symbol:'NVDA',name:'NVDA trigger',status:'active'},
+  {...alert,id:'alert:aapl',symbol:'AAPL',name:'AAPL trigger',status:'active'}
+ ];
+ const h=harness(route(async(url,options)=>{
+  if(url==='/api/research/evaluate')return response({company:company(),evaluations:data,alerts});
+  if(url==='/api/research/alerts')return response({alerts});
+  if(url.includes('/api/research/alerts/')&&options.method==='PATCH')return response({alert:{...alerts[1],status:'acknowledged',revision:3}});
+  throw Error('Unexpected '+url);
+ }));
+ await h.open('signals');await h.click('researchEvaluate');
+ const overview=h.element('researchSignalOverview').innerHTML;
+ for(const label of ['Triggered','Not triggered','Warming up','Unavailable'])assert.match(overview,new RegExp(label));
+ assert.match(h.element('researchEvaluations').innerHTML,/research-rule-v1/);
+ assert.match(h.element('researchEvaluations').innerHTML,/Evidence, readiness and methodology/);
+ await h.change('researchSignalFilter','triggered');
+ const shown=h.element('researchEvaluations').innerHTML;
+ assert.match(shown,/RSI under threshold/);assert.doesNotMatch(shown,/SMA non-trigger/);
+ await h.change('researchSignalFilter','unavailable');
+ assert.match(h.element('researchEvaluations').innerHTML,/Absent fiscal metric/);
+ await h.change('researchAlertFilter','active');
+ await h.input('researchAlertSearch','AAPL');
+ const rendered=h.element('researchAlerts').innerHTML;
+ assert.match(rendered,/AAPL trigger/);assert.doesNotMatch(rendered,/NVDA trigger/);
+ assert.match(rendered,/data-research-alert-index="1"/);
+ await h.delegate('researchAlerts',{researchAlertState:'acknowledged',researchAlertIndex:'1'});
+ const mutation=h.requests.filter(request=>request.options.method==='PATCH').at(-1);
+ assert.match(mutation.url,/alert:aapl/);
+ assert.deepEqual(JSON.parse(mutation.options.body),{expectedRevision:2,status:'acknowledged'});
+ await h.change('researchAlertFilter','acknowledged');
+ assert.match(h.element('researchAlerts').innerHTML,/ACKNOWLEDGED/);
+ assert.equal(h.element('navCount').textContent,'01');
+});
+
 test('rule evaluations retain warming states, persist revisioned alert changes and pass grounded case context',async()=>{
  const h=harness(route(async(url,options)=>{
   if(url==='/api/research/alerts')return response({alerts:[alert,{...alert,id:'alert:2',symbol:'NVDA'}]});
