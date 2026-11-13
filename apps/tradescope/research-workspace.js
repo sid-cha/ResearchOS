@@ -453,8 +453,8 @@
   async function loadEarthquakes() {
     state.eventGeneration++;abortScope('event');
     return action('earthquakes','event','Loading source event records…',async context=>{
-      const theme=state.theme,topic=$('researchGeoTopic').value;
-      const endpoint=theme==='earthquake'?'/api/research/earthquakes':'/api/research/theme-events?'+new URLSearchParams({theme,symbol:state.symbol,topic}).toString();
+      const theme=state.theme,topic=$('researchGeoTopic').value,hazardType=$('researchHazardType')?.value||'all';
+      const endpoint=theme==='earthquake'?'/api/research/earthquakes':'/api/research/theme-events?'+new URLSearchParams({theme,symbol:state.symbol,topic,hazardType}).toString();
       const data=await read(endpoint,{key:'earthquakes',context});
       state.earthquakes=array(data.events);state.eventId=state.earthquakes[0]?.id||'';state.analogues=null;state.outcomes=null;
       $('researchEarthquake').innerHTML=state.earthquakes.length?state.earthquakes.map(event=>'<option value="'+esc(event.id)+'">'+esc(event.title||event.headline||event.id)+'</option>').join(''):'<option value="">No records returned</option>';
@@ -476,7 +476,7 @@
   async function findAnalogues() {
     return action('analogues','event','Finding dated source-record comparisons…',async context=>{
       const eventId=state.eventId;if(!eventId)throw Error('Load and select an official source event first.');
-      const endpoint=state.theme==='earthquake'?'/api/research/analogues?eventId='+encodeURIComponent(eventId):'/api/research/theme-analogues?'+new URLSearchParams({theme:state.theme,symbol:state.symbol,topic:$('researchGeoTopic').value,eventId}).toString();
+      const endpoint=state.theme==='earthquake'?'/api/research/analogues?eventId='+encodeURIComponent(eventId):'/api/research/theme-analogues?'+new URLSearchParams({theme:state.theme,symbol:state.symbol,topic:$('researchGeoTopic').value,hazardType:$('researchHazardType')?.value||'all',eventId}).toString();
       const data=await read(endpoint,{key:'analogues',context});
       state.analogues=data;state.outcomes=null;$('researchEventFacts').textContent=eventFacts(data.event||selectedEvent());renderAnalogues();renderOutcomes();
       status(array(data.matches).length+' historical comparisons loaded. Inspect differences, data coverage and exposure limitations.','success');
@@ -495,8 +495,9 @@
     const match=state.analogues?.matches?.[index],event=match?.event||match;
     if(!event)return;
     return action('outcomes','outcome','Loading supported historical market outcomes…',async context=>{
+      if(event.timeBasis==='calendar_day_only')throw Error('This historical catalog provides day-only dates; an exact event-time market comparison is unavailable.');
       const eventTime=event.occurredAt||event.time||event.comparisonTime||event.publishedAt;
-      if(!validTime(eventTime))throw Error('The selected historical event has no usable occurrence time.');
+      if(!validTime(eventTime))throw Error('The selected historical event has no usable occurrence or publication time.');
       const data=await read('/api/research/event-outcomes?symbol='+encodeURIComponent(state.symbol)+'&eventTime='+encodeURIComponent(eventTime),{key:'outcomes',context});
       state.outcomeEvent=event;state.outcomes=data;renderOutcomes();status('Historical outcome request completed. Unsupported or unfinished horizons remain unavailable.','success');
     });
@@ -510,9 +511,9 @@
     const description=('Retrospective comparison: selected current event '+(current?.id||'unknown')+'; historical event '+historical.id+
       '. Captured return windows belong to this historical event only. Attribute similarity '+(Number.isFinite(similarity)?similarity.toFixed(3):'unavailable')+
       ' is not a prediction probability. Company exposure and economic linkage remain UNVERIFIED; returns do not establish causation.').slice(0,1200);
-    const payload={symbol:state.symbol,event:{id:historical.id,headline:historical.title||historical.headline||'Historical earthquake',category:'NATURAL',type:'EARTHQUAKE',source:'USGS',sourceUrl:safeUrl(historical.sourceUrl),occurredAt:validTime(historical.occurredAt)?historical.occurredAt:null,publishedAt:null,ingestedAt:null,symbols:[],evidenceLevel:'retrospective_catalog_comparison',synthetic:false,summary:description},context:{study:{study:structuredClone(data.study)},research:{description,observations:[],evidence:[]}}};
+    const payload={symbol:state.symbol,event:{id:historical.id,headline:historical.title||historical.headline||'Historical sourced event',category:historical.category||'NATURAL',type:historical.type||'EARTHQUAKE',source:historical.source||(state.theme==='earthquake'?'USGS':'UNKNOWN'),sourceUrl:safeUrl(historical.sourceUrl),occurredAt:validTime(historical.occurredAt)?historical.occurredAt:null,publishedAt:null,ingestedAt:null,symbols:[],evidenceLevel:'retrospective_catalog_comparison',synthetic:false,summary:description},context:{study:{study:structuredClone(data.study)},research:{description,observations:[],evidence:[]}}};
     document.dispatchEvent(new CustomEvent('tradescope:research-investigate',{detail:payload}));
-    status('Opening the historical USGS event and its captured return windows in Investigations…');
+    status('Opening the historical sourced event and its observed market outcomes in Investigations…');
   }
   function createInvestigation(kind,index) {
     const item=kind==='alert'?state.alerts?.[index]:kind==='screen'?state.screenResults?.results?.[index]:state.evaluations[index];
@@ -581,7 +582,8 @@
   delegated('researchScreenResults',data=>{if(data.researchInvestigateScreen!==undefined)createInvestigation('screen',Number(data.researchInvestigateScreen));});
   on('researchLoadFilings','click',loadFilings);delegated('researchFilingList',data=>{if(data.researchFiling!==undefined)void loadFiling(Number(data.researchFiling));});
   on('researchLoadEarthquakes','click',loadEarthquakes);on('researchFindAnalogues','click',findAnalogues);
-  on('researchTheme','change',ev=>{state.theme=ev.target.value;$('researchGeoTopic').disabled=state.theme!=='geopolitical';state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load the selected source theme…</option>';$('researchEventFacts').textContent='Select a theme and load its sourced observations. This is not a calibrated forecast.';renderAnalogues();renderOutcomes();});
+  on('researchTheme','change',ev=>{state.theme=ev.target.value;$('researchGeoTopic').disabled=state.theme!=='geopolitical';$('researchHazardType').disabled=state.theme!=='natural';state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load the selected source theme…</option>';$('researchEventFacts').textContent='Select a theme and load its sourced observations. This is not a calibrated forecast.';renderAnalogues();renderOutcomes();});
+  on('researchHazardType','change',()=>{state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load this natural hazard category…</option>';renderAnalogues();renderOutcomes();});
   on('researchGeoTopic','change',()=>{state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load this geopolitical topic…</option>';renderAnalogues();renderOutcomes();});
   on('researchEarthquake','change',event=>{state.eventGeneration++;abortScope('event');state.eventId=event.target.value;state.analogues=null;state.outcomes=null;$('researchEventFacts').textContent=eventFacts(selectedEvent());renderAnalogues();renderOutcomes();});
   delegated('researchAnalogues',data=>{if(data.researchOutcome!==undefined)void loadOutcomes(Number(data.researchOutcome));});
