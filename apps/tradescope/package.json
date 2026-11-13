@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.21.0",
-  "description": "TradeScope source-backed research dashboard, fertilizer intelligence and provider reliability control center",
+  "version": "0.22.0",
+  "description": "TradeScope evidence-scoped economic transmission, source control and market research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
