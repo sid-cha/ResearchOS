@@ -7,6 +7,7 @@ import {BUILTIN_RULES,BUILTIN_SCREENS,validateScreen,evaluateRule,screenCompanie
 import {createResearchStore} from './research-store.mjs';
 import {createFilingReader} from './filing-intelligence.mjs';
 import {createEarthquakeResearch,compareEventOutcomes} from './event-analogues.mjs';
+import {createThematicResearch} from './thematic-analogues.mjs';
 import {validEventTimestamp} from './market-events.mjs';
 import {join,dirname} from 'node:path';
 import {createResearchMonitor} from './research-monitor.mjs';
@@ -56,9 +57,10 @@ const checkedSymbols=value=>{
 const isoDay=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
 
 export function createResearchApi({filename,sources=makeSources(),store=createResearchStore(filename),
- filingReader=createFilingReader(),earthquakes=createEarthquakeResearch(),now=Date.now,
+ filingReader=createFilingReader(),earthquakes=createEarthquakeResearch(),now=Date.now,themes,
  monitorFilename=join(dirname(filename),'monitors.json'),monitorFactory=createResearchMonitor,
  javaAdapter=createJavaResearchAdapter()}={}){
+ const thematic=themes??createThematicResearch({sources,now});
  const companies=new Map(),inflight=new Map(),queue=[];
  let active=0;
  const previousObservations=record=>record.observations.filter(item=>item.details?.previousAsOf).map(item=>({...item,
@@ -215,6 +217,14 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
     const filings=await providerRequest(()=>sources.filings(symbol),'SEC'),filing=filings.filings.find(item=>item.accession===accession);
     if(!filing)throw fail('Filing is not in the supported issuer filing list',404);
     respond(res,200,await providerRequest(()=>filingReader.read({filing,symbol}),'SEC'));return true;
+   }
+   if(method==='GET'&&resource==='theme-events'){
+    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions';
+    respond(res,200,await thematic.list({theme,symbol,topic}));return true;
+   }
+   if(method==='GET'&&resource==='theme-analogues'){
+    const theme=url.searchParams.get('theme')||'corporate',symbol=url.searchParams.get('symbol')||'AAPL',topic=url.searchParams.get('topic')||'sanctions',eventId=url.searchParams.get('eventId');
+    respond(res,200,await thematic.analogues({theme,symbol,topic,eventId,limit:5}));return true;
    }
    if(method==='GET'&&resource==='earthquakes'){respond(res,200,await providerRequest(()=>earthquakes.recentEvents(),'USGS'));return true;}
    if(method==='GET'&&resource==='analogues'){
