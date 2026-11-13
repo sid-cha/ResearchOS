@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.25.0",
-  "description": "TradeScope geographic exposure evidence, multi-scenario research, market and macro intelligence",
+  "version": "0.26.0",
+  "description": "TradeScope government facility-source reconciliation, adversarial evidence gaps, economic and macro research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
