@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {analyzePublicTaxDisclosures,TAX_DISCLOSURE_METRICS} from '../tax-disclosures.mjs';
+import {analyzePublicTaxDisclosures,TAX_DISCLOSURE_METRICS} from '../lib/tax-disclosures.mjs';
 const row=(val,end,filed,accn='0000001234-26-000001',start='2025-01-01')=>({val,end,filed,accn,start,form:'10-K'});
 const facts={cik:1234,entityName:'Example Inc',facts:{'us-gaap':{
   IncomeTaxExpenseBenefit:{units:{USD:[row(200,'2025-12-31','2026-02-20'),row(230,'2025-12-31','2026-09-20','0000001234-26-000002'),row(999,'2026-12-31','2027-02-20','0000001234-27-000001','2026-01-01')]}},
