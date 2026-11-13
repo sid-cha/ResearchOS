@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.26.0",
-  "description": "TradeScope government facility-source reconciliation, adversarial evidence gaps, economic and macro research",
+  "version": "0.27.0",
+  "description": "TradeScope 15-feature company exposure proof, source audits, challenge and rebuttal research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
