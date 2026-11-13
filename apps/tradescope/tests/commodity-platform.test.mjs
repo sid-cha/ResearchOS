@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
+import vm from 'node:vm';
+import {fileURLToPath} from 'node:url';
 import {commoditySearchUrl,normalizeOfficialDocs,createOfficialCommodityFeed,companyProfiles,
  createCommodityLedger,createCommodityWorkbench,createCommodityApi} from '../lib/commodity-platform.mjs';
 
@@ -152,6 +154,46 @@ test('pilot feedback never invents revenue or verified research-time savings',as
  assert.equal(saved.clientAdoptionEvidence,false);
  await assert.rejects(ledger.feedback({minutesBefore:-4,minutesWith:1,sourceQuality:5}),e=>e.status===400);
 });
+test('analyst source reviews are immutable, anchored to captured revisions and do not assert independent validation',async t=>{
+ const filename=await temp(t),svc=createCommodityWorkbench({filename,feed:fakeFeed});
+ await svc.scan('potash');
+ const event=(await svc.ledger.list('potash'))[0].document;
+ const first=await svc.ledger.review({eventId:event.id,disposition:'NEEDS_EVIDENCE',
+  rationale:'This is an official regulatory document mentioning fertilizer; the market effect is unknown.'});
+ assert.equal(first.eventImpactVerified,false);
+ assert.equal(first.independentlyValidated,false);
+ assert.equal(first.sourceUrl,event.sourceUrl);
+ assert.equal(first.revisionId,(await svc.ledger.get(event.id)).revisionId);
+ await svc.ledger.review({eventId:event.id,disposition:'RELEVANT_RESEARCH_CANDIDATE',
+  rationale:'The source mentions a commodity regulation, but it still needs an independent supply assessment.'});
+ const history=await svc.ledger.reviews(event.id);
+ assert.equal(history.length,2);
+ assert.equal(history[0].disposition,'NEEDS_EVIDENCE');
+ const brief=await svc.brief(event.id);
+ assert(brief.report.includes('RELEVANT_RESEARCH_CANDIDATE'));
+ assert.equal(brief.coverage.validatedDisruptionEvents,0);
+ await assert.rejects(svc.ledger.review({eventId:event.id,disposition:'CONFIRMED_MARKET_CRASH',
+  rationale:'This is entirely unverified.'}),e=>e.status===400);
+ await assert.rejects(svc.ledger.review({eventId:'fr:unknown',disposition:'NEEDS_EVIDENCE',
+  rationale:'A reason without an actual source document should not be accepted.'}),e=>e.status===404);
+ const second=createCommodityLedger({filename});
+ assert.equal((await second.reviews(event.id)).length,2);
+});
+test('standalone commodity UI assets are allowlisted, self-consistent and parse under Node',async()=>{
+ const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+ const html=await fs.readFile(path.join(root,'commodity.html'),'utf8');
+ const js=await fs.readFile(path.join(root,'commodity.js'),'utf8');
+ const css=await fs.readFile(path.join(root,'commodity.css'),'utf8');
+ assert.doesNotThrow(()=>new vm.Script(js,{filename:'commodity.js'}));
+ for(const id of ['commoditySelect','preview','scan','events','candidateCount','revisionCount','companyCount',
+  'profiles','briefArea','briefText','briefExport','briefStatus','reviewForm','reviewStatus','watchForm',
+  'watches','pilotMetrics','feedbackForm','feedbackStatus','watchStatus','feedStatus']){
+  assert(html.includes('id="'+id+'"'),'missing UI node '+id);
+ }
+ assert(html.includes('href="/commodity.css"'));
+ assert(html.includes('src="/commodity.js"'));
+ assert(css.includes('.review-form'));
+});
 test('end-to-end M1–M4 HTTP workflow persists official docs, serves a text brief and restricts writes',async t=>{
  const filename=await temp(t),service=createCommodityWorkbench({filename,feed:fakeFeed});
  const handler=createCommodityApi({service});
@@ -187,6 +229,9 @@ test('end-to-end M1–M4 HTTP workflow persists official docs, serves a text bri
  const run=await post('watches/'+encodeURIComponent(w.id)+'/scan',{});
  assert.equal(run.status,200);
  assert.equal((await run.json()).summary.baselineEstablished,true);
+ assert.equal((await post('reviews',{eventId:id,disposition:'NEEDS_EVIDENCE',rationale:'Relevant source mention but no verified supply change.'})).status,201);
+ const reviews=await get('reviews?id='+encodeURIComponent(id));
+ assert.equal(reviews.status,200);assert.equal((await reviews.json()).reviews.length,1);
  assert.equal((await post('feedback',{minutesBefore:90,minutesWith:35,sourceQuality:4})).status,201);
  assert.equal((await (await get('metrics')).json()).selfReportedSamples,1);
  assert.equal((await post('scan',{commodity:'potash'},'POST')).status,200);
