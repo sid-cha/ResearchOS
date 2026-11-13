@@ -1,3 +1,15 @@
+# TradeScope AI — ResearchOS Unified Development (v0.6–v0.18)
+
+> **Current development source:** [cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19), branch `feature/tradescope-v018-unified-development`. All earlier TradeScope PR heads were verified as included in this branch and their drafts closed as superseded. **Nothing has been merged into `main`**; full historical/live-source and browser validation is intentionally deferred.
+
+**Newest research pilots (v0.10–v0.18):** issuer discovery and saved archives; SEC regulatory and thematic evidence; signals, IEX daily/intraday charts; Crisis & Climate Atlas; ALFRED as-of macro snapshots; retrospective warning replay; optional licensed long-history SPY outcomes; NOAA CPC historical ENSO issue-date evidence; conditional climate-to-industry transmission graphs; **NASA POWER monthly point precipitation/temperature history** with received-snapshot SHA-256 receipts.
+
+These are **scoped development capabilities**, not production-verified financial predictions. NASA POWER values are retrospective currently revised point-model observations, not regional averages or point-in-time issued climate forecasts. A cited graph edge is not verified company exposure or estimated market impact.
+
+**Current source-of-truth documents:** [prioritized backlog](docs/V018_PRIORITIZED_BACKLOG.md), [geographic climate evidence](docs/V018_GEOGRAPHIC_CLIMATE_EVIDENCE.md), [typed economic transmission](docs/V018_TRANSMISSION_GRAPH.md), [unified branch/release gate](docs/V018_UNIFIED_DEVELOPMENT.md), and [comprehensive validation checklist](docs/STACKED_RELEASE_VALIDATION_GATE.md).
+
+---
+
 # TradeScope AI v0.9 — Monitoring, Market Atlas and Optional Research Storage
 
 **Status:** Local-first research workstation with server-side IEX streaming, snapshot fallback, investigations and professional light/dark workspaces. Authenticated live streaming requires local provider verification; this is **not** an institutional surveillance release or public licensed data product.
