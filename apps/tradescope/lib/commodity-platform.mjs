@@ -207,6 +207,16 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
    if(s.runs.length>150)s.runs.shift();
    return {watch:w,summary:w.lastResult};
   });},
+  recordWatchFailure(id){return write(s=>{
+   const w=s.watches.find(x=>x.id===id);if(!w)throw issue('Watch not found',404);
+   const stamp=clock();w.lastRunAt=stamp;w.runCount++;
+   w.lastResult={status:'failed',baselineEstablished:false,candidateDocuments:null,
+    newCandidates:null,providerFetchedAt:null,
+    error:'Official source unavailable; previous observations remain unchanged.'};
+   s.runs.push({id:'run:'+randomUUID(),watchId:id,at:stamp,...w.lastResult});
+   if(s.runs.length>150)s.runs.shift();
+   return {watch:w,summary:w.lastResult};
+  });},
   runs(){return read(s=>s.runs.slice(-40).reverse());},
   feedback(input){return write(s=>{
    if(!inRange(input?.minutesBefore,1,720)||!inRange(input?.minutesWith,1,720)||
@@ -236,7 +246,8 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
   return {...result,capture};
  }
  async function scanWatch(id){const watch=await ledger.watch(id);if(!watch)throw issue('Watch not found',404);
-  const r=await scan(watch.commodity);return ledger.recordWatchRun(id,r);
+  try{const r=await scan(watch.commodity);return await ledger.recordWatchRun(id,r);}
+  catch(e){await ledger.recordWatchFailure(id).catch(()=>{});throw e;}
  }
  async function tick(){
   if(busy)return;busy=true;
