@@ -25,3 +25,10 @@ select,input{height:37px;border:1px solid #d9e2eb;padding:7px 10px;background:#f
 .gap-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.gap{background:#f8fafc;border:1px solid #e4ecf3;border-radius:8px;padding:13px}.gap strong{font-size:11px;color:#345572}.gap p{font-size:11px;line-height:1.65;color:#71849a;margin-bottom:0}.empty{padding:28px;color:#8396ac;font-size:12px;text-align:center;line-height:1.65}.muted{font-size:11px;color:#788b9d;line-height:1.65}footer{font-size:10px;line-height:1.6;color:#8c9caf;text-align:center;padding:25px;margin-top:15px;border-top:1px solid #e2eaf3}
 @media(max-width:1160px){.main-grid{grid-template-columns:1fr}.stages{min-height:240px}.stage{min-width:165px}.truth{display:none}}
 @media(max-width:670px){main{padding:18px 13px}.top{flex-wrap:wrap;padding:10px 14px}nav{order:3;width:100%;overflow:auto}.version{margin-left:auto}.metrics{grid-template-columns:repeat(2,1fr)}.controls label{flex:1 1 170px}.controls label:first-child,.controls label:nth-child(2){min-width:165px}.gap-list{grid-template-columns:1fr}.panel{padding:13px}.control-buttons{width:100%}.control-buttons button{flex:1}.legend{gap:8px}}
+
+.scenario-directory{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#eff5fc;border:1px solid #d6e6f6;padding:13px 19px;margin:17px 0;border-radius:9px}
+.scenario-directory>div{flex:1;min-width:205px}.scenario-directory strong{display:block;font-size:12px;color:#244667}
+.scenario-directory small{display:block;font-size:10px;color:#708ba5;margin-top:5px;line-height:1.5}
+.scenario-directory label{display:grid;gap:5px;color:#768ca2;font-size:9px;font-weight:780;min-width:185px;flex:0 1 205px;text-transform:uppercase}
+.registry-status{font-size:10px;font-weight:750;color:#8a6f39;background:#fff7e5;border:1px solid #ecddc4;border-radius:5px;padding:8px 9px;max-width:320px}
+@media(max-width:650px){.scenario-directory label{flex:1 1 100%}.scenario-directory .registry-status{max-width:100%}}
