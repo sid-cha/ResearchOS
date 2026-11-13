@@ -12,7 +12,7 @@ Legend: **Built pilot** = modules/UI or logic exists in current branch but cover
 | Point-in-time macro replay | Built pilot | Persist original observations and source publication/ingestion clocks; optimize bounded timeline fetch | Live ALFRED original vintages and release timing |
 | Historical outcome validation | Built pilot | Licensed benchmark cross-check; additional independent market regimes and control periods | Entitlement, adjusted basis, missingness, look-ahead leakage, false alarms |
 | Climate outlook evidence | **Initial v0.18 implementation** | Source-dated NOAA CPC monthly historical ENSO discussions and as-of UI, rejecting future issues | Live archive HTML and original issue/revision verification still deferred |
-| Versioned research provenance | Pending | Immutable source-observation/event/assertion records with publication, first-seen and vintage clocks, schemas, replay and audit diffs | Chronology, storage durability and migrations |
+| Versioned research provenance | **Partial** — normalized NASA POWER climate snapshots carry retrieval times and content SHA-256 receipts; no durable evidence ledger | Immutable source/event/assertion records, original source publication/first-seen clocks, corrections, replay and audit diffs | Chronology, source auth, durable storage and migrations |
 | Signal quality and negative controls | In progress | More honest baseline comparisons, independently sampled decisions, coverage-weighted diagnostics, randomized-control alternatives | Research design, holdout and error analysis |
 | Unified data-quality status | In progress | Shared provider health/coverage/entitlement statuses, no silent stale/future imputation | Provider contract and failure injection |
 
@@ -20,8 +20,8 @@ Legend: **Built pilot** = modules/UI or logic exists in current branch but cover
 
 | Workstream | Status | Next deliverable |
 | --- | --- | --- |
-| ENSO and rainfall | In progress | CPC historical discussion retrieval is a starting point; add original-issued probabilities where archived, reanalysis separated from forecasts, NOAA monthly climate measurements and timestamped region definitions |
-| Drought, snowpack and monsoon | Pending | NOAA/US Drought Monitor/NRCS or region-specific official archives; original issue dates and explicit geography |
+| ENSO and rainfall | **Partial** — dated CPC ENSO discussion and NASA POWER monthly representative-point precipitation / temperature with current-revision provenance | Original-issued ENSO probabilities, dated regional precipitation polygons, NOAA weather stations, publication-time archives and historical normals |
+| Drought, snowpack and monsoon | **Pending** — representative Colorado temperature/precipitation point is not snowpack, drought or monsoon measurement | NOAA/US Drought Monitor/NRCS and regional monsoon agency archives with original issue dates, watersheds and crop regions |
 | Wildfire and catastrophe | Built event pilot only | Historic perimeter/intensity, insured location and catastrophe loss evidence, time-specific publication and region matching |
 | Commodity and supply chain | Pending | USDA crop reports, USGS potash, trade data, shipping and inventory shock pathways with versioned source evidence |
 | Transmission graph | **Typed research-graph foundation implemented** | Three directed scenario graphs, read-only API and Crisis & Climate stage UI, with conditional lag/sign placeholders; add georeferenced dated evidence, measured causal edges and named issuer verification |
@@ -57,7 +57,7 @@ Legend: **Built pilot** = modules/UI or logic exists in current branch but cover
 
 ## Recommended next implementation order
 
-1. Extend v0.18 historical climate evidence with immutable/dated source observation provenance and a bounded climate source catalog, then add official weather/hydrology observations.
+1. Extend the new v0.18 NASA POWER point-history pilot into an immutable, versioned evidence ledger and geographically verified station/area climate observations; do not equate current-revision data with original historical knowledge.
 2. Build an evidence-backed industry transmission graph, starting ENSO → crop season/region → fertilizer demand/transport → issuer revenue, and wildfire → insured locations/reinsurance → rebuilding.
 3. Add issuer exposure proof, geographic/sector mapping and scenario-to-company coverage.
 4. Expand historical backtesting, benchmark coverage and contamination controls across multiple shocks and negative controls.
