@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Readable} from 'node:stream';
-import {createDiscoveryApi} from './discovery-api.mjs';
+import {createDiscoveryApi} from '../lib/discovery-api.mjs';
 const saved={id:'WATCHLIST-11111111-1111-1111-1111-111111111111',revision:1,name:'Semiconductors',symbols:['NVDA']};
 const stub={
  search:async(query)=>({results:[{symbol:'NVDA',name:'NVIDIA'}],query}),
