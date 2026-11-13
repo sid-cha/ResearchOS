@@ -2,7 +2,7 @@ import {normalizeNews,normalizeUsgs,normalizeNasa,normalizeGdelt} from './analys
 import {summarizeCompanyFacts,extractFilings} from './fundamentals.mjs';
 export const SYMBOLS=['NVDA','AAPL','MSFT','TSLA','SPY','AMD','QQQ','META','AMZN','PLTR'];
 const CIK={NVDA:'0001045810',AAPL:'0000320193',MSFT:'0000789019',TSLA:'0001318605',AMD:'0000002488',META:'0001326801',AMZN:'0001018724',PLTR:'0001321655'};
-const TOPICS={sanctions:'(sanctions OR "export restrictions")',conflict:'("armed conflict" OR geopolitical conflict)',supply:'("supply chain disruption" OR port closure)'};
+const TOPICS={sanctions:'(sanctions OR "export restrictions")',conflict:'("armed conflict" OR geopolitical conflict)',supply:'("supply chain disruption" OR port closure)',cyber:'("cyber attack" OR ransomware OR "data breach")',industrial:'("industrial accident" OR "factory explosion" OR "chemical spill")',transport:'("rail derailment" OR "aviation accident" OR "ship collision")',energy:'("power outage" OR "pipeline disruption" OR "refinery shutdown")'};
 const fromDate=(days)=>new Date(Date.now()-days*86400000).toISOString();
 const DIRECTORY_URL='https://www.sec.gov/files/company_tickers_exchange.json';
 const validSymbol=value=>typeof value==='string'&&/^[A-Z][A-Z0-9.-]{0,11}$/.test(value);
