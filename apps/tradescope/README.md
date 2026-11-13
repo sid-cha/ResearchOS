@@ -1,3 +1,13 @@
+# TradeScope v0.27 — 15-Feature Company Exposure Proof & Research Review Batch
+
+**New:** [Exposure Proof Review](exposure-review.html) · [15-feature technical contract](docs/V027_PROOF_BATCH_15_FEATURES.md) · [Geo Exposure](geo-exposure.html) · [Product backlog](docs/V018_PRIORITIZED_BACKLOG.md) · [Cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
+
+This larger release adds **fifteen bounded features** in one review workflow: SEC registrant identity and official filings, evidence-gated operator-to-issuer research case intake, dated operator/SEC documents and effective dates, local append-only audit, on-demand current EPA/SEC source snapshots and stable change hashes, deterministic opposing evidence checks, historical cutoff warnings, analyst challenges/rebuttals/dispositions, issuer filtering and source-cited export. It reuses the previous source and geographic integrations without inventing proven legal ownership.
+
+Casebook writes are **off by default**, only enabled when both `RESEARCH_GEO_ASSET_REGISTRY_ENABLED=true` and `RESEARCH_EXPOSURE_PROOF_ENABLED=true` on a loopback server. SEC lookups additionally require `SEC_USER_AGENT` with a real contact. These are research pilots, **not** independent CIK subsidiary verification, live browser/provider acceptance, operational/financial forecasting or a production AI agent system. NVIDIA/parallel research and autonomous Anti-Agent remain planned, not running. No merge of PR #19.
+
+---
+
 # TradeScope v0.26 — Official Facility Identity & Evidence Challenger
 
 **New on shared development branch:** [Geo Exposure & EPA source challenge](geo-exposure.html) · [v0.26 source contract](docs/V026_FRS_FACILITY_AND_CRITIC.md) · [prioritized backlog](docs/V018_PRIORITIZED_BACKLOG.md) · [cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
