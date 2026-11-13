@@ -12,7 +12,7 @@
   const message = value => typeof value === 'string' ? value : value?.message || value?.reason || value?.text || '';
   const validTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
   const time = value => validTime(value) ? value : 'Not supplied';
-  const tabs = ['company','signals','screener','filings','analogues','atlas','monitoring'];
+  const tabs = ['company','signals','screener','filings','discovery','analogues','atlas','monitoring'];
   const state = {
     tab:'company',symbol:'AAPL',generation:0,screenGeneration:0,eventGeneration:0,
     catalog:null,catalogPromise:null,company:null,evaluations:[],alerts:null,screens:[],presets:[],
