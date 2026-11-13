@@ -195,7 +195,7 @@ test('fundamentals snapshot reports per-source status without inventing data',as
 test('fundamentals API serves catalog, sources, USGS capture and rejects bad writes',async t=>{
  const file=await temp(t);
  const service=createCommodityFundamentals({env:{EIA_API_KEY:'a'.repeat(32)},
-  fetchImpl:fetchOk({response:{data:[{period:'2026-09',value:'3.10'}]}}),
+  fetchImpl:fetchOk({response:{data:[{period:'2026-09',value:'3.10',series:'RNGWHHD'}]}}),
   usgsFile:file,clock:now});
  const api=createCommodityFundamentalsApi({service});
  const {server,url,close}=await listen(async(req,res)=>{const done=await api(req,res,new URL(req.url,'http://x'));if(!done){res.writeHead(404);res.end();}});
