@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="TradeScope Market Workspace — source-dated ETF themes, stock research, financials and macro comparisons.">
+<meta name="color-scheme" content="light dark"><title>TradeScope | Market Research Workspace</title>
+<link rel="stylesheet" href="/market-hub.css"></head>
+<body><div class="shell">
+<header class="brand-header"><a class="brand" href="/"><span class="mark">T<span>.</span></span><span>TRADE<span>SCOPE</span><small>RESEARCH INTELLIGENCE</small></span></a>
+<nav class="header-links" aria-label="Product navigation"><a href="/">Surveillance</a><a class="active" href="/market-hub.html">Markets</a><a href="/commodity.html">Disruption Research</a><a href="/source-control.html">Data Sources</a><a href="/event-portal.html">Global Events</a><a href="/transmission-lab.html">Transmission Lab</a><a href="/fred-research.html">FRED Explorer</a><a href="/evidence-ledger.html">Evidence Ledger</a><a href="/geo-exposure.html">Geo Exposure</a><a href="/exposure-review.html">Exposure Proof</a></nav>
+<div class="header-meta"><span id="providerStatus">Checking research sources…</span><button id="modeSwitch" type="button" aria-label="Toggle dark mode">◐ Theme</button></div></header>
+<div class="layout">
+<aside class="sidebar" aria-label="Stock selection and research navigation">
+ <div class="sidebar-title"><span>YOUR RESEARCH UNIVERSE</span><span class="indicator">PILOT</span></div>
+ <label class="search-wrap" for="tickerSearch"><span>⌕</span><input id="tickerSearch" placeholder="Find ticker or company…" autocomplete="off" aria-label="Search company or ticker"></label>
+ <div id="tickerMatches" class="matches" aria-live="polite"></div>
+ <div class="sidebar-row"><strong>Symbols</strong><span id="universeCount">—</span></div>
+ <div id="tickerButtons" class="ticker-list"></div>
+ <div class="side-foot"><span class="dot"></span> Connected sources are labeled; missing records are never estimates.</div>
+</aside>
+<main class="main">
+<div class="title-row"><div><p class="eyebrow">RESEARCHOS / INVESTMENT DATA WORKSPACE</p><h1>Markets, without the clutter.</h1><p class="subtitle">Explore companies, economic series and themed ETFs. Move from the market context to source-backed disruption research.</p></div><div class="session-mark"><span>SOURCE MODE</span><strong id="sourceMode">RESEARCH / DATED</strong><small>No consolidated real-time quote guarantee</small></div></div>
+<nav class="view-nav" id="navTabs" aria-label="Market workspace tabs">
+ <button type="button" class="active" data-view="overview">Market Overview</button>
+ <button type="button" data-view="dashboard">Stock Dashboard</button>
+ <button type="button" data-view="compare">Compare</button>
+ <button type="button" data-view="financials">Financials</button>
+ <button type="button" data-view="watchlists">Watchlists</button>
+ <button type="button" data-view="screener">Screener</button>
+ <button type="button" data-view="themes">ETF Themes</button>
+ <button type="button" data-view="macro">Macro</button>
+</nav>
+<div id="notice" class="notice" role="status" aria-live="polite">Initializing sourced market data…</div>
+<section id="view-overview" class="view active" aria-labelledby="headOverview">
+ <div class="section-heading"><div><h2 id="headOverview">Global market overview</h2><p>Curated U.S.-listed fund proxies. The numbers are completed IEX daily bars, not index levels or consolidated live quotes.</p></div><button type="button" id="refreshOverview" class="quiet">↻ Refresh</button></div>
+ <div class="overview-stats" id="overviewStats"></div><div class="overview-grid" id="overviewGroups"></div>
+</section>
+<section id="view-dashboard" class="view" aria-labelledby="headDashboard">
+ <div class="section-heading"><div><h2 id="headDashboard"><span id="dashboardSymbol">AAPL</span> — Stock dashboard</h2><p>Reusable chart layout; annual SEC metrics and sourced price histories.</p></div>
+ <div class="tools"><label>Range <select id="dashboardRange"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="3M">3 months</option><option value="1M">1 month</option></select></label>
+ <label>Size <select id="chartSize"><option value="S">Small</option><option value="M">Medium</option><option value="L">Large</option></select></label>
+ <label>Add chart <select id="dashboardAdd"><option value="">Choose metric…</option></select></label><button type="button" id="dashboardSave" class="primary">Save layout</button></div></div>
+ <div class="pane-caption" id="dashboardProvenance">Source dates appear on every chart; SEC annual periods can differ by company.</div><div class="chart-grid" id="dashboardCharts"></div>
+</section>
+<section id="view-compare" class="view" aria-labelledby="headCompare">
+ <div class="section-heading"><div><h2 id="headCompare">Relative stock performance</h2><p>Compare up to 10 US-listed instruments from a common observed start, using split-adjusted IEX close prices.</p></div>
+ <div class="tools"><label>Range <select id="compareRange"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="3M">3 months</option><option value="1M">1 month</option></select></label><button id="compareRefresh" type="button" class="primary">Compare</button><button type="button" id="compareSave">Save selection</button><button type="button" id="compareExport">Export CSV</button></div></div>
+ <div class="selection-line"><div id="compareChips" class="chips"></div><label class="append"><select id="compareAdd"><option value="">Add ticker…</option></select></label></div>
+ <div class="surface large-chart"><h3>Price performance from common start (%)</h3><p id="compareSource" class="micro">Waiting for a comparison.</p><div id="compareChart" class="plot"></div></div>
+</section>
+<section id="view-financials" class="view" aria-labelledby="headFinancials">
+ <div class="section-heading"><div><h2 id="headFinancials">Financial statements · <span id="financialSymbol">AAPL</span></h2><p>SEC EDGAR XBRL annual results with fiscal end and filing cutoffs. Not a 40-year standardized vendor dataset.</p></div><div class="tools"><button id="financialRefresh" type="button" class="quiet">↻ Reload</button><button id="financialExport" type="button">Export CSV</button></div></div>
+ <div class="pane-caption" id="financialSource"></div><div class="surface table-panel"><div id="financialTable"></div></div>
+ <div class="surface" id="financialDetail"><h3 id="financialDetailTitle">Choose a financial metric</h3><div class="plot" id="financialDetailPlot"></div></div>
+</section>
+<section id="view-watchlists" class="view" aria-labelledby="headWatchlists">
+ <div class="section-heading"><div><h2 id="headWatchlists">Saved watchlists</h2><p>Uses the existing TradeScope single-user research universe. Changes persist locally on your server.</p></div><button type="button" id="watchReload" class="quiet">↻ Reload</button></div>
+ <div class="watch-layout"><div class="surface watch-lists"><h3>Saved collections</h3><div id="savedWatchlists"></div></div>
+ <div class="surface"><h3>Edit collection</h3><form id="watchEditForm">
+ <label>Watchlist name<input id="watchName" maxlength="120" required placeholder="e.g., Core Tech Research"></label>
+ <label>Symbols (comma or space separated; register issuers through the search directory first)<textarea id="watchSymbols" rows="4" placeholder="AAPL, MSFT, NVDA" maxlength="420"></textarea></label>
+ <div class="form-actions"><button type="submit" class="primary">Save collection</button><button type="button" id="watchNew">New list</button><button type="button" id="watchDelete" class="danger" disabled>Delete selected</button></div>
+ </form><div id="watchStatus" class="micro" role="status"></div></div></div>
+</section>
+<section id="view-screener" class="view" aria-labelledby="headScreener">
+ <div class="section-heading"><div><h2 id="headScreener">Fundamental screener</h2><p>SEC annual-filing pilot universe only. This is not a 5,000-stock, 80-filter product.</p></div><button id="screenRun" class="primary" type="button">Run 8-issuer screen</button></div>
+ <div class="screen-controls surface"><label>Revenue ≥ (USD billions)<input id="screenRevenue" type="number" min="0" max="10000" step="1" value="0"></label>
+ <label>Revenue YoY ≥ (%)<input id="screenGrowth" type="number" min="-100" max="500" step="1" value="-100"></label>
+ <label>Net margin ≥ (%)<input id="screenMargin" type="number" min="-100" max="100" step="1" value="-100"></label></div>
+ <div id="screenStatus" class="pane-caption"></div><div class="surface table-panel" id="screenResult"></div>
+</section>
+<section id="view-themes" class="view" aria-labelledby="headThemes">
+ <div class="section-heading"><div><h2 id="headThemes">ETF themes & subsectors</h2><p>Comparable historical returns, price ranges and thematic fund proxies. All values require a supported live data entitlement.</p></div>
+ <div class="tools"><label>Group <select id="themeGroup"></select></label><button id="themeRefresh" type="button" class="quiet">↻ Refresh</button><button id="themeExport" type="button">Export CSV</button></div></div>
+ <div class="pane-caption" id="themeSource">Thematic categories are editorial, not a live holdings analysis.</div><div class="surface table-panel" id="themeTable"></div>
+</section>
+<section id="view-macro" class="view" aria-labelledby="headMacro">
+ <div class="section-heading"><div><h2 id="headMacro">Macroeconomic chart wall</h2><p>FRED macro and index series, current revisions. For historical first-available vintages, use TradeScope's ALFRED research module.</p></div>
+ <div class="tools"><label>Group <select id="macroGroup"><option value="Markets">Markets</option><option value="All">All 12 series</option><option value="Rates">Rates</option><option value="Economy">Economy</option><option value="Commodities">Commodities</option></select></label>
+ <label>Range <select id="macroYears"><option value="10">10 years</option><option value="5">5 years</option><option value="1">1 year</option></select></label>
+ <button type="button" id="macroRefresh" class="quiet">↻ Load series</button></div></div><div id="macroCards" class="chart-grid macro-grid"></div>
+</section>
+<footer class="footer">TradeScope ResearchOS · Source-labelled research interface · Curated ETF proxies ≠ validated company exposure · Not investment advice · Local single-user development</footer>
+</main></div></div><script src="/market-hub.js"></script></body></html>

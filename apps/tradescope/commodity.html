@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827"><meta name="description" content="TradeScope commodity disruption research — an evidence-first local pilot.">
+<title>TradeScope | Commodity Research Pilot</title><link rel="stylesheet" href="/commodity.css"></head>
+<body><div class="shell">
+<header class="top"><a href="/" class="brand">T<span>.</span> TRADE<span>SCOPE</span></a><nav><a href="/">Terminal</a><a href="/market-hub.html">Markets</a><a href="/source-control.html">Data Sources</a><a href="/transmission-lab.html">Transmission Lab</a><a href="/geo-exposure.html">Geo Exposure</a><a class="selected" href="/commodity.html">Commodity Intelligence</a></nav><div class="tag">LOCAL RESEARCH PILOT</div></header>
+<main><div class="hero"><div><p class="eyebrow">RESEARCH / COMMODITY ECONOMIC INTELLIGENCE</p><h1>Follow the source. <em>Not the hype.</em></h1>
+<p>Find official commodity-related regulatory documents, inspect documented business activity, and produce a cautious source-backed research brief.</p></div>
+<div class="hero-side"><span>FIRST VERTICAL</span><strong>FERTILIZER</strong><small>Potash · Urea · Phosphate</small></div></div>
+<section class="toolbar" aria-label="Commodity selection"><div><label for="commoditySelect">COMMODITY</label><select id="commoditySelect"><option value="potash">Potash</option><option value="urea">Urea / nitrogen fertilizer</option><option value="phosphate">Phosphate fertilizer</option></select></div>
+<button type="button" id="preview">Preview official documents</button><button type="button" class="primary" id="scan">Capture source observations</button><span id="feedStatus" role="status">No official documents loaded yet.</span></section>
+<section class="metrics" aria-label="Research pilot counts"><div><small>SOURCE CANDIDATES</small><strong id="candidateCount">—</strong></div><div><small>LOCAL EVIDENCE REVISIONS</small><strong id="revisionCount">—</strong></div><div><small>SEC DISCLOSURE PROFILES</small><strong id="companyCount">—</strong></div><div><small>VERIFIED EVENT IMPACTS</small><strong>0</strong></div></section>
+<div class="columns"><section class="pane"><div class="pane-head"><h2>01 / Source document feed</h2><span>FEDERAL REGISTER</span></div>
+<p class="aside">Search matches are <strong>unreviewed document candidates</strong> — not proof that a supply disruption occurred.</p><div id="events" class="stack"><div class="empty">Choose a commodity and preview or capture official source documents.</div></div></section>
+<section class="pane"><div class="pane-head"><h2>02 / SEC business disclosures</h2><span>COMPANY EXPOSURE</span></div>
+<p class="aside">Business links are anchored to annual SEC filings. They do <strong>not</strong> establish exposure to a particular document or an investment outcome.</p>
+<div id="profiles" class="stack"><div class="empty">Source profiles load with the selected commodity.</div></div></section></div>
+<section class="pane brief" id="briefArea"><div class="pane-head"><h2>03 / Research brief</h2><span>EXPORTABLE · CITED</span></div>
+<p class="aside">Select a locally captured official document. A brief combines its source record with SEC business descriptions and explicit evidence gaps.</p>
+<div class="actions"><button type="button" id="briefExport" disabled>Download Markdown brief</button><span id="briefStatus" role="status">No document selected.</span></div>
+<pre id="briefText" class="brief-text">Capture an official source document to generate a research brief.</pre><form id="reviewForm" class="review-form"><h3>Analyst source review · optional</h3><label>Disposition<select name="disposition"><option value="NEEDS_EVIDENCE">Needs more evidence</option><option value="RELEVANT_RESEARCH_CANDIDATE">Relevant research candidate</option><option value="NOT_RELEVANT">Not relevant</option></select></label><label>Source assessment<textarea name="rationale" minlength="20" maxlength="1100" rows="3" placeholder="Explain what the official document actually supports and what remains uncertain..." required></textarea></label><button type="submit">Save append-only analyst assessment</button><span id="reviewStatus" role="status">Review requires a selected captured document. Assessments are local and not independently validated.</span></form></section>
+<div class="columns"><section class="pane"><div class="pane-head"><h2>04 / Pilot monitoring</h2><span>SERVER MUST STAY ON</span></div>
+<form id="watchForm" class="form-row"><label>Monitor name<input name="name" maxlength="80" placeholder="Potash regulation watch"></label>
+<label>Interval <select name="intervalMinutes"><option value="60">Hourly</option><option value="240">Every 4 hours</option><option value="1440">Daily</option></select></label>
+<button class="primary" type="submit">Create disabled watch</button></form><p class="aside">Enable a created watch to poll locally. The first scan establishes a baseline; no email, push delivery or automated disruption classification.</p>
+<div id="watches" class="stack"><div class="empty">No watch created.</div></div><p id="watchStatus" role="status"></p></section>
+<section class="pane"><div class="pane-head"><h2>05 / Design-partner measurement</h2><span>USER REPORTED</span></div>
+<p class="aside">Record actual minutes spent on comparable research tasks. This is a local feedback mechanism, not independent validation or client adoption.</p>
+<form id="feedbackForm" class="feedback-form"><label>Previous workflow (min)<input name="minutesBefore" type="number" min="1" max="720" required></label>
+<label>TradeScope workflow (min)<input name="minutesWith" type="number" min="1" max="720" required></label>
+<label>Source usefulness (1–5)<input name="sourceQuality" type="number" min="1" max="5" required></label>
+<label class="full">Researcher notes<textarea name="notes" rows="2" maxlength="650" placeholder="What was useful? What evidence was missing?"></textarea></label>
+<button type="submit">Save local evaluation</button></form><div id="pilotMetrics" class="metrics-inline"></div><p id="feedbackStatus" role="status"></p></section></div>
+<section class="pane fundamentals" id="fundamentalsArea"><div class="pane-head"><h2>06 / Fundamentals &amp; trade evidence</h2><span>GDELT · EIA · COMTRADE · USDA · USGS</span></div>
+<p class="aside">Commodity-level context only: media candidates, energy cost series, annual trade totals and crop estimates. None of these sources verifies a disruption, issuer impact or forecast.</p>
+<div class="actions"><button type="button" id="fundamentalsLoad">Load fundamentals snapshot</button><button type="button" id="gdeltLoad">Load media candidates</button><span id="fundamentalsStatus" role="status">Not loaded.</span></div>
+<div id="fundamentals" class="stack"><div class="empty">Choose a commodity and load the snapshot.</div></div>
+<form id="usgsForm" class="usgs-form"><h3>Capture USGS annual statistic · transcribed from the official publication</h3>
+<label class="full">Official publication title<input name="title" maxlength="280" placeholder="Mineral Commodity Summaries 2026 — Potash" required></label>
+<label>Release date<input name="releaseDate" type="date" required></label>
+<label class="wide">Official usgs.gov URL<input name="officialUrl" type="url" placeholder="https://pubs.usgs.gov/..." required></label>
+<label>Commodity<select name="usgsCommodity"><option value="potash">Potash</option><option value="urea">Urea</option><option value="phosphate">Phosphate</option></select></label>
+<label>Attribute<input name="attribute" maxlength="80" placeholder="US production" required></label>
+<label>Period<input name="period" placeholder="2025" pattern="\\d{4}(?:-\\d{2})?" required></label>
+<label>Value<input name="value" type="number" step="any" required></label>
+<label>Unit<input name="unit" maxlength="40" placeholder="thousand tonnes" required></label>
+<label class="wide">Source anchor (optional)<input name="anchor" maxlength="120" placeholder="Table 1"></label>
+<button type="submit">Save transcribed capture</button><span id="usgsStatus" role="status">Captures carry SHA-256 revision history; transcription is analyst-asserted.</span></form></section>
+<footer>TRADESCOPE · SOURCE-FIRST COMMODITY RESEARCH · LOCAL SINGLE-USER PILOT · NO TRADING RECOMMENDATIONS · NO ESTIMATED STOCK IMPACT</footer>
+</main></div><script src="/commodity.js"></script></body></html>

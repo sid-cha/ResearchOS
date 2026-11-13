@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en" data-workspace="monitor">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0a0d10">
+<meta name="description" content="TradeScope Terminal — synthetic market surveillance and explainable transaction blotter demo.">
+<title>TradeScope Terminal — Market Surveillance Workstation</title>
+<link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./intelligence.css">
+<link rel="stylesheet" href="./cases.css">
+<link rel="stylesheet" href="./terminal-theme.css">
+<link rel="stylesheet" href="./monitor-candles.css">
+<link rel="stylesheet" href="./crisis-workspace.css">
+<link rel="stylesheet" href="./research.css">
+<link rel="stylesheet" href="./research-operations.css">
+<link rel="stylesheet" href="./discovery-workspace.css">
+</head>
+<body>
+<div class="terminal" id="terminal">
+  <header class="global-header">
+    <div class="brand"><div class="brand-glyph">T<span>.</span></div><div class="brand-name">TRADE<span>SCOPE</span><small>MARKET INTELLIGENCE</small></div></div>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <button type="button" class="nav-link active" data-nav="monitor">MONITOR</button>
+      <button type="button" class="nav-link" data-nav="blotter">TRADE BLOTTER</button>
+      <button type="button" class="nav-link" data-nav="research">RESEARCH</button><a class="nav-link" href="/market-hub.html">MARKET DATA</a><a class="nav-link" href="/source-control.html">DATA SOURCES</a><a class="nav-link" href="/transmission-lab.html">ECONOMIC TRANSMISSION</a><a class="nav-link" href="/fred-research.html">FRED EXPLORER</a><a class="nav-link" href="/evidence-ledger.html">EVIDENCE LEDGER</a><a class="nav-link" href="/geo-exposure.html">GEO EXPOSURE</a><a class="nav-link" href="/exposure-review.html">EXPOSURE PROOF</a><a class="nav-link" href="/commodity.html">COMMODITY INTELLIGENCE</a>
+      <button type="button" class="nav-link" data-nav="signals">SIGNALS <span class="nav-counter" id="navCount" title="Saved research alerts have not loaded.">—</span></button>
+      <button type="button" class="nav-link" data-nav="replay">REPLAY LAB</button>
+      <button type="button" class="nav-link" data-nav="intel">EVENT INTELLIGENCE</button><a class="nav-link" href="/event-portal.html">GLOBAL EVENTS</a>
+      <button type="button" class="nav-link" data-nav="cases">INVESTIGATIONS <span class="nav-counter" id="caseNavCount">0</span></button>
+    </nav>
+    <div class="global-actions"><button type="button" id="assistOpen" class="header-action assist-jump" title="Open Evidence Assistant">✦ ASSIST</button><button type="button" id="densityToggle" class="header-action preference-button" aria-label="Change display density">▤ COMPACT</button><button type="button" id="themeToggle" class="header-action preference-button" aria-label="Switch display theme">☀ LIGHT</button><span class="env-badge"><i></i> SYNTHETIC DATA</span><span class="utc-clock" id="clock">UTC 14:32:08</span><button id="export" type="button" class="header-action" title="Export visible events to CSV">↓ EXPORT</button></div>
+  </header>
+  <div class="ticker-tape" aria-label="Synthetic watchlist prices" id="tickerTape"></div>
+  <main>
+    <div class="command-header">
+      <div class="command-title"><div class="path">WORKSPACES <span>›</span> SURVEILLANCE <span>›</span> <strong>MARKET MONITOR</strong></div><div class="headline"><h1>Market surveillance</h1><span class="release">WORKSTATION / 02</span></div><p>Event monitoring, abnormal-flow detection and transaction reconstruction</p></div>
+      <div class="command-actions"><div class="stream-state"><span class="stream-ring"></span><span><strong id="streamState">REPLAY PAUSED</strong><small id="streamProgress">68 / 128 EVENTS</small></span></div><button type="button" class="button button-outline" id="reset">↺ RESET</button><select aria-label="Replay speed" id="speed" class="speed-select"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select><button type="button" class="button button-amber" id="play">▶ RUN REPLAY</button></div>
+    </div>
+    <div class="disclaimer"><span class="disclaimer-icon">SIM</span><span><strong>SIMULATED DATA ENVIRONMENT</strong> <span id="sourceWarning">The trading blotter begins in synthetic mode; switch its connector for authenticated IEX observations. The independent Event Intelligence workspace can load separate official/news records. Source labels in each panel apply independently.</span> Surveillance rules are illustrative, not misconduct determinations.</span><span class="data-source">SOURCE: SYNTHETIC_FIXTURE_V2</span></div>
+    <section class="data-connector" aria-label="Market data connection">
+      <div class="mode-options"><button id="modeDemo" class="mode-button active" type="button">DEMO REPLAY</button><button id="modeLive" class="mode-button" type="button">LIVE IEX · STREAM / FALLBACK</button><button id="modeHistory" class="mode-button" type="button">HISTORICAL TRADES</button></div>
+      <div class="historical-controls" id="historyControls" hidden><label for="historySymbol">SYMBOL</label><select id="historySymbol"><option>AAPL</option><option>NVDA</option><option>TSLA</option><option>MSFT</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select><label for="historyFeed">FEED</label><select id="historyFeed"><option value="sip">SIP · PREVIOUS DAYS</option><option value="iex">IEX · ANY SESSION</option></select><label for="historyDate">SESSION DATE</label><input type="date" id="historyDate"><button id="loadHistory" type="button">LOAD REAL TRADES</button></div>
+      <div id="connectionStatus" class="connection-status" role="status" aria-live="polite">DEMO / NO PROVIDER CONNECTION</div>
+    </section>
+    <section class="feed-health" aria-labelledby="feedHealthTitle">
+      <div class="feed-health-heading"><h2 id="feedHealthTitle">FEED HEALTH <span>/ SOURCE INTEGRITY</span></h2><strong id="feedTransport">DEMO · SYNTHETIC</strong></div>
+      <dl class="feed-health-grid">
+        <div><dt>PROVIDER / COVERAGE</dt><dd id="feedProvider">SYNTHETIC FIXTURE</dd></div>
+        <div><dt>UPSTREAM CONNECTION</dt><dd id="feedConnection">No provider connection</dd></div>
+        <div><dt>LAST EXCHANGE OBSERVATION</dt><dd id="feedExchangeTime">—</dd></div>
+        <div><dt>LAST BACKEND INGESTION</dt><dd id="feedIngestedTime">—</dd></div>
+        <div><dt>OBSERVATION FRESHNESS</dt><dd id="feedFreshness">Synthetic observations</dd></div>
+        <div><dt>OBSERVATIONS</dt><dd id="feedCounts">—</dd></div>
+        <div><dt>STREAM DUPLICATES / RECONNECTS</dt><dd id="feedDuplicates">—</dd></div>
+        <div><dt>GAPS / CONTINUITY</dt><dd id="feedContinuity">Deterministic demo replay</dd></div>
+      </dl>
+      <p>IEX is one venue. Idle observations can be normal outside trading sessions; session and holiday status is not inferred. A connected feed does not guarantee fresh data or complete coverage.</p>
+    </section>
+    <section class="kpi-grid" aria-label="Surveillance key metrics">
+      <div class="kpi"><div class="kpi-label">EVENTS INGESTED <span>01 / 05</span></div><div class="kpi-main"><strong id="metricEvents">68</strong><svg viewBox="0 0 80 30" class="micro-chart" aria-hidden="true"><polyline points="0,25 12,21 24,23 36,15 48,18 60,9 72,11 80,3"/></svg></div><div class="kpi-foot"><span class="accent-teal">↑ 12.8%</span> vs. earlier replay segment</div></div>
+      <div class="kpi"><div class="kpi-label">FLAGGED EVENTS <span>02 / 05</span></div><div class="kpi-main"><strong id="metricAlerts">00</strong><span class="kpi-tag amber">RULE TRIGGERS</span></div><div class="kpi-foot" id="metricAlertRate">0% of observed events</div></div>
+      <div class="kpi"><div class="kpi-label">HIGH PRIORITY <span>03 / 05</span></div><div class="kpi-main"><strong id="metricCritical">00</strong><span class="red-pulse"></span></div><div class="kpi-foot"><span class="accent-red">ACTION REQUIRED</span> / manual review</div></div>
+      <div class="kpi"><div class="kpi-label">AVG. ANOMALY SCORE <span>04 / 05</span></div><div class="kpi-main"><strong id="metricScore">00<span class="muted-fraction">/100</span></strong><div class="score-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="kpi-foot">Deterministic risk indicator</div></div>
+      <div class="kpi"><div class="kpi-label">DATA COVERAGE <span>05 / 05</span></div><div class="kpi-main coverage-value"><strong>10</strong><span>SYMBOLS</span><span class="coverage-led"></span></div><div class="kpi-foot">Simulated venues / US equities</div></div>
+    </section>
+    <section class="terminal-grid">
+      <div class="column left-column">
+        <section class="panel watchlist-panel"><div class="panel-titlebar"><div><span class="panel-index">01</span><h2>MARKET WATCH</h2></div><span class="panel-meta">10 ASSETS <b>▼</b></span></div><div class="watch-head"><span>SYMBOL</span><span>LAST</span><span>CHG %</span></div><div id="watchRows" class="watch-rows"></div></section>
+        <section class="panel heatmap-panel"><div class="panel-titlebar"><div><span class="panel-index">02</span><h2>PERFORMANCE MAP</h2></div><span class="panel-meta">SYNTHETIC</span></div><div class="heatmap" id="heatmap"></div><div class="panel-note">Click a tile to filter the blotter and chart.</div></section>
+        <section class="panel mini-flow-panel"><div class="panel-titlebar"><div><span class="panel-index">03</span><h2>FLOW COMPOSITION</h2></div><span class="panel-meta">EVENT MIX</span></div><div class="flow-content" id="eventMix"></div></section>
+      </div>
+      <div class="column center-column">
+        <section class="panel chart-panel"><div class="panel-titlebar chart-title"><div><span class="panel-index">04</span><h2>PRICE & ACTIVITY</h2><span class="chart-symbol" id="chartSymbol">NVDA</span></div><div class="chart-tabs"><button class="active" type="button" data-range="1M">1M</button><button type="button" data-range="5M">5M</button><button type="button" data-range="15M">15M</button><button type="button" data-range="1H">1H</button></div></div><div class="chart-info"><div><strong id="chartPrice">$190.43</strong><span id="chartChange" class="accent-teal">+1.42%</span><small>SIMULATED MID / USD</small></div><div class="chart-legend"><span><i class="legend-line"></i> LAST PRICE</span><span><i class="legend-bar"></i> EVENT VOLUME</span></div></div><div class="candle-controls" id="chartHistoryControls" hidden><label for="chartInterval">CANDLE INTERVAL<select id="chartInterval"><option value="1Day" selected>1D · completed sessions</option><option value="1Min">1 minute</option><option value="5Min">5 minutes</option><option value="15Min">15 minutes</option><option value="1Hour">1 hour</option></select></label><label id="chartDayWindowWrap" for="chartDayWindow">COMPLETED SESSIONS<select id="chartDayWindow"><option value="20">20D</option><option value="60" selected>60D</option><option value="120">120D</option><option value="250">250D</option></select></label><button type="button" id="chartHistoryRefresh">REFRESH DAILY BARS</button><span class="candle-history-scope" id="chartSourceScope">IEX · historical / single venue</span></div><div class="market-chart" id="marketChart"></div><p id="chartHistoryMeta" class="candle-meta" hidden aria-live="polite">Completed daily IEX bars are not a streaming trade reconstruction.</p></section>
+        <section class="panel events-panel" id="blotterPanel"><div class="panel-titlebar blotter-title"><div><span class="panel-index">05</span><h2>EVENT BLOTTER</h2><span class="count-pill" id="blotterCount">68 EVENTS</span></div><div class="panel-tools"><button type="button" class="tool-button active" id="allEvents">ALL EVENTS</button><button type="button" class="tool-button" id="flaggedOnly">FLAGGED ONLY</button></div></div>
+          <div class="filters"><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Search symbol, event ID, venue..." aria-label="Search blotter events"></div><select id="symbolFilter" aria-label="Symbol filter"><option value="ALL">ALL SYMBOLS</option></select><select id="eventFilter" aria-label="Event type filter"><option value="ALL">ALL EVENTS</option><option value="TRADE">TRADES</option><option value="QUOTE">QUOTES</option><option value="ADD">ORDER ADDS</option><option value="CANCEL">CANCELLATIONS</option></select><button type="button" id="clearFilters" class="clear-button">CLEAR</button></div>
+          <div class="blotter-scroll"><table aria-label="Synthetic market event blotter"><thead><tr><th>TIME <span>ET</span></th><th>SYMBOL</th><th>TYPE</th><th class="num">PRICE</th><th class="num">SIZE</th><th>VENUE</th><th class="num">SCORE</th><th>RISK</th></tr></thead><tbody id="blotterBody"></tbody></table></div><div class="table-status"><span id="rowCount">0 EVENTS</span><span class="legend"><i class="legend-red"></i> HIGH <i class="legend-yellow"></i> MED <i class="legend-green"></i> NORMAL</span><span class="keyboard-hint">SELECT ROW → INSPECT</span></div>
+        </section>
+        <section class="panel alert-log-panel"><div class="panel-titlebar"><div><span class="panel-index">06</span><h2>RECENT SURVEILLANCE ALERTS</h2></div><span class="panel-meta">LATEST FIRST</span></div><div class="alert-stream" id="alertStream"></div></section>
+      </div>
+      <div class="column right-column">
+        <section class="panel signals-panel"><div class="panel-titlebar"><div><span class="panel-index">07</span><h2>SIGNAL MONITOR</h2></div><span class="panel-meta" id="signalCount">00 ACTIVE</span></div><div class="signals-subhead">RULE-BASED OBSERVATIONS <span>SEVERITY</span></div><div class="signal-rows" id="signalRows"></div><div class="signal-action"><button type="button" id="filterSignals">VIEW ALL FLAGGED EVENTS ↗</button></div></section>
+        <section class="panel inspector-panel"><div class="panel-titlebar"><div><span class="panel-index">08</span><h2>EVENT INSPECTOR</h2></div><span class="inspector-status" id="inspectorStatus">AWAITING SELECTION</span></div><div id="inspector" class="inspector-content"></div></section>
+        <section class="panel rule-panel"><div class="panel-titlebar"><div><span class="panel-index">09</span><h2>DETECTION ENGINE</h2></div><span class="healthy-tag"><i></i> ACTIVE</span></div><div class="rule-list"><div><span class="rule-code">VOL-01</span><span>Trade size</span><span class="rule-on">ON</span></div><div><span class="rule-code">SPR-02</span><span>Spread widening</span><span class="rule-on">ON</span></div><div><span class="rule-code">CAN-03</span><span>Cancel concentration</span><span class="rule-on">ON</span></div><div><span class="rule-code">MOV-04</span><span>Price dislocation</span><span class="rule-on">ON</span></div></div></section>
+      </div>
+    </section>
+
+    <section class="research-workspace" id="researchWorkspace" aria-labelledby="researchTitle">
+      <div class="research-heading"><div><span class="research-overline">RESEARCHOS / DATED METRICS + EXPLAINABLE CONDITIONS</span><h2 id="researchTitle">Research intelligence</h2><p>Inspect company metrics, evaluate conditions, screen the supported universe and investigate source evidence.</p></div><div class="research-source"><strong id="researchMode">NO RESEARCH DATA LOADED</strong><span id="researchCoverage">Local research workspace · sources load on request</span></div></div>
+      <div class="research-toolbar"><label for="researchSymbol">SECURITY</label><select id="researchSymbol"><option>AAPL</option><option>NVDA</option><option>MSFT</option><option>TSLA</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select><button type="button" id="researchLoad" class="research-primary">LOAD COMPANY RESEARCH</button><button type="button" id="researchCatalogRetry">REFRESH CATALOG</button><span id="researchAsOf">No company snapshot loaded</span></div>
+      <div id="researchStatus" class="research-status" role="status" aria-live="polite">Open a research tab and load a source. Monitor feed mode and research sources are independent.</div>
+      <div class="research-tabs" role="tablist" aria-label="Research tools"><button id="researchTabCompany" type="button" role="tab" aria-controls="researchPanelCompany" aria-selected="true" data-research-tab="company">COMPANY RESEARCH</button><button id="researchTabSignals" type="button" role="tab" aria-controls="researchPanelSignals" aria-selected="false" data-research-tab="signals">SIGNALS</button><button id="researchTabScreener" type="button" role="tab" aria-controls="researchPanelScreener" aria-selected="false" data-research-tab="screener">SCREENER</button><button id="researchTabAtlas" type="button" role="tab" aria-controls="researchPanelAtlas" aria-selected="false" data-research-tab="atlas">MARKET ATLAS</button><button id="researchTabMonitoring" type="button" role="tab" aria-controls="researchPanelMonitoring" aria-selected="false" data-research-tab="monitoring">LOCAL MONITORING</button><button id="researchTabFilings" type="button" role="tab" aria-controls="researchPanelFilings" aria-selected="false" data-research-tab="filings">FILING READER</button><button id="researchTabDiscovery" type="button" role="tab" aria-controls="researchPanelDiscovery" aria-selected="false" data-research-tab="discovery">ISSUER DISCOVERY</button><button id="researchTabCrisis" type="button" role="tab" aria-controls="researchPanelCrisis" aria-selected="false" data-research-tab="crisis">CRISIS & CLIMATE</button><button id="researchTabAnalogues" type="button" role="tab" aria-controls="researchPanelAnalogues" aria-selected="false" data-research-tab="analogues">HISTORICAL ANALOGUES</button></div>
+      <section id="researchPanelCompany" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabCompany" data-research-panel="company">
+        <div id="researchSummary" class="research-summary"><div class="research-empty">Load company research to see actual values, fiscal periods, calculation methods and missing-data reasons.</div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Metric catalog and company snapshot</h3><span id="researchMetricCount">NO METRICS LOADED</span></div><div class="research-filters"><label class="research-search" for="researchMetricSearch">SEARCH METRICS<input id="researchMetricSearch" type="search" placeholder="Name, metric, source or definition…"></label><label for="researchMetricGroup">GROUP<select id="researchMetricGroup"><option value="ALL">All groups</option></select></label><label for="researchMetricAvailability">AVAILABILITY<select id="researchMetricAvailability"><option value="ALL">All states</option><option value="available">Available</option><option value="unavailable">Unavailable / warming up</option></select></label></div><div id="researchGroups" class="research-groups"></div><div class="research-table-scroll"><table class="research-table" aria-label="Company metrics with source and readiness"><thead><tr><th>METRIC / DEFINITION</th><th class="research-number">VALUE</th><th>AVAILABILITY</th><th>PERIOD / AS OF</th><th>SOURCE / METHOD</th></tr></thead><tbody id="researchMetricRows"><tr><td colspan="5" class="research-empty">Load a company to populate sourced metric observations.</td></tr></tbody></table></div><div id="researchCompanyErrors" class="research-source-errors"></div></div>
+      </section>
+      <section id="researchPanelSignals" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabSignals" data-research-panel="signals" hidden>
+        <div class="research-section-intro"><div><h3>Explainable research conditions</h3><p>See triggered, normal, warming-up and unavailable rules. An uncomputed condition is not a zero-risk observation.</p></div><div class="research-actions"><button id="researchEvaluate" type="button" class="research-primary">EVALUATE SELECTED SECURITY</button><button id="researchRefreshAlerts" type="button">REFRESH SAVED ALERTS</button></div></div>
+        <div id="researchEvaluationSummary" class="research-note">No research rules evaluated in this session. Triggered conditions are not probabilities.</div>
+        <div id="researchSignalOverview" class="signal-summary" aria-label="Condition readiness and rule result summary"></div>
+        <div class="signal-filterbar"><label for="researchSignalFilter">RULE RESULTS<select id="researchSignalFilter"><option value="all">All conditions</option><option value="triggered">Triggered</option><option value="ready">Evaluated / not triggered</option><option value="warming_up">Warming up</option><option value="unavailable">Unavailable / missing</option></select></label><span class="signal-filter-help">Condition readiness ≠ prediction confidence</span></div>
+        <div id="researchEvaluations" class="research-evaluations"><div class="research-empty">Evaluate a security to load condition evidence and readiness. No sample trading signals are inserted.</div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Saved research alerts</h3><span id="researchAlertCount">NOT LOADED</span></div><div class="signal-filterbar"><label for="researchAlertFilter">ALERT LIFECYCLE<select id="researchAlertFilter"><option value="all">All saved alerts</option><option value="active">Active</option><option value="acknowledged">Acknowledged</option><option value="resolved">Resolved</option></select></label><label class="signal-search" for="researchAlertSearch">SEARCH ALERTS<input id="researchAlertSearch" type="search" placeholder="Ticker, rule or source…"></label><span class="signal-filter-help">Acknowledge = reviewed · Resolve = closed · Investigate = evidence case</span></div><div id="researchAlerts" class="research-alerts"><div class="research-empty">Refresh alerts to inspect locally saved triggers, acknowledgements and resolutions.</div></div></div>
+      </section>
+      <section id="researchPanelScreener" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabScreener" data-research-panel="screener" hidden>
+        <div class="research-section-intro"><div><h3>Screen the supported pilot</h3><p>Build explicit metric comparisons. Missing inputs stay unknown and every result explains the evaluated conditions.</p></div></div>
+        <div class="research-card"><div class="research-screen-controls"><label for="researchScreenSelect">PRESET / SAVED SCREEN<select id="researchScreenSelect"><option value="">Choose a screen…</option></select></label><label for="researchScreenName">SCREEN NAME<input id="researchScreenName" maxlength="120" value="My research screen"></label><label for="researchScreenMatch">MATCH<select id="researchScreenMatch"><option value="all">ALL conditions</option><option value="any">ANY condition</option></select></label></div><div id="researchConditions" class="research-conditions"></div><div class="research-actions research-screen-actions"><button id="researchAddCondition" type="button">+ ADD CONDITION</button><button id="researchSaveScreen" type="button">SAVE NEW SCREEN</button><button id="researchDeleteScreen" type="button" disabled>DELETE SELECTED SAVED SCREEN</button></div><fieldset class="research-universe"><legend>SUPPORTED SYMBOLS</legend><div id="researchScreenSymbols"></div></fieldset><div class="research-screen-actions"><button id="researchRunScreen" type="button" class="research-primary">RUN SCREEN ON SELECTED SYMBOLS</button><span id="researchScreenCoverage">Pilot only; no whole-market claim.</span></div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Explained screen results</h3><span id="researchScreenResultCount">NOT RUN</span></div><div id="researchScreenResults"><div class="research-empty">Choose a preset or add conditions, then run the screen. Results require the relevant provider data.</div></div></div>
+      </section>
+      <section id="researchPanelDiscovery" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabDiscovery" data-research-panel="discovery" hidden>
+        <div class="research-section-intro"><div><h3>Issuer discovery & filing evidence</h3><p>Search SEC issuer identities, register an instrument, save a local watchlist, inspect official corporate disclosures and link an exact archived revision to an investigation.</p></div></div>
+        <div id="discoveryStatus" class="research-status" role="status" aria-live="polite">SEC issuer lookup and archived evidence require the local Node server.</div>
+        <div class="discovery-layout">
+          <div class="discovery-stack">
+            <div class="research-card">
+              <div class="research-card-heading"><h3>SEC issuer directory</h3><span id="discoveryRegisteredCount">NO REGISTRY LOADED</span></div>
+              <div class="discovery-controls"><label for="discoverySearch">FIND ISSUER</label><input id="discoverySearch" type="search" maxlength="80" placeholder="Company or ticker, e.g. NVDA"><button type="button" id="discoverySearchButton" class="research-primary">SEARCH</button></div>
+              <div id="discoveryMatches" class="discovery-match-list"></div>
+              <div id="discoverySelected" class="discovery-issuer">Select an issuer.</div>
+              <div class="discovery-issuer-actions"><button id="discoveryRegister" type="button">REGISTER OFFICIAL IDENTITY</button><button id="discoveryLoadIssuer" type="button" class="research-primary">LOAD ISSUER RESEARCH</button></div>
+            </div>
+            <div class="research-card">
+              <div class="research-card-heading"><h3>Local watchlists</h3><span>NOT A LIVE FEED SUBSCRIPTION</span></div>
+              <div class="discovery-watch-form">
+                <label for="discoveryWatchlistSelect">SAVED WATCHLIST<select id="discoveryWatchlistSelect"><option value="">Create new watchlist…</option></select></label>
+                <label for="discoveryWatchName">NAME<input id="discoveryWatchName" maxlength="120" placeholder="My SEC watchlist"></label>
+                <label for="discoveryWatchSymbols">REGISTERED TICKERS / COMMA SEPARATED<input id="discoveryWatchSymbols" maxlength="320" placeholder="AAPL, MSFT, NVDA"></label>
+                <button type="button" id="discoveryWatchSave">SAVE WATCHLIST</button>
+                <p class="research-note">Watchlists persist locally with optimistic revisions. A registered company is not automatically streamed by Alpaca.</p>
+              </div>
+            </div>
+          </div>
+          <div class="discovery-stack">
+            <div class="research-card">
+              <div class="research-card-heading"><h3>Registered company facts & SEC filings</h3><span>OFFICIAL FILING EVIDENCE</span></div>
+              <div id="discoveryCompanyFacts" class="research-note">Load a registered issuer to inspect available SEC facts.</div>
+              <div id="discoveryFilingList" class="discovery-filing-list"></div>
+            </div>
+            <div class="research-card">
+              <div class="research-card-heading"><h3>Classification and source citations</h3><span>NO AUTOMATIC VIOLATION VERDICT</span></div>
+              <div id="discoveryFilingDetail" class="discovery-reader">Select a filing for source-cited analysis.</div>
+            </div>
+            <div class="research-card">
+              <div class="research-card-heading"><h3>Local captured event revisions</h3><span>EXACT EVIDENCE HANDOFF</span></div>
+              <div id="discoveryArchiveList" class="discovery-archive-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="research-limitations">Local single-user research only. Filing retrieval does not imply an alert. Local capture is disabled unless REGULATORY_LOCAL_CAPTURE_ENABLED=true in your private .env. Immutable revision snapshots preserve when this installation first observed evidence; do not treat backfilled filing dates as earlier knowledge. Login/signup is not yet implemented.</div>
+      </section>
+      <section id="researchPanelFilings" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabFilings" data-research-panel="filings" hidden>
+        <div class="research-section-intro"><div><h3>Source-grounded filing reader</h3><p>Read supported filing items and extracted passages. A filing title alone does not establish an economic event or its occurrence date.</p></div><button id="researchLoadFilings" type="button" class="research-primary">LOAD SEC FILINGS</button></div>
+        <div class="research-reader-layout"><div class="research-card"><div class="research-card-heading"><h3>Recent filings</h3><span id="researchFilingCount">NOT LOADED</span></div><div id="researchFilingList"><div class="research-empty">Load the selected company's SEC filings. SEC_USER_AGENT must be configured locally.</div></div></div><div class="research-card"><div class="research-card-heading"><h3>Document evidence</h3><span id="researchFilingMode">NO DOCUMENT SELECTED</span></div><div id="researchFilingDetail"><div class="research-empty">Select a filing to inspect parsed content and source passages.</div></div></div></div>
+      </section>
+            <section id="researchPanelCrisis" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabCrisis" data-research-panel="crisis" hidden>
+        <div class="research-section-intro"><div><h3>Crisis, climate & economic transmission research</h3><p>Explore early-warning candidates and pathways from global shocks to sectors. This curated research foundation does not claim validated lead times, investment probabilities or reconstructed historical alerts.</p></div><button id="crisisLoad" type="button" class="research-primary">LOAD RESEARCH CATALOG</button></div>
+        <div id="crisisStatus" class="research-status" role="status" aria-live="polite">Historical cases and economic pathways are available from the local Node API.</div>
+        <div class="crisis-layout">
+          <div class="research-card"><div class="research-card-heading"><h3>Historical shock / climate scenario</h3><span>RESEARCH HYPOTHESES</span></div><div class="crisis-controls"><label for="crisisSelect">SELECT CASE STUDY<select id="crisisSelect"><option value="">Load cases…</option></select></label><button id="crisisOpen" type="button">VIEW EVIDENCE PATHWAY</button></div><div id="crisisCases" class="crisis-case-list"></div></div>
+          <div class="research-card"><div class="research-card-heading"><h3>Warning candidates and causal pathway</h3><span>NO EX-ANTE SCORE</span></div><div id="crisisDetail" class="crisis-detail"><div class="research-empty">Choose a documented case study or a climate transmission scenario.</div></div></div>
+        </div>
+        <div class="research-limitations">Early warning requires period-available source versions, a contemporaneous event definition, dated issuer/region exposures, and leakage-safe out-of-sample evaluation. This module is retrospective research and scenario exploration—not an operational crash prediction or assurance system.</div>
+      </section>
+      <section id="researchPanelAnalogues" class="research-tab-panel" role="tabpanel" aria-labelledby="researchTabAnalogues" data-research-panel="analogues" hidden>
+        <div class="research-section-intro"><div><h3>Historical and thematic event analogues</h3><p>Explore SEC filings, company news, geopolitical coverage and natural hazards. Source lists have incomplete historical coverage; similarity is not a forecast or evidence of issuer exposure.</p></div><button id="researchLoadEarthquakes" type="button" class="research-primary">LOAD SOURCE EVENTS</button></div>
+        <div class="research-analogue-controls"><label for="researchTheme">EVENT THEME<select id="researchTheme"><option value="corporate" selected>SEC corporate filings</option><option value="news">Company news</option><option value="geopolitical">Geopolitical media coverage</option><option value="natural">Natural hazards (USGS/NASA)</option><option value="tsunami">Historical tsunamis · NOAA NCEI</option><option value="earthquake">Earthquakes · historical USGS catalogue</option></select></label><label for="researchGeoTopic">GEOPOLITICAL TOPIC<select id="researchGeoTopic" disabled><option value="sanctions">Sanctions / export restrictions</option><option value="conflict">Conflict</option><option value="supply">Supply chain disruption</option><option value="cyber">Cyberattacks · media reports</option><option value="industrial">Industrial incidents · media reports</option><option value="transport">Transport incidents · media reports</option><option value="energy">Energy disruptions · media reports</option></select></label><label for="researchHazardType">NATURAL EVENT TYPE<select id="researchHazardType" disabled><option value="all">All natural hazards</option><option value="wildfire">Wildfires</option><option value="flood">Floods</option><option value="storm">Storms / cyclones</option><option value="volcano">Volcanoes</option><option value="drought">Droughts</option><option value="landslide">Landslides</option></select></label><label for="researchEarthquake">SOURCED EVENT<select id="researchEarthquake"><option value="">Load and select an event…</option></select></label><button id="researchFindAnalogues" type="button">FIND HISTORICAL ANALOGUES</button></div><div id="researchEventFacts" class="research-note">Select a source category and load its dated observations. A source record alone does not establish market impact, causation or issuer exposure.</div><div id="researchAnalogues"><div class="research-empty">Load an official earthquake, then request historical comparisons. Missing history is reported explicitly.</div></div><div class="research-card"><div class="research-card-heading"><h3>Supported market outcomes</h3><span id="researchOutcomeLabel">NO COMPARISON SELECTED</span></div><div id="researchOutcomes"><div class="research-empty">Choose a historical match to request daily market outcomes for the selected security and benchmark.</div></div><div class="research-screen-actions"><button id="researchInvestigateOutcome" type="button" hidden>OPEN HISTORICAL INVESTIGATION ↗</button></div></div>
+      </section>
+      <section id="researchPanelAtlas" class="research-tab-panel operations-panel" role="tabpanel" aria-labelledby="researchTabAtlas" data-research-panel="atlas" hidden>
+        <div class="research-section-intro"><div><h3>Market Atlas / supported pilot</h3><p>Compare sourced returns, trend breadth and normalized prices. Display categories and equal-weight pilot averages do not represent an entire sector or market.</p></div><button id="atlasLoad" type="button" class="research-primary">LOAD MARKET ATLAS</button></div>
+        <div id="atlasStatus" class="research-status" role="status" aria-live="polite">Choose supported instruments, then load their research snapshots.</div>
+        <div class="research-card"><div class="operations-controls"><label for="atlasWindow">COMPARISON WINDOW<select id="atlasWindow"><option value="20">20 completed sessions</option><option value="63">63 completed sessions</option></select></label><span id="atlasCoverage">Coverage has not been evaluated.</span></div><fieldset class="research-universe operations-universe"><legend>ATLAS INSTRUMENTS / UP TO TEN</legend><div id="atlasSymbols"></div></fieldset><fieldset class="research-universe operations-universe"><legend>NORMALIZED COMPARISON / UP TO FIVE SELECTED INSTRUMENTS</legend><div id="atlasComparisonSymbols"></div></fieldset></div>
+        <div id="atlasBreadth" class="atlas-breadth"><div class="research-empty">No eligible breadth calculated. Missing or stale inputs are excluded rather than counted as unchanged.</div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Returns and trend evidence</h3><span id="atlasAsOf">NOT LOADED</span></div><div class="research-table-scroll"><table class="research-table" aria-label="Pilot returns and trend observations"><thead><tr><th>SECURITY / SOURCE</th><th class="research-number">1 SESSION</th><th class="research-number">5 SESSIONS</th><th class="research-number">20 SESSIONS</th><th class="research-number">63 SESSIONS</th><th>SMA 20 / 50 / 200</th><th class="research-number">RSI 14</th><th class="research-number">REL VOLUME</th></tr></thead><tbody id="atlasRows"><tr><td colspan="8" class="research-empty">Load sourced research to populate this table.</td></tr></tbody></table></div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Equal-weight display-category comparisons</h3><span>PILOT MEMBERS ONLY</span></div><div id="atlasGroups" class="atlas-groups"><div class="research-empty">Contributor counts accompany every available group average.</div></div></div>
+        <div class="research-card"><div class="research-card-heading"><h3>Aligned price comparison / base 100</h3><span>COMMON OBSERVED DATES</span></div><div id="atlasComparison"><div class="research-empty">No comparison loaded. Missing prices are never forward-filled.</div></div></div>
+        <div id="atlasLimitations" class="research-limitations">Ten-symbol US-listed pilot; daily IEX is one venue. This view does not establish broad-market breadth or company exposure.</div>
+      </section>
+      <section id="researchPanelMonitoring" class="research-tab-panel operations-panel" role="tabpanel" aria-labelledby="researchTabMonitoring" data-research-panel="monitoring" hidden>
+        <div class="research-section-intro"><div><h3>Local research monitoring</h3><p>Copy a saved screen into a disabled monitor, then enable its schedule. Scans run while this local Node server stays running; alerts remain in this workstation.</p></div><button id="monitorRefresh" type="button">REFRESH MONITORS</button></div>
+        <div id="monitorStatus" class="research-status" role="status" aria-live="polite">Monitor configurations and health have not loaded.</div>
+        <div class="research-card"><div class="research-card-heading"><h3>Create a monitor from a saved screen</h3><span>DISABLED UNTIL ENABLED</span></div><div class="operations-controls"><label for="monitorScreen">SAVED SCREEN<select id="monitorScreen"><option value="">Save a screen in Screener first…</option></select></label><label for="monitorName">MONITOR NAME<input id="monitorName" maxlength="120" value="My research monitor"></label><label for="monitorInterval">INTERVAL / MINUTES<input id="monitorInterval" type="number" min="5" max="1440" step="1" value="15"></label><button id="monitorCreate" type="button" class="research-primary">CREATE DISABLED MONITOR</button></div><p id="monitorScreenSnapshot" class="research-note">Criteria and their screen revision are copied at creation. Later edits to the original screen do not change a monitor.</p><fieldset class="research-universe operations-universe"><legend>MONITORED INSTRUMENTS / UP TO TEN</legend><div id="monitorSymbols"></div></fieldset></div>
+        <div id="monitorHealth" class="research-note">Scheduler health is unknown.</div><div id="monitorRows" class="operations-monitor-list"><div class="research-empty">No monitor list loaded.</div></div>
+        <div class="research-card operations-backend"><div class="research-card-heading"><h3>Optional Java research storage</h3><span>EXPLICIT SNAPSHOT SYNC</span></div><div id="researchBackendStatus" class="research-note" role="status">Storage configuration has not loaded.</div><p>Sync the selected security's calculated research snapshot when a local Java API is configured. Market data credentials stay on the server.</p><div class="research-actions"><button id="researchBackendRefresh" type="button">CHECK STORAGE</button><button id="researchBackendSync" type="button" disabled>SYNC SELECTED SECURITY</button><a href="https://github.com/sid-cha/ResearchOS/blob/feature/tradescope-monitoring-atlas/apps/tradescope/docs/MONITORING_ATLAS_STORAGE.md" target="_blank" rel="noopener noreferrer">SETUP GUIDE ↗</a></div></div>
+        <div class="research-limitations">One local scan runs at a time. Provider availability and freshness determine rule readiness; an unavailable run is not a low-risk result. This schedule does not send email, push notifications or orders.</div>
+      </section>
+      <div class="research-footer">Sources, available-at times and calculation definitions travel with each observation. Unsupported consensus, exposure and forecasting inputs remain unavailable. Local saved research does not imply a complete market feed.</div>
+    </section>
+
+    <section class="intel-workspace" id="eventIntel" aria-label="Event intelligence and financial research">
+      <div class="intel-heading"><div><span class="intel-overline">WORKSPACE 03 / FUNDAMENTALS + EVENT CONTEXT</span><h2>EVENT INTELLIGENCE <em>/</em> MARKET REACTION</h2><p>Compare timestamped real-world events with exchange observations, company filings and financial indicators.</p></div><div class="intel-metadata"><span class="intel-badge" id="intelMode">SYNTHETIC EXAMPLE</span><span id="intelUpdated">Not connected to an external feed</span></div></div>
+      <div class="intel-bar">
+        <label for="intelSymbol">SECURITY</label><select id="intelSymbol"><option>NVDA</option><option selected>AAPL</option><option>MSFT</option><option>TSLA</option><option>SPY</option><option>AMD</option><option>QQQ</option><option>META</option><option>AMZN</option><option>PLTR</option></select>
+        <button id="intelNews" class="intel-primary" type="button">↗ ALPACA NEWS</button>
+        <button id="intelFilings" type="button">SEC FILINGS + FUNDAMENTALS</button>
+        <button id="intelTechnical" type="button">TECHNICAL INDICATORS</button>
+        <button id="intelHazards" type="button">USGS / NASA</button>
+        <select id="intelTopic" aria-label="Geopolitical topic"><option value="sanctions">SANCTIONS</option><option value="conflict">CONFLICT</option><option value="supply">SUPPLY CHAIN</option></select>
+        <button id="intelGeo" type="button">GDELT REPORTS</button>
+        <button id="intelDemo" type="button">↺ DEMO SCENARIOS</button>
+      </div>
+      <div id="intelStatus" class="intel-status" role="status" aria-live="polite">Research illustration loaded. Select a source to request real, sourced records from the local server.</div>
+      <div class="intel-layout">
+        <section class="intel-pane intel-feed"><div class="intel-panel-head"><h3>01 / EXTERNAL EVENT FEED</h3><span id="intelCount">00 RECORDS</span></div><div class="intel-feed-filters"><select id="intelCategory" aria-label="Event category"><option value="ALL">ALL CATEGORIES</option><option value="CORPORATE">CORPORATE</option><option value="NATURAL">NATURAL</option><option value="GEOPOLITICAL">GEOPOLITICAL</option></select><input id="intelQuery" type="search" placeholder="Filter titles…" aria-label="Filter event titles"/></div><div class="intel-rows" id="intelEventRows"></div></section>
+        <section class="intel-pane intel-analysis"><div class="intel-panel-head"><h3>02 / EVENT INVESTIGATION</h3><span>RELATIONSHIP ≠ CAUSATION</span></div><div id="intelInvestigation"></div><div class="intel-study-head"><b>BENCHMARK-RELATIVE EVENT STUDY</b><button id="intelImpact" type="button">RUN REAL EVENT STUDY</button><button id="intelOpenCase" type="button" class="intel-primary">↗ OPEN INVESTIGATION</button></div><div class="intel-study" id="intelStudy"><div class="intel-empty">Select an event and run the study to compare completed-session returns against SPY.</div></div></section>
+        <div class="intel-sidebar">
+          <section class="intel-pane"><div class="intel-panel-head"><h3>03 / TECHNICAL SNAPSHOT</h3><span id="intelTechnicalSource">DEMO ONLY</span></div><div class="intel-indicators" id="intelIndicators"></div><div class="intel-forecast" id="intelForecast"></div><div class="intel-panel-foot">SMA20/50 · RSI14 (rolling) · MACD · ATR14 (simple mean) · Volume/20D. EWMA estimates volatility magnitude; indicator methods may differ from Wilder-smoothed charts.</div></section>
+          <section class="intel-pane"><div class="intel-panel-head"><h3>04 / COMPANY FUNDAMENTALS</h3><span id="intelFinancialSource">DEMO ONLY</span></div><div id="intelFundamentals" class="intel-fundamentals"></div><div class="intel-panel-foot">SEC XBRL data is fiscal-period based; incomplete fields are shown as unavailable.</div></section>
+          <section class="intel-pane"><div class="intel-panel-head"><h3>05 / QUARTERLY REPORTS & FILINGS</h3><span>SEC EDGAR</span></div><div class="intel-filings" id="intelFilingRows"></div></section>
+        </div>
+      </div>
+      <div class="intel-footer">DATA PROVENANCE: EACH RECORD SHOWS SOURCE + TIMESTAMP. PUBLIC NEWS LINKS ARE RESEARCH POINTERS; MARKET MOVEMENTS ARE NOT ATTRIBUTED TO EVENTS WITHOUT INDEPENDENT EVIDENCE. NO TRADE EXECUTION.</div>
+    </section>
+
+
+    <section class="cases-workspace" id="caseWorkspace" aria-label="Investigation case workbench">
+      <div class="cases-heading">
+        <div><div class="cases-eyebrow">WORKSPACE 04 / RESEARCH → EVIDENCE → DECISION</div>
+          <h2>INVESTIGATION <em>/</em> WORKBENCH</h2>
+          <p>Record what was observed, distinguish economic hypotheses from established facts, and retain a reproducible analyst review trail.</p></div>
+        <div class="case-heading-actions"><span id="caseStoreStatus" class="case-storage">LOCAL CASE STORE</span><button type="button" id="caseRefresh" class="case-button">↻ REFRESH</button></div>
+      </div>
+      <div class="case-summary-strip" aria-label="Investigation statistics">
+        <div><small>ALL INVESTIGATIONS</small><strong id="caseMetricTotal">0</strong></div>
+        <div><small>ACTIVE REVIEWS</small><strong id="caseMetricActive">0</strong></div>
+        <div><small>NEEDS EVIDENCE</small><strong id="caseMetricNeeds">0</strong></div>
+        <div><small>CLOSED</small><strong id="caseMetricClosed">0</strong></div>
+        <div class="case-strip-note">Persisted on this machine · Single analyst preview · No automated compliance verdicts</div>
+      </div>
+      <section id="assistPanel" class="assist-panel" aria-label="TradeScope analyst assistant">
+        <div class="assist-top"><div><span class="assist-eyebrow">✦ TRADESCOPE / RESEARCH COPILOT</span><h3>EVIDENCE ASSISTANT</h3><p>Structured interpretation of recorded events, quantitative context and source gaps. No investment recommendations.</p></div><div class="assist-head-right"><span id="assistMode" class="assist-mode">EVIDENCE ENGINE · NO AI KEY</span><span id="assistContext" class="assist-context">NO INVESTIGATION SELECTED</span></div></div>
+        <div class="assist-tabs" role="group" aria-label="Assistant analysis focus"><button type="button" class="is-active" data-assist-focus="overview">01 / BRIEF</button><button type="button" data-assist-focus="market">02 / MARKET & FINANCIALS</button><button type="button" data-assist-focus="gaps">03 / EVIDENCE GAPS</button><button type="button" data-assist-focus="sources">04 / SOURCES</button></div>
+        <div class="assist-grid"><div class="assist-main"><div class="assist-section-heading"><h4 id="assistTitle">Investigation briefing</h4><span>CASE-GROUNDED</span></div><div id="assistModelAnswer" class="assist-model-answer" hidden></div><div id="assistObservations" class="assist-observations"><div class="assist-placeholder">Open an investigation to generate an evidence brief.</div></div><form id="assistAskForm" class="assist-query"><label for="assistQuestion">ASK ABOUT THE SELECTED CASE</label><div><input type="text" id="assistQuestion" maxlength="600" placeholder="What are the missing corroborating signals?" aria-label="Question about this investigation" required><button type="submit" id="assistAsk">ANALYZE ↗</button></div><small>Uses the local evidence engine by default. An optional server-side AI model can be configured separately.</small></form></div><div class="assist-side"><div class="assist-section-heading"><h4>EVIDENCE GAPS</h4><span>CHECKLIST</span></div><div id="assistGaps" class="assist-gaps"></div><div class="assist-section-heading"><h4>NEXT INVESTIGATION STEPS</h4></div><div id="assistNext" class="assist-steps"></div></div></div><div class="assist-bottom"><div><b>SOURCE REFERENCES</b><div id="assistRefs" class="assist-refs"></div></div><button type="button" class="case-button" id="assistCopy">COPY BRIEF</button></div><div class="assist-method" id="assistMethod">Rule-grounded evidence brief</div><div class="assist-note" id="assistCaution">An observed market association does not establish causation.</div><div id="assistError" class="assist-error" role="status" aria-live="polite"></div>
+      </section>
+      <div id="caseFeedback" class="case-feedback" aria-live="polite">Choose an event in Event Intelligence and click OPEN INVESTIGATION, or reopen an existing case.</div>
+      <div class="cases-layout">
+        <section class="case-pane case-list-panel" aria-label="Saved investigations">
+          <div class="case-panel-heading"><h3>01 / CASE QUEUE</h3><span id="caseQueueLabel">0 CASES</span></div>
+          <div class="case-list-filters"><input type="search" id="caseSearch" aria-label="Search cases" placeholder="Search case, symbol, headline…"><select id="caseStatusFilter" aria-label="Filter case status"><option value="ALL">ALL STATUSES</option><option value="OPEN">OPEN</option><option value="IN_REVIEW">IN REVIEW</option><option value="NEEDS_EVIDENCE">NEEDS EVIDENCE</option><option value="CLOSED">CLOSED</option></select></div>
+          <div id="caseList" class="case-list"><div class="case-blank">No saved investigations yet.</div></div>
+        </section>
+        <section class="case-pane case-detail-panel" aria-label="Case investigation details">
+          <div class="case-panel-heading"><h3>02 / INVESTIGATION RECORD</h3><div class="case-header-tools"><span id="caseRecordId">NO CASE SELECTED</span><button type="button" id="caseExport" class="case-button" disabled>↓ EXPORT JSON</button></div></div>
+          <div id="caseDetailEmpty" class="case-detail-empty"><div class="case-blank-glyph">⌕</div><strong>Open a case to start your investigation.</strong><p>Create a case directly from a sourced event or a clearly labeled hypothetical scenario. Your notes and decisions persist after restarting the local server.</p></div>
+          <div id="caseDetail" hidden>
+            <div class="case-hero"><div class="case-hero-heading"><div><div id="caseHeroMeta" class="case-kicker"></div><h3 id="caseTitle"></h3></div><span id="caseTruthTag" class="case-pill">SOURCED</span></div><div class="case-hero-row"><span id="caseRelationship"></span><span id="caseCreatedAt"></span></div></div>
+            <div class="case-detail-columns">
+              <div class="case-detail-main">
+                <section class="case-block"><div class="case-block-head"><h4>EVENT EVIDENCE</h4><span id="caseSourceType"></span></div><div id="caseEventMeta" class="case-event-meta"></div><div id="caseEventSummary" class="case-event-summary"></div><div id="caseContext" class="case-context"></div></section>
+                <section class="case-block"><div class="case-block-head"><h4>ANALYST ASSESSMENT</h4><span>HUMAN REVIEW</span></div><div class="case-form-grid">
+                  <label>STATUS<select id="caseEditStatus"><option value="OPEN">OPEN</option><option value="IN_REVIEW">IN REVIEW</option><option value="NEEDS_EVIDENCE">NEEDS EVIDENCE</option><option value="CLOSED">CLOSED</option></select></label>
+                  <label>PRIORITY<select id="caseEditPriority"><option value="LOW">LOW</option><option value="MEDIUM">MEDIUM</option><option value="HIGH">HIGH</option></select></label>
+                  <label>CONCLUSION<select id="caseEditConclusion"><option value="UNDETERMINED">UNDETERMINED</option><option value="TEMPORAL_ASSOCIATION">TEMPORAL ASSOCIATION</option><option value="SUPPORTED_HYPOTHESIS">SUPPORTED HYPOTHESIS</option><option value="INCONCLUSIVE">INCONCLUSIVE</option><option value="NO_RELATIONSHIP">NO RELATIONSHIP</option></select></label>
+                  <label>ASSIGNEE<input id="caseEditAssignee" maxlength="100" placeholder="Local analyst"></label>
+                </div><label class="case-field-label">INVESTIGATION SUMMARY<textarea id="caseEditSummary" rows="4" maxlength="4000" placeholder="What did the market data show? Which primary sources support the hypothesis? What alternative explanations remain?" ></textarea></label><div class="case-form-actions"><button type="button" class="case-button case-button-primary" id="caseSave">SAVE CASE REVIEW</button><span id="caseRevision">REV 1</span></div></section>
+                <section class="case-block"><div class="case-block-head"><h4>PRIMARY SOURCES & REFERENCES</h4><span id="caseEvidenceCount">0 ITEMS</span></div><div id="caseEvidenceRows" class="case-evidence-rows"></div><form id="caseEvidenceForm" class="case-inline-form"><input id="caseEvidenceLabel" required maxlength="220" placeholder="Reference title" aria-label="Evidence title"><input id="caseEvidenceUrl" required type="url" placeholder="https://… source URL" aria-label="Evidence URL"><select id="caseEvidenceKind" aria-label="Evidence type"><option value="SOURCE">SOURCE</option><option value="FILING">FILING</option><option value="MARKET_OBSERVATION">MARKET OBSERVATION</option><option value="ANALYST_REFERENCE">ANALYST REFERENCE</option></select><button type="submit" class="case-button">+ ATTACH</button></form></section>
+              </div>
+              <div class="case-detail-aside">
+                <section class="case-block"><div class="case-block-head"><h4>ANALYST NOTES</h4><span id="caseNotesCount">0 NOTES</span></div><div id="caseNotesRows" class="case-notes-rows"></div><form id="caseNoteForm"><textarea id="caseNoteBody" maxlength="5000" rows="3" required placeholder="Record observations or open questions…" aria-label="Add analyst note"></textarea><button type="submit" class="case-button case-button-primary">+ ADD NOTE</button></form></section>
+                <section class="case-block"><div class="case-block-head"><h4>EVIDENCE / AUDIT TIMELINE</h4><span>OLDEST FIRST</span></div><div id="caseTimeline" class="case-timeline"></div></section>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div class="case-disclaimer">LOCAL SINGLE-USER RESEARCH TOOL · SOURCE LINKS AND TIME LABELS PRESERVED · ASSOCIATION DOES NOT ESTABLISH CAUSALITY · NO ORDER EXECUTION · MULTI-USER AUTHENTICATION NOT IMPLEMENTED</div>
+    </section>
+
+    <footer class="statusbar"><span><i class="status-led"></i> LOCAL REPLAY ENGINE <b id="footerEngine">READY</b></span><span>RULESET <b>V2.1</b></span><span>EVENT SOURCE <b>SYNTHETIC</b></span><span>DETECTION <b>DETERMINISTIC</b></span><span class="status-end">TRADESCOPE TERMINAL · RESEARCH DEMO · NOT INVESTMENT ADVICE</span></footer>
+  </main>
+</div>
+<script src="./theme-controls.js"></script>
+<script src="./monitor-candles.js"></script>
+<script src="./app.js"></script>
+<script src="./live-adapter.js"></script>
+<script src="./event-workspace.js"></script>
+<script src="./case-workspace.js"></script>
+<script src="./assistant-workspace.js"></script>
+<script src="./research-workspace.js"></script>
+<script src="./research-operations.js"></script>
+<script src="./discovery-workspace.js"></script>
+<script src="./crisis-workspace.js"></script>
+<script src="./workspace-nav.js"></script>
+</body>
+</html>
