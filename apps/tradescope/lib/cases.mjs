@@ -101,13 +101,13 @@ export function createCaseStore(filename) {
   })().catch(e=>{initializing=null;throw e});
   return initializing;
  }
- async function save(){
+ async function save(candidate){
   await fs.mkdir(path.dirname(filename),{recursive:true});
   const temp=`${filename}.${randomUUID()}.tmp`;
-  try{await fs.writeFile(temp,JSON.stringify(cache,null,2)+'\n',{encoding:'utf8',mode:0o600});await fs.rename(temp,filename);}
+  try{await fs.writeFile(temp,JSON.stringify(candidate,null,2)+'\n',{encoding:'utf8',mode:0o600});await fs.rename(temp,filename);}
   finally{await fs.rm(temp,{force:true}).catch(()=>{});}
  }
- const write=fn=>{const p=serial.then(async()=>{await load();const result=fn(cache);await save();return copy(result);});serial=p.catch(()=>{});return p;};
+ const write=fn=>{const p=serial.then(async()=>{await load();const candidate=copy(cache);const result=fn(candidate);await save(candidate);cache=candidate;return copy(result);});serial=p.catch(()=>{});return p;};
  const read=async fn=>{await serial;await load();return copy(fn(cache));};
  const find=(d,id)=>{const c=d.cases.find(x=>x.id===id);if(!c)throw err('Investigation not found',404);return c;};
  function normalizeEvent(input){
@@ -120,8 +120,75 @@ export function createCaseStore(filename) {
   const marketData=lineage && symbols.includes(lineage.symbol) && (synthetic?lineage.mode==='SYNTHETIC':lineage.mode!=='SYNTHETIC')?lineage:null;
   const publishedAt=validTime(input.publishedAt),occurredAt=marketData?marketData.exchangeEventTime:validTime(input.occurredAt);
   return {id,headline:nonempty(input.headline,350,'Event headline'),category:string(input.category,40)||'OTHER',type:string(input.type,70)||'UNCLASSIFIED',source,sourceUrl:validUrl(input.sourceUrl),publishedAt,occurredAt,providerFirstSeenAt:validTime(input.providerFirstSeenAt),ingestedAt:marketData?marketData.ingestedAt:validTime(input.ingestedAt),evidenceLevel:string(input.evidenceLevel,70)||'unclassified',symbols,summary:string(input.summary,1200),synthetic,...(marketData?{marketData}:{})};
+
+ }
+ // Only a trusted server-held archive response can be passed here. The public case
+ // creation/evidence routes never accept an archived-revision payload.
+ function archivedEvidence(archive,symbol,now){
+  const revision=archive?.revision,ev=revision?.event;
+  if(!archive||archive.eventId!==ev?.id||archive.source!=='SEC_EDGAR'||ev.source!=='SEC_EDGAR'||
+     !/^REV-[a-f0-9-]{36}$/.test(revision?.id||'')||
+     !/^[a-f0-9]{64}$/.test(revision?.contentHash||'')||
+     !Number.isSafeInteger(revision?.version)||revision.version<1||
+     !validEventTimestamp(revision?.capturedAt)||!validEventTimestamp(archive?.firstObservedAt)||
+     !Array.isArray(ev.symbols)||!ev.symbols.includes(symbol))throw err('An exact SEC archive revision for this issuer is required',422);
+  const url=validUrl(ev.sourceUrl);
+  if(!url||!url.startsWith('https://www.sec.gov/Archives/edgar/data/'))throw err('Archived evidence requires an official SEC filing URL',422);
+  const citations=(Array.isArray(ev.evidence)?ev.evidence:[]).slice(0,16).map(e=>({
+   id:string(e.id,160),section:string(e.section,160),text:string(e.text,1600),sourceUrl:validUrl(e.sourceUrl)
+  })).filter(e=>e.id&&e.text&&e.sourceUrl===url);
+  const classifications=(Array.isArray(ev.classifications)?ev.classifications:[]).slice(0,20).map(e=>({
+   code:string(e.code,100),label:string(e.label,160),evidenceIds:Array.isArray(e.evidenceIds)?e.evidenceIds.filter(v=>typeof v==='string').slice(0,16):[]
+  }));
+  return {id:randomUUID(),kind:'ARCHIVED_REVISION',
+   label:'SEC '+string(ev.form,20)+' · archived revision '+revision.version,
+   url,source:'SEC_EDGAR',claimedAt:validTime(ev.publishedAt),addedAt:now,
+   archive:{eventId:archive.eventId,revisionId:revision.id,version:revision.version,
+    contentHash:revision.contentHash,firstObservedAt:archive.firstObservedAt,
+    capturedAt:revision.capturedAt,source:'SEC_EDGAR',sourceUrl:url,
+    filingDate:string(ev.filingDate,10),accession:string(ev.accession,30),
+    publishedAt:validTime(ev.publishedAt),contentRevision:string(ev.contentRevision,128),
+    classificationVersion:string(ev.classificationVersion,100),
+    classifications,citations,knowledgeStatus:string(revision.knowledgeStatus,50),
+    captureKind:string(revision.captureKind,50)}};
  }
  return {
+  async createFromArchivedRevision({archive,symbol}={}){
+   return write(d=>{
+    if(d.cases.length>=MAX_CASES)throw err('Local case storage is full',409);
+    if(!allowSymbol(symbol))throw err('A registered uppercase issuer symbol is required');
+    const now=new Date().toISOString(),evidence=archivedEvidence(archive,symbol,now);
+    const existing=d.cases.find(c=>c.symbol===symbol&&c.evidence.some(v=>v.archive?.revisionId===evidence.archive.revisionId));
+    if(existing)return existing;
+    const original=archive.revision.event;
+    const event=normalizeEvent({id:archive.eventId,headline:original.headline,
+     category:'CORPORATE',type:original.type||'FILING',source:'SEC_EDGAR',
+     sourceUrl:original.sourceUrl,publishedAt:original.publishedAt,
+     occurredAt:original.occurredAt,symbols:original.symbols,
+     summary:original.summary||'Official filing captured from SEC EDGAR; review cited evidence.',
+     evidenceLevel:'official_filing'});
+    const item={id:'CASE-'+randomUUID(),title:event.headline,symbol,context:null,
+     priority:'MEDIUM',status:'OPEN',relationship:'PROVIDER_TAGGED',assignee:'Unassigned',
+     conclusion:'UNDETERMINED',summary:'',event,createdAt:now,updatedAt:now,revision:1,
+     evidence:[evidence],notes:[],audit:[
+      audit('CASE_CREATED','From archived official SEC filing '+archive.eventId,now),
+      audit('ARCHIVED_REVISION_ATTACHED','Immutable '+evidence.archive.revisionId+' captured '+evidence.archive.capturedAt,now)]};
+    d.cases.unshift(item);return item;
+   });
+  },
+  async attachArchivedRevision(id,{archive,symbol,expectedRevision}={}){
+   return write(d=>{
+    const c=find(d,id);
+    if(c.symbol!==symbol)throw err('Archived SEC filing does not match the investigation security',422);
+    const now=new Date().toISOString(),evidence=archivedEvidence(archive,symbol,now);
+    if(c.evidence.some(v=>v.archive?.revisionId===evidence.archive.revisionId))return c;
+    pickRevision({expectedRevision},c);
+    if(c.evidence.length>=200)throw err('Evidence limit reached',409);
+    c.evidence.push(evidence);c.updatedAt=now;c.revision++;
+    c.audit.push(audit('ARCHIVED_REVISION_ATTACHED','Immutable '+evidence.archive.revisionId+' captured '+evidence.archive.capturedAt,now));
+    return c;
+   });
+  },
   async list({status='ALL',search=''}={}){return read(d=>d.cases.filter(c=>(status==='ALL'||c.status===status)&&`${c.title} ${c.symbol} ${c.event.source} ${c.id}`.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,event,assignee})=>({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,assignee,source:event.source,synthetic:event.synthetic,eventHeadline:event.headline})));},
   async get(id){return read(d=>find(d,id));},
   async create(input){return write(d=>{
