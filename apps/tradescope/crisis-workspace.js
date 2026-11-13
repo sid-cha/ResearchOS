@@ -57,6 +57,14 @@
     '<button type="button" id="crisisClimateRun">LOAD NOAA DISCUSSION</button></div>'+
     '<p id="crisisClimateStatus" role="status">Select a date to inspect sourced ENSO discussion evidence; no crop or equity impact is inferred.</p><div id="crisisClimateResults"></div></section>');
   }
+  if(['enso-fertilizer','wildfire-insurance','snow-hydropower'].includes(item.id)){
+   node.insertAdjacentHTML('beforeend','<section class="crisis-section" id="crisisGraphSection">'+
+    '<h4>Economic transmission graph · conditional research links</h4>'+
+    '<p>Trace potential climate-to-industry mechanisms. No geography-specific effects, company exposure, market returns or causal relationships are confirmed by this graph.</p>'+
+    '<div class="crisis-macro-controls"><button type="button" id="crisisGraphRun">EXPLORE TRANSMISSION GRAPH</button></div>'+
+    '<p id="crisisGraphStatus" role="status">Load typed driver, hazard, resource, industry and company-exposure research stages.</p>'+
+    '<div id="crisisGraphResults"></div></section>');
+  }
   selected=item.id||null;
  }
  async function open(id){
@@ -170,6 +178,54 @@
   }catch(error){if(requestId===token&&selected===caseId)message.textContent=error.message;}
   finally{if($('crisisClimateRun')===button)button.disabled=false;}
  }
+
+ function renderGraph(graph){
+  const node=$('crisisGraphResults'),nodes=Array.isArray(graph.nodes)?graph.nodes:[],edges=Array.isArray(graph.edges)?graph.edges:[],
+    sources=new Map((graph.sources||[]).map(x=>[x.id,x])),stages=[...new Set(nodes.map(n=>n.stage))].sort((a,b)=>a-b),
+    names=new Map(nodes.map(n=>[n.id,n.label]));
+  const state=graph.coverage||{};
+  const stagesHtml=stages.map(stage=>'<section class="crisis-graph-stage"><h5>STAGE '+safe(stage+1)+'</h5><div class="crisis-graph-nodes">'+
+   nodes.filter(n=>n.stage===stage).map(n=>'<article class="crisis-graph-node"><small>'+safe(n.type.replaceAll('_',' ').toUpperCase())+'</small>'+
+    '<strong>'+safe(n.label)+'</strong><span>'+safe(n.evidenceStatus.replaceAll('_',' '))+'</span>'+
+    '<details><summary>Evidence required</summary><p>'+safe(n.requiredEvidence)+'</p></details></article>').join('')+
+   '</div></section>').join('');
+  const edgesHtml=edges.map(e=>{
+    const ref=sources.get(e.sourceId),href=ref?allowedUrl(ref.url):null;
+    return '<article class="crisis-graph-edge"><strong>'+safe(names.get(e.from)||e.from)+' → '+safe(names.get(e.to)||e.to)+'</strong>'+
+      '<p>'+safe(e.mechanism)+'</p><small>HYPOTHESIS · EFFECT '+safe(e.direction)+' · LAG '+safe(e.lag)+
+      ' · '+(href?'<a target="_blank" rel="noopener noreferrer" href="'+safe(href)+'">'+safe(ref.name)+'</a>':'Reference unavailable')+'</small></article>';
+   }).join('');
+  const dated=graph.datedEvidence?.status==='ISSUE_DATED_ARCHIVE_PAGE_REVISION_UNVERIFIED'?
+   '<p><strong>Eligible NOAA evidence:</strong> '+safe(graph.datedEvidence.issueDate)+' — '+safe(graph.datedEvidence.synopsis)+
+   '</p><p>Archive revision and original intraday publication clock are not verified. This does not validate any edge.</p>':
+   '<p><strong>Historical evidence:</strong> '+safe(graph.datedEvidence?.status||'NOT REQUESTED')+'</p>';
+  node.innerHTML='<div class="crisis-replay-summary"><div><small>RESEARCH NODES</small><strong>'+safe(state.totalNodes)+'</strong></div>'+
+   '<div><small>HYPOTHESIS LINKS</small><strong>'+safe(state.totalEdges)+'</strong></div>'+
+   '<div><small>VALIDATED LINKS</small><strong>'+safe(state.empiricallyValidatedEdges)+'</strong></div>'+
+   '<div><small>VERIFIED ISSUER EDGES</small><strong>'+safe(state.verifiedIssuerExposureEdges)+'</strong></div></div>'+
+   dated+'<p><b>Geography:</b> '+safe(graph.regionScope)+'</p>'+
+   '<div class="crisis-graph-stages">'+stagesHtml+'</div>'+
+   '<h5>Conditional transmission links</h5><div class="crisis-graph-edges">'+edgesHtml+'</div>'+
+   '<p class="crisis-warning">This is a research hypothesis graph, not a quantified risk model. Industry and issuer impacts remain unverified.</p>';
+ }
+ async function loadTransmissionGraph(){
+  const button=$('crisisGraphRun'),message=$('crisisGraphStatus'),output=$('crisisGraphResults');
+  if(!button||!message||!output)return;
+  const token=requestId,id=selected;
+  const asOf=id==='enso-fertilizer'?$('crisisClimateAsOf')?.value||'':null;
+  const params=new URLSearchParams({id});if(asOf)params.set('asOf',asOf);
+  button.disabled=true;message.textContent='Loading typed economic mechanism and evidence boundaries…';output.replaceChildren();
+  try{
+   const graph=await read('/api/transmission/graph?'+params.toString());
+   if(token!==requestId||selected!==id||!$('crisisGraphResults'))return;
+   if(graph.id!==id||!Array.isArray(graph.nodes)||!Array.isArray(graph.edges)||graph.calibratedForecast!==false)
+    throw Error('Unexpected economic transmission graph payload');
+   renderGraph(graph);
+   message.textContent='Graph loaded: '+graph.coverage.totalNodes+' research nodes, '+graph.coverage.totalEdges+' conditional links. No validated causal edges.';
+  }catch(error){if(token===requestId&&selected===id)message.textContent=error.message;}
+  finally{if($('crisisGraphRun')===button)button.disabled=false;}
+ }
+ $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisGraphRun'))void loadTransmissionGraph();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisClimateRun'))void loadClimateEvidence();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisReplayRun'))void replayWarningHistory();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisMacroRun'))void loadMacro();});
