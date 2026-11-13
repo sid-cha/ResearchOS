@@ -21,6 +21,7 @@ const latitude=x=>{const n=number(x);return Number.isFinite(n)&&n>=-90&&n<=90?n:
 const longitude=x=>{const n=number(x);return Number.isFinite(n)&&n>=-180&&n<=180?n:null};
 const sha=x=>createHash('sha256').update(JSON.stringify(x),'utf8').digest('hex');
 const validRegistryId=x=>typeof x==='string'&&ID.test(x);
+const validDay=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 export function frsLookupUrl(registryId){
  if(!validRegistryId(registryId))throw err('Enter a 10–14 digit official EPA FRS Registry ID');
  const url=new URL(BASE);
@@ -143,7 +144,7 @@ export function createEpaFrsLookup({fetchImpl=fetch,now=()=>new Date(),timeoutMs
 const TEST_METERS=1000;
 export function adversarialFacilityReview({asset,frs,asOf=null}={}){
  if(!asset||!frs||typeof asset!=='object')throw err('A local facility claim and an EPA FRS lookup are required');
- if(asOf!==null&&(!/^\d{4}-\d{2}-\d{2}$/.test(asOf)||Number.isNaN(Date.parse(asOf+'T00:00:00Z'))))throw err('Invalid historical cutoff');
+ if(asOf!==null&&!validDay(asOf))throw err('Invalid historical cutoff');
  const issues=[],record=frs.record;
  const challenge=(id,priority,observation,request)=>issues.push({id,priority,observation,requiredProof:request,
   disposition:'OPEN',resolvedByIndependentEvidence:false});
