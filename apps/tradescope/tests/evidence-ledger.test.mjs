@@ -44,6 +44,30 @@ test('normalized FRED capture records as-of request separate from original relea
  assert(d.facts.find(x=>x.kind==='GRAPH_EDGE').verification==='NOT_VALIDATED');
  assert(!JSON.stringify(d).includes(dossier.report));
 });
+test('evidence dossier archives bounded EIA and NOAA source observations without unsafe query secrets',()=>{
+ const x=captureDossierEvidence({...dossier,nodes:[
+  {id:'fert_industry',researchInputs:[
+   {source:'EIA_API_V2',period:'2026-09',value:2.95,unit:'USD per million Btu',
+    label:'Henry Hub gas price',dataClass:'CURRENT_RELEASE_NOT_HISTORICAL_VINTAGE',
+    sourceUrl:'https://www.eia.gov/dnav/ng/hist/rngwhhdm.htm'},
+   {source:'UN_COMTRADE_PREVIEW',period:'2025',value:10000,unit:'USD',
+    label:'Annual imports',dataClass:'ANNUAL_TOTAL',
+    sourceUrl:'https://www.eia.gov/another?api_key=NEVER_PERSIST'}]},
+  {id:'enso_outlook',observation:{source:'NOAA_CPC_ENSO_DIAGNOSTIC_DISCUSSION',
+   issueDate:'2020-02-13',
+   sourceUrl:'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_disc_feb2020/ensodisc.html'}}
+ ]});
+ assert.equal(x.facts[0].sourceInputsArchived,3);
+ const gas=x.facts.find(r=>r.kind==='RESEARCH_CONTEXT_INPUT'&&r.source==='EIA_API_V2');
+ assert.equal(gas.value,2.95);
+ assert.equal(gas.originalReleaseClockVerified,false);
+ const unsafe=x.facts.find(r=>r.label==='Annual imports');
+ assert.equal(unsafe.sourceUrl,null);
+ const issued=x.facts.find(r=>r.kind==='SOURCE_ISSUE_DATED_DOCUMENT');
+ assert.equal(issued.issueDate,'2020-02-13');
+ assert.equal(issued.originalWebsiteRevisionVerified,false);
+ assert(!JSON.stringify(x).includes('NEVER_PERSIST'));
+});
 test('local journal persists across instances and verifies its hash chain',async t=>{
  const filename=await fixture(t),ledger=createEvidenceLedger({filename,now});
  const first=await ledger.captureFred(fred(),options);
