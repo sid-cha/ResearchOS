@@ -162,7 +162,7 @@ test('on-demand SEC disclosure reader extracts true 10-K passages but cannot ass
   return {fetchedAt:'2026-11-13T12:00:00Z',evidence:[{
    id:'sec-excerpt-1',section:'Item 1',sourceUrl:filing.sourceUrl,
    text:symbol==='CF'?'CF operates major ammonia and urea production facilities in North America.':
-    'The filing text contains a different line of business without an observable potash keyword.'
+    'The filing text describes an unrelated line of business without the expected product terminology.'
   }]};
  }};
  const svc=createCommodityWorkbench({filename,feed:fakeFeed,filingReader:reader});
