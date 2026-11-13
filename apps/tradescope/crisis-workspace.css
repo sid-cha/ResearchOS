@@ -1,0 +1,24 @@
+.crisis-layout{display:grid;grid-template-columns:minmax(250px,1fr) minmax(0,2fr);gap:14px}
+.crisis-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:13px;border-bottom:1px solid var(--border-soft)}
+.crisis-controls label{display:flex;flex-direction:column;gap:5px;min-width:190px;flex:1;font:700 10px var(--mono);color:var(--muted)}
+.crisis-controls select{width:100%}
+.crisis-case-list{display:flex;flex-direction:column;gap:2px;padding:10px}
+.research-workspace .crisis-case{display:flex;flex-direction:column;align-items:start;text-align:left;gap:4px;padding:12px;border:1px solid var(--border-soft);background:var(--surface-1)}
+.crisis-case strong{font-size:11px;color:var(--head-text)}.crisis-case small{font:10px/1.5 var(--mono);color:var(--muted)}
+.crisis-section{padding:16px;border-bottom:1px solid var(--border-soft)}
+.crisis-section:last-child{border:0}
+.crisis-section h4{font:700 14px/1.5 var(--mono);color:var(--head-text);margin:0 0 11px}
+.crisis-section p,.crisis-section li{font:11px/1.75 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.crisis-section ul{padding-left:20px}
+.crisis-label{color:var(--accent);font:700 10px var(--mono)}
+.crisis-signal,.crisis-pathway{border:1px solid var(--border-soft);background:var(--surface-1);padding:12px;margin:9px 0}
+.crisis-signal strong{font:700 12px var(--mono);color:var(--head-text)}
+.crisis-signal p{margin:8px 0}
+.crisis-citations{font:10px/1.8 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+.crisis-citations a{display:inline;text-decoration:underline}
+.crisis-pathway h5{margin:0 0 8px;font:700 12px var(--mono);color:var(--head-text)}
+.crisis-chain{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:10px 0}
+.crisis-chain span{background:var(--surface-2);border:1px solid var(--border);padding:6px 8px;font:10px/1.5 var(--mono)}
+.crisis-chain span[aria-hidden]{background:none;border:0;color:var(--accent)}
+.crisis-warning{border-left:3px solid var(--amber);background:var(--yellow-wash);padding:10px 12px}
+@media(max-width:920px){.crisis-layout{grid-template-columns:1fr}}
