@@ -279,7 +279,7 @@ export function createCommodityApi({service}={}){
     let u;try{u=new URL(req.headers.origin)}catch{throw issue('Invalid write origin',403)}
     if(u.host!==req.headers.host||!['http:','https:'].includes(u.protocol))throw issue('Cross-origin writes forbidden',403);
    }
-   const op=url.pathname.slice('/api/commodity/'.length),qs=url.searchParams;
+   const op=decodeURIComponent(url.pathname.slice('/api/commodity/'.length)),qs=url.searchParams;
    if(req.method==='GET'&&op==='catalog')reply(res,200,service.catalog());
    else if(req.method==='GET'&&op==='live'){
     const c=qs.get('commodity');
