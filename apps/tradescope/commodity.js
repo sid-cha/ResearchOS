@@ -102,6 +102,18 @@ get('events').addEventListener('click',e=>{
 get('briefExport').addEventListener('click',()=>{
  if(currentId)window.location.href='/api/commodity/brief.txt?id='+encodeURIComponent(currentId);
 });
+get('reviewForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!currentId){say('reviewStatus','Select a captured document and build its brief first.');return;}
+ const form=new FormData(e.currentTarget);
+ try{
+  const result=await api('reviews','POST',{eventId:currentId,
+   disposition:form.get('disposition'),rationale:form.get('rationale')});
+  say('reviewStatus','Append-only analyst assessment saved at '+result.review.reviewedAt+
+   '. This is not independent event-impact verification.');
+  await openBrief(currentId);
+ }catch(err){say('reviewStatus',err.message);}
+});
 get('watchForm').addEventListener('submit',async e=>{
  e.preventDefault();const form=new FormData(e.currentTarget);
  try{
