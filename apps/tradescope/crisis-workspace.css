@@ -22,3 +22,12 @@
 .crisis-chain span[aria-hidden]{background:none;border:0;color:var(--accent)}
 .crisis-warning{border-left:3px solid var(--amber);background:var(--yellow-wash);padding:10px 12px}
 @media(max-width:920px){.crisis-layout{grid-template-columns:1fr}}
+
+.crisis-macro-controls{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:12px 0}
+.crisis-macro-controls label{font:700 10px var(--mono);color:var(--muted)}
+.crisis-macro-controls input{min-height:32px;padding:5px 9px;border:1px solid var(--border);background:var(--surface-1);color:var(--head-text)}
+.crisis-macro-controls button{min-height:32px}
+.crisis-macro-table{overflow-x:auto}
+.crisis-macro-table table{width:100%;border-collapse:collapse;font:10px/1.6 var(--mono)}
+.crisis-macro-table th,.crisis-macro-table td{padding:8px;text-align:left;border-bottom:1px solid var(--border-soft)}
+.crisis-macro-table th{color:var(--head-text)}
