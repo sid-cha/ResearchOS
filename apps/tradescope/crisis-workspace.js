@@ -47,7 +47,7 @@
     '<label>FORWARD HORIZON <select id="crisisReplayHorizon"><option value="5">5 sessions</option><option value="20" selected>20 sessions</option><option value="63">63 sessions</option></select></label>'+
     '<label>LOSS THRESHOLD <select id="crisisReplayThreshold"><option value="5">5%</option><option value="10" selected>10%</option><option value="20">20%</option></select></label>'+
     '<button type="button" id="crisisReplayRun">REPLAY WARNING HISTORY</button></div>'+
-    '<p id="crisisReplayStatus" role="status">Historical source credentials are required. The 2008 preset does not have market-price outcome coverage in the current Alpaca adapter.</p>'+
+    '<p id="crisisReplayStatus" role="status">Historical source credentials are required. The 2008 preset requires separately entitled, server-side long-history SPY data for market outcome labels.</p>'+
     '<div id="crisisReplayResults"></div></section>');
   }
   selected=item.id||null;
