@@ -163,7 +163,7 @@ test('signal dashboard remains readable, filters preserve original action identi
  assert.match(rendered,/data-research-alert-index="1"/);
  await h.delegate('researchAlerts',{researchAlertState:'acknowledged',researchAlertIndex:'1'});
  const mutation=h.requests.filter(request=>request.options.method==='PATCH').at(-1);
- assert.match(mutation.url,/alert:aapl/);
+ assert.match(decodeURIComponent(mutation.url),/alert:aapl/);
  assert.deepEqual(JSON.parse(mutation.options.body),{expectedRevision:2,status:'acknowledged'});
  await h.change('researchAlertFilter','acknowledged');
  assert.match(h.element('researchAlerts').innerHTML,/ACKNOWLEDGED/);
