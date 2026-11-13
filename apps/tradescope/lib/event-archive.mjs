@@ -202,6 +202,14 @@ export function createEventArchive({filename,now=Date.now,maxEvents=500,maxRevis
    });
   },
   get(id){return read(document=>summary(find(document,id)));},
+  getRevision(id,revisionId){
+   if(typeof revisionId!=='string'||!VERSION.test(revisionId))return Promise.reject(fail('Choose an exact archived revision identifier'));
+   return read(document=>{
+    const entry=find(document,id),revision=entry.revisions.find(item=>item.id===revisionId);
+    if(!revision)throw fail('Archived revision was not captured',404);
+    return {eventId:entry.id,source:entry.source,firstObservedAt:entry.firstObservedAt,revision};
+   });
+  },
   findRevision(id,{contentRevision}={}){
    if(typeof contentRevision!=='string'||!contentRevision.trim()||contentRevision.length>128)return Promise.reject(fail('Choose a valid archived content revision'));
    return read(document=>{const entry=find(document,id),revision=entry.revisions.filter(item=>item.event.contentRevision===contentRevision).at(-1);
