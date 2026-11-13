@@ -24,7 +24,7 @@ Legend: **Built pilot** = modules/UI or logic exists in current branch but cover
 | Drought, snowpack and monsoon | Pending | NOAA/US Drought Monitor/NRCS or region-specific official archives; original issue dates and explicit geography |
 | Wildfire and catastrophe | Built event pilot only | Historic perimeter/intensity, insured location and catastrophe loss evidence, time-specific publication and region matching |
 | Commodity and supply chain | Pending | USDA crop reports, USGS potash, trade data, shipping and inventory shock pathways with versioned source evidence |
-| Transmission graph | Scenario hypotheses only | Directed typed edges: driver → georegion → resource/commodity → sector → named issuer with lag, sign and evidence quality |
+| Transmission graph | **Typed research-graph foundation implemented** | Three directed scenario graphs, read-only API and Crisis & Climate stage UI, with conditional lag/sign placeholders; add georeferenced dated evidence, measured causal edges and named issuer verification |
 | Issuer exposure | Pending | SEC facility/subsidiary, supplier, property, revenue and insurance exposure mapping with effective dates and source excerpts |
 | Corporate event attribution | Built pilot | Join validated occurrence sources, issuer exposure and benchmark-adjusted outcome studies, distinguishing association from causation |
 | Global events | Partial pilot | Regulatory, sanctions, macro and political evidence from original dated sources; first-seen and correction logs |
