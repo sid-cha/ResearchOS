@@ -107,7 +107,7 @@ async function limitedJson(response,max=700000){
  const text=await response.text();if(Buffer.byteLength(text)>max)throw err('FRED payload exceeded bound',502);
  try{return JSON.parse(text);}catch{throw err('FRED JSON was invalid',502);}
 }
-export function createFredExplorer({fetchImpl=fetch,env=process.env,now=()=>new Date(),timeoutMs=12000}={}){
+export function createFredExplorer({fetchImpl=fetch,env=process.env,now=()=>new Date(),timeoutMs=12000,ledger=null}={}){
  const cache=new Map(),pending=new Map();
  async function query(type,options={}){
   const today=now().toISOString().slice(0,10);
@@ -127,6 +127,7 @@ export function createFredExplorer({fetchImpl=fetch,env=process.env,now=()=>new 
     }
     const data=normalizeFredResearch(type,await limitedJson(response),{
      id:options.id,asOf:options.asOf,fetchedAt:now().toISOString()});
+    if(ledger)await ledger.captureFred(data,options); // Fail closed: opted-in source evidence must persist before returning data.
     cache.set(cacheKey,{value:data,expiry:Date.now()+180000});
     if(cache.size>60)cache.delete(cache.keys().next().value);
     return data;
