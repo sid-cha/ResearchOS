@@ -44,7 +44,7 @@ function checkClaim(x,{now}={}){
   x.effectiveTo!=null&&x.effectiveTo<x.effectiveFrom||
   !text(x.thesis,550))throw fail('A dated legal-operator hypothesis with valid asset and FRS IDs is required');
  const a=document(x.operatorDocument,'legal operator'),b=document(x.issuerRelationshipDocument,'SEC relationship');
- const today=(now||new Date()).toISOString().slice(0,10);
+ const today=(typeof now==='function'?now():now||new Date()).toISOString().slice(0,10);
  if(a.publishedDate>today||b.publishedDate>today||x.effectiveFrom>today)throw fail('Future-dated source or ownership assertion not allowed');
  return {assetId:x.assetId,epaRegistryId:x.epaRegistryId,
   legalOperatorName:text(x.legalOperatorName,160),effectiveFrom:x.effectiveFrom,effectiveTo:x.effectiveTo||null,
