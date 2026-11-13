@@ -39,7 +39,7 @@
   if(!s){meta.textContent='No completed IEX daily bars loaded.';return;}
   const last=s.asOf||'unavailable',quality=s.quality||{};
   const intraday=s.interval!=='1Day';
-  meta.textContent='HISTORICAL / COMPLETED '+s.interval+' IEX BARS · '+s.bars.length+(intraday?' BARS':' SESSIONS')+' · THROUGH '+last+
+  meta.textContent='HISTORICAL / COMPLETED '+(s.interval==='1Day'?'1D':s.interval)+' IEX BARS · '+s.bars.length+(intraday?' BARS':' SESSIONS')+' · THROUGH '+last+
    ' · SPLIT ADJUSTED · SINGLE VENUE'+(quality.partialHistory||quality.incompleteWindow?' · PARTIAL COVERAGE':'')+
    '. Observed LIVE price above is independent of the historical bar close. No price prediction.';
  }
