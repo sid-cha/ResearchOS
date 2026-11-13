@@ -17,6 +17,14 @@ The new narrow product experiment lives at `/commodity.html` and is documented i
 
 **Product freeze:** do not add unrelated chart indicators, equity screening features, trading execution, generic chat or mobile functionality until target users show a recurring need. Finish actual source quality, specific commodity/company exposure proof, end-to-end usability, licensing and meaningful design-partner evaluation before expanding.
 
+## v0.23 delivery — generalized scenario registry & FRED source explorer
+
+**Built (pilot):** versioned `scenario-registry.mjs` shared across directed graphs and dossiers, with strict node/edge/source validation; **12** curated scenarios (3 research-context, 2 partial-source, 7 template-only); regional/maturity-aware UI and a second data-source workflow for official FRED/ALFRED searches, metadata, vintage dates, release calendars and historically as-of observations. See [V023_SCENARIO_REGISTRY_AND_FRED.md](V023_SCENARIO_REGISTRY_AND_FRED.md).
+
+**Not complete:** live credentials, original publication-time snapshots, reliable geographic/issuer crosswalks, measured causal effects, production tenant security, model forecasts and seven template-only integrations. Key rotation and local environment-variable setup are required; user-provided secret material was never placed into version control.
+
+**Next:** durable evidence/provenance ledger with original event/release/observed timestamps, source correction history and source-provider rights, followed by tested region/company exposure joins. Do not add unvalidated scenario types or claim catalog breadth equals measured industry intelligence.
+
 ## v0.22 delivery — evidence-backed economic transmission (pilot built)
 
 **Code:** `lib/transmission-dossier.mjs`, `transmission-lab.html`, `transmission-lab.js`, `transmission-lab.css` and `tests/transmission-dossier.test.mjs`.
