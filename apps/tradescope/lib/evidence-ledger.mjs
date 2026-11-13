@@ -13,7 +13,7 @@ const KINDS=new Set(['FRED_SEARCH','FRED_SERIES_METADATA','FRED_VINTAGE_CALENDAR
  'FRED_RELEASE_MAPPING','FRED_RELEASE_CALENDAR','FRED_AS_OF_OBSERVATIONS','ANALYSIS_SUMMARY']);
 const idPattern=/^[A-Za-z0-9][A-Za-z0-9._:@+-]{0,115}$/;
 const iso=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(x)&&!Number.isNaN(Date.parse(x));
-const day=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
+const day=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const fail=(m,status=400)=>Object.assign(new Error(m),{status});
 const hash=x=>createHash('sha256').update(typeof x==='string'?x:JSON.stringify(x),'utf8').digest('hex');
 const clone=x=>structuredClone(x);
