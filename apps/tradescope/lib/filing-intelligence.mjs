@@ -4,8 +4,8 @@
  */
 import {createHash} from 'node:crypto';
 
-const MAX_DOCUMENT_BYTES = 2 * 1024 * 1024;
-const MAX_TEXT_CHARS = 400000;
+const MAX_DOCUMENT_BYTES = 24 * 1024 * 1024; // SEC primary iXBRL forms can be multi-megabyte.
+const MAX_TEXT_CHARS = 5_000_000; // Keep later 10-Q/10-K sections in scope.
 const MAX_ITEMS = 16;
 const MAX_PASSAGE_CHARS = 1600;
 const CACHE_LIMIT = 20;
@@ -109,7 +109,7 @@ function documentText(html) {
     if (end >= html.length) { if (!skipped) chunks.push(html.slice(start)); break; }
     const tag = html.slice(start, end + 1);
     cursor = end + 1;
-    if (++tags > 100000) throw err('SEC document structure exceeds the local analysis limit.', 413);
+    if (++tags > 600000) throw err('SEC document structure exceeds the local analysis limit.', 413);
     const name = /^<\s*(\/?)\s*([a-z][a-z0-9:.-]*)\b/i.exec(tag);
     if (!name) continue;
     const closing = name[1] === '/', tagName = name[2].toLowerCase(), selfClosing = /\/\s*>$/.test(tag);
@@ -183,7 +183,7 @@ function excerpt(value, maximum = MAX_PASSAGE_CHARS) {
 /** Pure section extraction. Summaries consist only of selected source text. */
 export function analyzeFilingDocument(html, {filing = {}, symbol = null, fetchedAt = null} = {}) {
   if (typeof html !== 'string') throw err('A text SEC filing document is required.');
-  if (Buffer.byteLength(html, 'utf8') > MAX_DOCUMENT_BYTES) throw err('SEC document exceeds the 2 MiB local reading limit.', 413);
+  if (Buffer.byteLength(html, 'utf8') > MAX_DOCUMENT_BYTES) throw err('SEC primary document exceeds the 24 MiB bounded reading limit; open the original SEC filing.', 413);
   const metadata = filingMetadata(filing);
   const {text, truncated} = documentText(html);
   const form = metadata.form?.replace('/A', '');
@@ -231,7 +231,8 @@ export function analyzeFilingDocument(html, {filing = {}, symbol = null, fetched
   return {filing: metadata, symbol: symbolValid(symbol) ? symbol : null, fetchedAt: instant(fetchedAt),
     occurredAt: null, items, summary, evidence, limitations, methodVersion: METHOD,
     coverage: {documentBytes: Buffer.byteLength(html, 'utf8'), textCharacters: text.length, textTruncated: truncated,
-      supportedSections: items.length, rawDocumentStored: false}};
+      supportedSections: items.length, rawDocumentStored: false,
+      documentByteLimit: MAX_DOCUMENT_BYTES, extractedTextCharacterLimit: MAX_TEXT_CHARS}};
 }
 
 function userAgent(env) {
@@ -246,10 +247,11 @@ function userAgent(env) {
 async function boundedResponseText(response, signal) {
   const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
   if (!['text/html', 'application/xhtml+xml', 'text/plain'].includes(contentType)) throw err('SEC returned an unsupported document format.', 502);
-  const declared = Number(response.headers.get('content-length'));
+  const declaredHeader = response.headers.get('content-length');
+  const declared = declaredHeader && /^\d+$/.test(declaredHeader) ? Number(declaredHeader) : null;
   if (Number.isFinite(declared) && declared > MAX_DOCUMENT_BYTES) {
     await response.body?.cancel().catch(() => {});
-    throw err('SEC document exceeds the 2 MiB local reading limit.', 413);
+    throw err('SEC primary document exceeds the 24 MiB bounded reading limit; open the original SEC filing.', 413);
   }
   const reader = response.body?.getReader();
   if (!reader) throw err('SEC returned an empty filing document.', 502);
@@ -260,7 +262,7 @@ async function boundedResponseText(response, signal) {
       const {done, value} = await reader.read();
       if (done) break;
       bytes += value.byteLength;
-      if (bytes > MAX_DOCUMENT_BYTES) throw err('SEC document exceeds the 2 MiB local reading limit.', 413);
+      if (bytes > MAX_DOCUMENT_BYTES) throw err('SEC primary document exceeds the 24 MiB bounded reading limit; open the original SEC filing.', 413);
       chunks.push(Buffer.from(value));
     }
   } catch (error) { await reader.cancel().catch(() => {}); throw error; }
@@ -289,7 +291,7 @@ export function createFilingReader({fetchImpl = fetch, env = process.env, now = 
       const wait = Math.max(0, lastStarted + 400 - Number(now()));
       if (wait) await sleepImpl(wait);
       lastStarted = Number(now());
-      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 12000);
+      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 25000);
       try {
         const response = await fetchImpl(url, {headers: {'User-Agent': agent, Accept: 'text/html, text/plain;q=0.9'},
           redirect: 'error', signal: controller.signal});
