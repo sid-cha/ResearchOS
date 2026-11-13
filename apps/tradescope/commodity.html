@@ -31,5 +31,20 @@
 <label>Source usefulness (1–5)<input name="sourceQuality" type="number" min="1" max="5" required></label>
 <label class="full">Researcher notes<textarea name="notes" rows="2" maxlength="650" placeholder="What was useful? What evidence was missing?"></textarea></label>
 <button type="submit">Save local evaluation</button></form><div id="pilotMetrics" class="metrics-inline"></div><p id="feedbackStatus" role="status"></p></section></div>
+<section class="pane fundamentals" id="fundamentalsArea"><div class="pane-head"><h2>06 / Fundamentals &amp; trade evidence</h2><span>GDELT · EIA · COMTRADE · USDA · USGS</span></div>
+<p class="aside">Commodity-level context only: media candidates, energy cost series, annual trade totals and crop estimates. None of these sources verifies a disruption, issuer impact or forecast.</p>
+<div class="actions"><button type="button" id="fundamentalsLoad">Load fundamentals snapshot</button><button type="button" id="gdeltLoad">Load media candidates</button><span id="fundamentalsStatus" role="status">Not loaded.</span></div>
+<div id="fundamentals" class="stack"><div class="empty">Choose a commodity and load the snapshot.</div></div>
+<form id="usgsForm" class="usgs-form"><h3>Capture USGS annual statistic · transcribed from the official publication</h3>
+<label class="full">Official publication title<input name="title" maxlength="280" placeholder="Mineral Commodity Summaries 2026 — Potash" required></label>
+<label>Release date<input name="releaseDate" type="date" required></label>
+<label class="wide">Official usgs.gov URL<input name="officialUrl" type="url" placeholder="https://pubs.usgs.gov/..." required></label>
+<label>Commodity<select name="usgsCommodity"><option value="potash">Potash</option><option value="urea">Urea</option><option value="phosphate">Phosphate</option></select></label>
+<label>Attribute<input name="attribute" maxlength="80" placeholder="US production" required></label>
+<label>Period<input name="period" placeholder="2025" pattern="\\d{4}(?:-\\d{2})?" required></label>
+<label>Value<input name="value" type="number" step="any" required></label>
+<label>Unit<input name="unit" maxlength="40" placeholder="thousand tonnes" required></label>
+<label class="wide">Source anchor (optional)<input name="anchor" maxlength="120" placeholder="Table 1"></label>
+<button type="submit">Save transcribed capture</button><span id="usgsStatus" role="status">Captures carry SHA-256 revision history; transcription is analyst-asserted.</span></form></section>
 <footer>TRADESCOPE · SOURCE-FIRST COMMODITY RESEARCH · LOCAL SINGLE-USER PILOT · NO TRADING RECOMMENDATIONS · NO ESTIMATED STOCK IMPACT</footer>
 </main></div><script src="/commodity.js"></script></body></html>

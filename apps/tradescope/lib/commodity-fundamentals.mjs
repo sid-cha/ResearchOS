@@ -12,6 +12,7 @@ const err=(message,status=400)=>Object.assign(new Error(message),{status});
 const copy=x=>structuredClone(x);
 const digest=x=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const nowIso=()=>new Date().toISOString();
+const clockIso=clock=>{const value=clock();return typeof value==='string'?value:value.toISOString();};
 const safe=(x,n=240)=>typeof x==='string'?x.replace(/[\u0000-\u001f\u007f<>]/g,' ').replace(/\s+/g,' ').trim().slice(0,n):'';
 const day=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&Number.isFinite(Date.parse(x+'T00:00:00Z'))&&new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
 const month=x=>typeof x==='string'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(x);
@@ -214,7 +215,7 @@ const USGS_SOURCE='USGS_MINERAL_STATISTICS_CAPTURE';
 const USGS_HOSTS=Object.freeze(new Set(['www.usgs.gov','pubs.usgs.gov','usgs.gov']));
 export function usgsStatsPage(){return 'https://www.usgs.gov/centers/national-minerals-information-center/potash-statistics-and-information';}
 function usgsId(url){return 'usgs:'+createHash('sha256').update(url).digest('hex').slice(0,12);}
-export function normalizeUsgsCapture(input,{clock=nowIso,today=clock().toISOString().slice(0,10)}={}){
+export function normalizeUsgsCapture(input,{clock=nowIso,today=clockIso(clock).slice(0,10)}={}){
  const officialUrl=safe(input?.officialUrl,400);
  if(!officialUrl)throw err('Provide the official USGS publication URL');
  let parsed;try{parsed=new URL(officialUrl)}catch{throw err('Official USGS URL is not a valid URL')}
@@ -327,7 +328,7 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
   async gdelt({commodity}){
    requireCommodity(commodity);
    return cached('gdelt:'+commodity,async()=>{
-    const today=clock().toISOString();
+    const today=clockIso(clock);
     const payload=await providerFetch(gdeltUrl(commodity),{fetchImpl,label:'GDELT'});
     const normalized=normalizeGdeltCommodityFeed(payload,{commodity,today,fetchedAt:today});
     return {...normalized,corroboration:corroborateDocuments(normalized.results,officialDocuments())};
@@ -338,7 +339,7 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
    return cached('eia:'+indicatorId,async()=>{
     const url=new URL(EIA_API);url.searchParams.set('api_key',key);url.searchParams.set('series_id',def.seriesId);
     const payload=await providerFetch(url.href,{fetchImpl,label:'EIA'});
-    return normalizeEiaSeries(payload,{indicatorId,fetchedAt:clock().toISOString()});});},
+    return normalizeEiaSeries(payload,{indicatorId,fetchedAt:clockIso(clock)});});},
   async comtrade({commodity,flow='M',reporter='842',period=null}={}){
    const url=comtradeUrl(commodity,flow,reporter,{period});
    const subscription=env?.COMTRADE_SUBSCRIPTION_KEY;
@@ -346,12 +347,12 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
     const headers={};
     if(typeof subscription==='string'&&subscription.length>=8){headers['Ocp-Apim-Subscription-Key']=subscription;}
     const payload=await providerFetch(url,{fetchImpl,headers,label:'UN Comtrade'});
-    return normalizeComtrade(payload,{commodity,flow,reporter,fetchedAt:clock().toISOString()});});},
+    return normalizeComtrade(payload,{commodity,flow,reporter,fetchedAt:clockIso(clock)});});},
   async usda({crop}={}){
    const url=psdUrl(crop),key=usdaKey(env);
    return cached('usda:'+crop,async()=>{
     const payload=await providerFetch(url,{fetchImpl,headers:{'X-Api-Key':key},label:'USDA FAS'});
-    return normalizePsd(payload,{crop,fetchedAt:clock().toISOString()});});},
+    return normalizePsd(payload,{crop,fetchedAt:clockIso(clock)});});},
   async snapshot({commodity}={}){
    requireCommodity(commodity);
    const run=async(name,fn)=>{
@@ -369,7 +370,7 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
      return {records:series.flatMap(x=>x.records),coverage:{returned:series.reduce((sum,x)=>sum+x.coverage.returned,0),accepted:series.reduce((sum,x)=>sum+x.coverage.accepted,0)},limitations:series[0]?.limitations||[]};})
    ]);
    const captures=await usgs.list(commodity);
-   return {commodity,fetchedAt:clock().toISOString(),sources:[gdelt,eia,comtrade,usda],
+   return {commodity,fetchedAt:clockIso(clock),sources:[gdelt,eia,comtrade,usda],
     usgs:{source:USGS_SOURCE,status:'AVAILABLE',captures},
     predictiveAccuracyMeasured:false,
     note:'Snapshot rows are source-dated research context. None of the sources establishes a verified disruption, verified issuer impact or forecast.'};

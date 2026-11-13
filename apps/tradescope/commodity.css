@@ -52,3 +52,17 @@ h1{font-size:clamp(29px,4vw,49px);line-height:1.1;letter-spacing:-.04em;margin:1
 .evidence-edge small{color:#8dafbd;line-height:1.4}
 
 .verified-excerpt{border:1px solid #365264;background:#132c3b;color:#bdcfdc;padding:10px;margin:9px 0 0;border-radius:6px;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+
+.fund-source{background:#172438;border:1px solid #29445b;border-radius:8px;padding:15px;min-width:0}
+.fund-source strong{font-size:12px;letter-spacing:.06em;color:#a9d3da}
+.fund-source p{margin:9px 0 0;font-size:12px;line-height:1.55;color:#b4c6d5}
+.pill-warn{color:#f2b6b6;border-color:#8b4d4d}
+.fund-rows{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:11px;color:#c6d6e5;font-variant-numeric:tabular-nums}
+.fund-rows em{color:#e2eef6;font-style:normal}
+.fund-rows small{color:#8dafbd}
+.usgs-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:16px;border-top:1px solid #2b4054;padding-top:14px}
+.usgs-form h3{grid-column:1/-1;font-size:13px;color:#dce9f1;margin:0}
+.usgs-form label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:#9db2c2}
+.usgs-form button{width:max-content}
+.usgs-form [role=status]{grid-column:1/-1}
+@media(max-width:760px){.usgs-form{grid-template-columns:1fr}}

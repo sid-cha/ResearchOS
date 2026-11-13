@@ -3,7 +3,7 @@
 'use strict';
 const get=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const safeUrl=v=>{try{const u=new URL(v);return u.protocol==='https:'&&['www.federalregister.gov','www.sec.gov'].includes(u.hostname)?u.href:null;}catch{return null;}};
+const safeUrl=v=>{try{const u=new URL(v);return u.protocol==='https:'&&['www.federalregister.gov','www.sec.gov','www.eia.gov','comtradeplus.un.org','apps.fas.usda.gov','www.usgs.gov','pubs.usgs.gov'].includes(u.hostname)?u.href:null;}catch{return null;}};
 const say=(id,s)=>{get(id).textContent=s;};
 let commodity='potash',currentId=null,sourceDocs=[],localDocs=[],requestToken=0;
 async function api(route,method='GET',payload){
@@ -98,6 +98,56 @@ async function metrics(){
   (m.minutesBeforeMean??'—')+' min; using TradeScope: '+(m.minutesWithMean??'—')+
   ' min; reported quality: '+(m.qualityMean??'—')+'/5.');
 }
+const STATUS_LABEL={AVAILABLE:'AVAILABLE',NOT_CONFIGURED:'KEY NOT CONFIGURED',UNAVAILABLE:'SOURCE UNAVAILABLE'};
+function sourceCard(s){
+ const rows=(s.observations||[]).map(o=>'<li>'+esc(o.period)+' — '+(o.value??'missing source value')+
+  (o.unit?' '+esc(o.unit):'')+'</li>').join('')+
+  (s.records||[]).map(r=>'<li>'+esc(r.marketYear||r.period)+' · '+esc(r.attribute||r.commodityGroup||'')+
+   ' — '+(r.value??r.tradeValueUsd??'—')+' '+esc(r.unit||'')+(r.country?' · '+esc(r.country):'')+
+   (r.partner?' → '+esc(r.partner):'')+'</li>').join('');
+ const media=(s.results||[]).map(item=>'<li>'+esc(item.providerFirstSeenAt?.slice(0,10))+' · '+esc(item.category)+
+  ' · '+esc(item.domain)+'<br><em>'+esc(item.title)+'</em>'+
+  (item.corroboration?.length?'<br><small>'+esc(item.corroboration.length)+' calendar-proximity candidate(s) near captured official documents — not confirmation</small>':'')+'</li>').join('');
+ const captures=(s.captures||[]).map(c=>'<li>'+esc(c.capture.releaseDate)+' · '+esc(c.capture.title)+'<small> SHA-256 '+esc(c.contentHash.slice(0,12))+'… · '+
+  c.capture.statistics.length+' transcribed statistic(s)</small></li>').join('');
+ const list=rows||media||captures;
+ return '<article class="fund-source"><div class="event-row"><strong>'+esc(s.source.replace(/_/g,' '))+'</strong>'+
+  '<span class="pill'+(s.status==='AVAILABLE'?'':' pill-warn')+'">'+esc(STATUS_LABEL[s.status]||s.status)+'</span></div>'+
+  (s.label?'<p>'+esc(s.label)+'</p>':'')+
+  (s.reason?'<p class="muted">'+esc(s.reason)+'</p>':'')+
+  (list?'<ul class="fund-rows">'+list+'</ul>':'<p class="muted">No rows returned.</p>')+
+  ((s.limitations||[]).length?'<p class="muted">'+esc(s.limitations.join(' '))+'</p>':'')+'</article>';
+}
+async function fundamentals(){
+ say('fundamentalsStatus','Loading source-dated fundamentals snapshot...');
+ try{
+  const d=await api('fundamentals/snapshot?commodity='+encodeURIComponent(commodity));
+  const cards=d.sources.map(sourceCard).concat(d.usgs?sourceCard(d.usgs):[]);
+  get('fundamentals').innerHTML=cards.join('');
+  say('fundamentalsStatus','Snapshot at '+esc(d.fetchedAt.slice(0,19).replace('T',' '))+' UTC. Commodity-level context only; nothing here verifies a disruption.');
+ }catch(e){say('fundamentalsStatus',e.message);}
+}
+async function gdelt(){
+ say('fundamentalsStatus','Loading GDELT media candidates...');
+ try{
+  const d=await api('fundamentals/gdelt?commodity='+encodeURIComponent(commodity));
+  get('fundamentals').insertAdjacentHTML('afterbegin',sourceCard(d));
+  say('fundamentalsStatus',d.results.length+' media candidates; corroboration is calendar proximity only, never confirmation.');
+ }catch(e){say('fundamentalsStatus',e.message);}
+}
+get('fundamentalsLoad').addEventListener('click',()=>void fundamentals());
+get('gdeltLoad').addEventListener('click',()=>void gdelt());
+get('usgsForm').addEventListener('submit',async e=>{
+ e.preventDefault();const form=new FormData(e.currentTarget);
+ try{
+  const r=await api('fundamentals/usgs','POST',{title:form.get('title'),releaseDate:form.get('releaseDate'),
+   officialUrl:form.get('officialUrl'),statistics:[{commodity:form.get('usgsCommodity'),
+   attribute:form.get('attribute'),period:form.get('period'),value:Number(form.get('value')),
+   unit:form.get('unit'),anchor:form.get('anchor')||undefined}]});
+  say('usgsStatus','Capture '+(r.added?'saved':r.changed?'revised':'unchanged')+' with revision '+esc(r.revisionId)+'. Transcription is analyst-asserted.');
+  e.currentTarget.reset();
+ }catch(err){say('usgsStatus',err.message);}
+});
 get('commoditySelect').addEventListener('change',()=>{void select();});
 get('preview').addEventListener('click',()=>{void fetchDocs(false);});
 get('scan').addEventListener('click',()=>{void fetchDocs(true);});

@@ -74,6 +74,20 @@ All write operations require loopback server access, use JSON-bound request size
 
 These are **manual acceptance steps**, not proof of completeness or payment intent. Mandatory release checks remain live-source URL/schema/rights verification, original publication-time controls, exposure validation, browser/security acceptance, and customer outcome studies.
 
+## Commodity fundamentals expansion (v0.19 sprint)
+
+Panel **06 / Fundamentals & trade evidence** on the commodity page adds bounded source-dated context, all served from `/api/commodity/fundamentals/*`:
+
+| Source | Delivered behavior | Boundary |
+| --- | --- | --- |
+| GDELT DOC (expanded) | Typed media-candidate classification (sanctions, trade policy, production, transport, prices, weather), dedupe, first-seen time, calendar-proximity corroboration against captured Federal Register documents | Media reports and chronology overlap are never event confirmation |
+| EIA series | Henry Hub natural gas spot and US dry gas production observations with explicit missing values | Energy cost context; not fertilizer supply or a live alert |
+| UN Comtrade | Annual HS 3102–3105 fertilizer import/export totals, keyless preview or registered key | Annual totals; not shipment-level or real-time |
+| USDA FAS PSD | Wheat/corn/soybean supply-demand records | Demand-side proxy for fertilizer use; requires `USDA_FAS_API_KEY` |
+| USGS capture ledger | Analyst-transcribed annual statistics with usgs.gov URL, release date, SHA-256 revision history | Transcription is analyst-asserted; annual data is not a live supply alert |
+
+Missing keys surface as `NOT_CONFIGURED` per source; no source failure invents data. Optional server-side keys: `EIA_API_KEY`, `USDA_FAS_API_KEY`, `COMTRADE_SUBSCRIPTION_KEY`. Briefs include captured USGS statistics and an explicit exposure-join status; no issuer-specific event exposure is verified.
+
 ## Next commercial acceptance gates
 
 - Interview commodity analysts, show their actual documents and research tasks, measure repeated usage.
