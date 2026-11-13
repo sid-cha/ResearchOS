@@ -339,7 +339,7 @@ const writeJson=(res,status,data)=>{res.writeHead(status,{'Content-Type':'applic
 export function createExposureProofApi({service=null,enabled=false}={}){
  return async(req,res,url)=>{
   if(!url.pathname.startsWith('/api/exposure-proof/'))return false;
-  if(!enabled||!service){writeJson(res,200,{enabled:false,reason:'RESEARCH_EXPOSURE_PROOF_ENABLED is not enabled on loopback'});return true;}
+  if(!enabled||!service){writeJson(res,req.method==='GET'?200:403,{enabled:false,reason:'RESEARCH_EXPOSURE_PROOF_ENABLED is not enabled on loopback'});return true;}
   try{
    const name=url.pathname.slice('/api/exposure-proof/'.length),q=url.searchParams;
    const permitted={catalog:[],integrity:[],cases:['symbol','limit'],case:['id','asOf'],
