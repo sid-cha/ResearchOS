@@ -145,7 +145,7 @@ export function createTransmissionDossier({
    const g=await graph.graph({id,asOf});
    const enriched=summarize(g,[{source:'NOAA_CPC_ENSO_DIAGNOSTIC_DISCUSSION',
     status:g.datedEvidence?.status||'UNAVAILABLE',eligibleInputRows:g.coverage.sourceDatedClimateNodes}]);
-   const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity,regionId:region,year:null,asOf,
+   const dossier={schemaVersion:1,registryVersion:'scenario-registry-v1',scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity,regionId:region,year:null,asOf,
     generatedAt:current.toISOString(),sourceStatuses:enriched.sourceStatus,nodes:g.nodes,edges:enriched.edges,
     coverage:enriched.coverage,priorityGaps:enriched.priorityGaps,
     replayEligibility:'ISSUE_DATED_NOAA_TEXT_ONLY_ARCHIVE_REVISION_NOT_VERIFIED',historicalForecastValidated:false,
@@ -162,7 +162,7 @@ export function createTransmissionDossier({
    const statuses=[...new Set(scenario.edges.map(x=>x[4]))].map(source=>({
     source,status:'NOT_CONNECTED',eligibleInputRows:0}));
    const summary=summarize(g,statuses);
-   const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:'TEMPLATE_ONLY',
+   const dossier={schemaVersion:1,registryVersion:'scenario-registry-v1',scenario:{id,title:scenario.title},availability:'TEMPLATE_ONLY',
     mode,commodity:scenario.commodities.length?commodity:null,regionId:region,
     year:selectedYear,asOf:null,generatedAt:current.toISOString(),nodes:g.nodes,edges:summary.edges,
     coverage:summary.coverage,priorityGaps:summary.priorityGaps,sourceStatuses:statuses,
@@ -220,7 +220,7 @@ export function createTransmissionDossier({
    }
   }
   const summary=summarize(g,statuses);
-  const dossier={schemaVersion:2,scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity:scenario.commodities.length?commodity:null,
+  const dossier={schemaVersion:1,registryVersion:'scenario-registry-v1',scenario:{id,title:scenario.title},availability:scenario.currentMode,mode,commodity:scenario.commodities.length?commodity:null,
    regionId:region,year:selectedYear,asOf:null,generatedAt:current.toISOString(),nodes:g.nodes,
    edges:summary.edges,coverage:summary.coverage,priorityGaps:summary.priorityGaps,sourceStatuses:summary.sourceStatus,
    otherContext:extraContext.slice(0,12),
