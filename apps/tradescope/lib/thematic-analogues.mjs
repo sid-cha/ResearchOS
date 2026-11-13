@@ -32,7 +32,7 @@ const normalize=(item,theme)=>{
  return {id:item.id,title,headline:title,type,form:item.form||null,category:theme.toUpperCase(),
   source:String(item.source||'SOURCE').slice(0,120),sourceUrl:safeLink(item.sourceUrl),
   occurredAt:date.basis==='occurred_at'?date.value:null,publishedAt:date.basis==='publication_or_acceptance'?date.value:null,
-  comparisonTime:date.value,timeBasis:date.basis,timePrecision:date.basis==='calendar_day_only'?'day':event.timePrecision||null,
+  comparisonTime:date.value,timeBasis:date.basis,timePrecision:date.basis==='calendar_day_only'?'day':item.timePrecision||null,
   symbols:Array.isArray(item.symbols)?item.symbols.filter(validSymbol).slice(0,12):[],
   evidenceLevel:String(item.evidenceLevel||'metadata_or_report').slice(0,80),location:typeof item.location==='string'?item.location.slice(0,180):null,eqMagnitude:typeof item.eqMagnitude==='number'?item.eqMagnitude:null,causeCode:typeof item.causeCode==='number'?item.causeCode:null,
   limitations:theme==='corporate'?'Filing form and metadata do not establish a specific disclosed economic event.':theme==='geopolitical'?'Media coverage does not prove a reported event occurred.':null};
