@@ -12,7 +12,7 @@ const err=(message,status=400)=>Object.assign(new Error(message),{status});
 const clone=x=>structuredClone(x);
 const TYPES=new Set(['climate_signal','regional_hazard','asset_exposure','crop_production','commodity_demand',
  'commodity_supply','market_balance','hydrology','energy_system','insurance_balance_sheet',
- 'industry_cashflow','issuer_exposure']);
+ 'industry_cashflow','issuer_exposure','regulatory_event','transport_network','credit_conditions','health_event','labor_supply']);
 
 function compileSpec(spec,atlas,registry){
  const detail=spec.caseId?atlas.detail(spec.caseId):null;
