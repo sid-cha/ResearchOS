@@ -1,3 +1,13 @@
+# TradeScope v0.22 — Evidence-Backed Economic Transmission Lab
+
+**New:** [Economic Transmission Lab](transmission-lab.html) · [v0.22 evidence & validation guide](docs/V022_TRANSMISSION_LAB.md) · [Source Control Center](source-control.html) · [Unified draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
+
+The next research increment connects the existing climate/economic hypothesis graphs to **source-linked retrospective and current context** from NASA POWER, EIA v2, USDA FAS, UN Comtrade, locally transcribed USGS observations, GDELT candidates and SEC issuer business activity. Node inputs are labelled research context; **all causal edges remain unverified**. A separate NOAA CPC historical mode excludes later-revised economic/weather values so it cannot silently leak future information into historical tests.
+
+Open `http://127.0.0.1:8000/transmission-lab.html` after `npm start` (or your configured `PORT`). Existing commodity, market and source diagnostics modules are preserved. Actual provider keys, browser acceptance, publication-vintage checks and issuer-level impact validation remain pending.
+
+---
+
 # TradeScope v0.21 — Data Source Control Center
 
 **New:** [Source Control](source-control.html) · [v0.21 integration guide](docs/V021_PROVIDER_SOURCE_CONTROL.md) · [Six-agent concept and external repository research backlog](docs/V018_PRIORITIZED_BACKLOG.md). The EIA integration now uses v2 endpoints. This is a **local pilot**, not production-grade provider monitoring; source checks run only on user request. Live API credentials remain local and are not tested by CI.
