@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Readable} from 'node:stream';
-import {createRegulatoryApi} from '../regulatory-api.mjs';
+import {createRegulatoryApi} from '../lib/regulatory-api.mjs';
 const NOW=Date.parse('2026-11-12T21:30:00Z'),ACCESSION='0000001234-26-000001';
 const filing={accession:ACCESSION,sourceUrl:'https://www.sec.gov/Archives/edgar/data/1234/000000123426000001/filing.htm',form:'8-K'};
 const data={cik:1234,entityName:'Sample issuer',facts:{'us-gaap':{IncomeTaxExpenseBenefit:{units:{USD:[{val:500,form:'10-K',accn:ACCESSION,start:'2025-01-01',end:'2025-12-31',filed:'2026-02-20'}]}}}}};
