@@ -1,3 +1,13 @@
+# TradeScope v0.24 — Source Evidence & Provenance Journal
+
+**New:** [Evidence Ledger](evidence-ledger.html) · [v0.24 provenance guide](docs/V024_EVIDENCE_PROVENANCE_LEDGER.md) · [12-scenario economic engine](transmission-lab.html) · [FRED/ALFRED explorer](fred-research.html).
+
+A new optional local journal stores bounded normalized source observations from FRED/ALFRED and source-backed economic dossiers, with ordered SHA-256 record/payload hashes, revision/dedup detection, tamper rejection and persistent restart-safe JSONL storage. Enable explicitly with RESEARCH_EVIDENCE_LEDGER_ENABLED=true in your private local .env on a loopback server. The journal does not assert historical original publication clocks, independently notarize its hashes, or grant redistribution rights.
+
+This release is a CI-tested **research pilot**; live-provider, browser, source-license and historical-clock acceptance remain pending. [Unified draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19) remains unmerged.
+
+---
+
 # TradeScope v0.23 — Scenario Registry and FRED Research Explorer
 
 **New:** [12-scenario transmission lab](transmission-lab.html) · [FRED/ALFRED source explorer](fred-research.html) · [Provider reliability center](source-control.html) · [v0.23 implementation guide](docs/V023_SCENARIO_REGISTRY_AND_FRED.md).
