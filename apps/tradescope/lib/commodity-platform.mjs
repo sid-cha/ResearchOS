@@ -46,7 +46,7 @@ export function normalizeOfficialDocs(payload,{commodity,fetchedAt=nowIso(),toda
   const no=item?.document_number,publication=item?.publication_date;
   if(typeof no!=='string'||! /^\d{4}-\d{4,6}$/.test(no)||!day(publication))throw issue('Invalid official document identity or issue date',502);
   if(publication>today||seen.has(no))continue;seen.add(no);
-  const doc={id:'fr:'+no,documentNumber:no,commodity,source:SRC,publishedDate:publication,
+  const doc={id:'fr:'+no+':'+commodity,documentNumber:no,commodity,source:SRC,publishedDate:publication,
    title:safe(item.title,280),summary:safe(item.abstract,700),documentType:safe(item.type,45),
    sourceUrl:'https://www.federalregister.gov/d/'+no,
    classification:'KEYWORD_MATCHED_REGULATORY_DOCUMENT',confirmedDisruption:false,
@@ -261,7 +261,7 @@ export function createCommodityApi({service}={}){
  if(!service)throw issue('Commodity workbench service is required');
  const reply=(res,status,value,plain=false)=>{
   res.writeHead(status,{'Content-Type':plain?'text/plain; charset=utf-8':'application/json; charset=utf-8',
-   'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+   'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(plain?{'Content-Disposition':'attachment; filename="tradescope-commodity-brief.txt"'}:{})});
   res.end(plain?value:JSON.stringify(value));
  };
  const body=async req=>{
