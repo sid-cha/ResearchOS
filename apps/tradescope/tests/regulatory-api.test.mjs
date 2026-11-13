@@ -33,3 +33,33 @@ test('capture disabled by default; when enabled requires same-origin loopback an
  assert.equal((await call(enabled,base,{method:'POST',headers:{...header,origin:'https://other.example'},payload:input})).status,403);
  const ok=await call(enabled,base,{method:'POST',headers:header,payload:input});assert.equal(ok.status,201);assert.equal(ok.data.archive.action,'created');assert.equal(captures,1);
 });
+
+
+test('exact archived revision can create and attach an SEC investigation only through local protected handoff',async()=>{
+ const ref='REV-11111111-1111-4111-8111-111111111111',eventId='sec:'+ACCESSION,archive={source:'SEC_EDGAR',eventId,revision:{id:ref,event:{symbols:['EXM']}}};
+ let created=0,attached=0;
+ const secure=createRegulatoryApi({...deps,captureEnabled:true,
+  eventArchive:{...deps.eventArchive,getRevision:async()=>archive,revisions:async()=>({revisions:[archive.revision]}),atCutoff:async()=>({status:'observed'})},
+  caseStore:{createFromArchivedRevision:async()=>{created++;return {id:'CASE-11111111-1111-4111-8111-111111111111'};},
+   attachArchivedRevision:async()=>{attached++;return {revision:2};}}});
+ const body={eventId,revisionId:ref,symbol:'EXM'};
+ const headers={'content-type':'application/json',host:'127.0.0.1:8000',origin:'http://127.0.0.1:8000'};
+ const latest=await call(secure,'/api/regulatory/archive/revision?eventId='+eventId+'&revisionId='+ref);
+ assert.equal(latest.status,200);assert.equal(latest.data.revision.id,ref);
+ assert.equal((await call(secure,'/api/regulatory/archive/revisions?eventId='+eventId)).status,200);
+ assert.equal((await call(secure,'/api/regulatory/archive/at-cutoff?eventId='+eventId+'&cutoff=2026-11-12T21:00:00Z')).status,200);
+ const deny=await call(secure,'/api/regulatory/investigate',{method:'POST',payload:body,headers,remoteAddress:'192.0.2.12'});
+ assert.equal(deny.status,403);
+ const cross=await call(secure,'/api/regulatory/investigate',{method:'POST',payload:body,headers:{...headers,origin:'https://hostile.example'}});
+ assert.equal(cross.status,403);
+ const wrong=await call(secure,'/api/regulatory/investigate',{method:'POST',payload:{...body,symbol:'AAPL'},headers});
+ assert.equal(wrong.status,422);
+ const ok=await call(secure,'/api/regulatory/investigate',{method:'POST',payload:body,headers});
+ assert.equal(ok.status,201);assert.equal(ok.data.case.id,'CASE-11111111-1111-4111-8111-111111111111');
+ assert.equal(created,1);
+ const attach=await call(secure,'/api/regulatory/investigate',{method:'POST',payload:{...body,caseId:ok.data.case.id,expectedRevision:1},headers});
+ assert.equal(attach.status,200);assert.equal(attached,1);
+ const disabled=createRegulatoryApi({...deps,eventArchive:{...deps.eventArchive,getRevision:async()=>archive},caseStore:{createFromArchivedRevision:async()=>{created++;}}});
+ assert.equal((await call(disabled,'/api/regulatory/investigate',{method:'POST',payload:body,headers})).status,403);
+ assert.equal(created,1);
+});
