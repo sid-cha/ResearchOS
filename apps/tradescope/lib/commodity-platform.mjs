@@ -186,6 +186,13 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
    if(typeof body.enabled!=='boolean')throw issue('enabled must be boolean');
    w.enabled=body.enabled;w.revision++;w.updatedAt=clock();return w;
   });},
+  deleteWatch(id,body){return write(s=>{
+   const index=s.watches.findIndex(w=>w.id===id);if(index<0)throw issue('Watch not found',404);
+   if(!inRange(body?.expectedRevision,1,1000000)||s.watches[index].revision!==body.expectedRevision)
+    throw issue('Watch revision conflict',409);
+   const removed=s.watches.splice(index,1)[0];
+   return {id:removed.id,deleted:true,preservedHistoricalRuns:s.runs.filter(x=>x.watchId===id).length};
+  });},
   recordWatchRun(id,result){return write(s=>{
    const w=s.watches.find(x=>x.id===id);if(!w)throw issue('Watch not found',404);
    if(w.commodity!==result.commodity)throw issue('Watch source mismatch');
@@ -297,7 +304,7 @@ export function createCommodityApi({service}={}){
  return async(req,res,url)=>{
   if(!url.pathname.startsWith('/api/commodity/'))return false;
   try{
-   if(!['GET','POST','PATCH'].includes(req.method))throw issue('Unsupported method',405);
+   if(!['GET','POST','PATCH','DELETE'].includes(req.method))throw issue('Unsupported method',405);
    if(req.method!=='GET'&&req.headers.origin){
     let u;try{u=new URL(req.headers.origin)}catch{throw issue('Invalid write origin',403)}
     if(u.host!==req.headers.host||!['http:','https:'].includes(u.protocol))throw issue('Cross-origin writes forbidden',403);
@@ -326,6 +333,8 @@ export function createCommodityApi({service}={}){
    else if(req.method==='POST'&&op==='watches')reply(res,201,{watch:await service.ledger.createWatch(await body(req))});
    else if(req.method==='PATCH'&&/^watches\/watch:[a-f0-9-]{36}$/.test(op))
     reply(res,200,{watch:await service.ledger.setWatch(op.slice(8),await body(req))});
+   else if(req.method==='DELETE'&&/^watches\/watch:[a-f0-9-]{36}$/.test(op))
+    reply(res,200,await service.ledger.deleteWatch(op.slice(8),await body(req)));
    else if(req.method==='POST'&&/^watches\/watch:[a-f0-9-]{36}\/scan$/.test(op))
     reply(res,200,await service.scanWatch(op.slice(8,-5)));
    else if(req.method==='GET'&&op==='reviews'){
