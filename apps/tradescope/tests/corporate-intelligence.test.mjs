@@ -166,3 +166,17 @@ test('future local observation clocks are rejected and headline metadata partici
  await assert.rejects(store.record(future),{status:400});assert.equal((await store.listEvents()).length,0);
  assert.notEqual(event().contentRevision,event({source:{...filing,headline:'Example issuer — amended source title'}}).contentRevision);
 });
+
+
+test('auditor changes, financial-statement non-reliance and listing notices require cited official 8-K passages',()=>{
+ const source='<h2>Item 4.01 Changes in Registrant\'s Certifying Accountant</h2><p>The issuer dismissed its former independent registered public accounting firm.</p>'+
+  '<h2>Item 4.02 Non-Reliance on Previously Issued Financial Statements</h2><p>The audit committee concluded the prior statements should no longer be relied upon.</p>'+
+  '<h2>Item 3.01 Notice of Delisting or Failure to Satisfy a Continued Listing Rule or Standard</h2><p>The exchange notified the issuer of a listing-rule deficiency.</p>';
+ const result=event({text:source});
+ assert(result.classifications.some(item=>item.id==='auditor_change_disclosure'));
+ assert(result.classifications.some(item=>item.id==='financial_statement_nonreliance'));
+ assert(result.classifications.some(item=>item.id==='listing_compliance_disclosure'));
+ for(const item of result.classifications){assert(item.evidenceIds.every(id=>result.evidence.some(e=>e.id===id&&e.kind==='source_passage')));}
+ const unavailable=event({source:{...filing,headline:'Auditor resigned and restatement required'},document:null});
+ assert(!unavailable.classifications.some(item=>item.id==='financial_statement_nonreliance'));
+});
