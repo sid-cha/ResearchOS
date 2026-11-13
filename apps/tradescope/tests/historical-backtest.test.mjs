@@ -89,7 +89,7 @@ test('wrong historical macro snapshot dates or invalid realtime validity are rej
  assert.throws(()=>buildHistoricalStudy({plan,snapshots}),/contemporaneous/);
 });
 test('non-overlapping outcomes contribute to descriptive counts; derived performance rates remain unavailable for small samples',()=>{
- const plan=planReplayDates({caseId:'covid-2020',start:'2020-01-03',end:'2020-02-14',cadenceDays:7,horizonSessions:5},()=>new Date('2026-11-13T12:00:00Z'));
+ const plan=planReplayDates({caseId:'covid-2020',start:'2020-01-03',end:'2020-02-14',cadenceDays:7,horizonSessions:20},()=>new Date('2026-11-13T12:00:00Z'));
  const snapshots=plan.dates.map((d,i)=>vintage(d,i%2?{curve:1,hy:3,nfci:-1}:{curve:-0.5,hy:8,nfci:1}));
  const bars=barsAfter('2020-01-01',85,i=>i>8&&i<12?80:100);
  const study=buildHistoricalStudy({plan,snapshots,benchmarkBars:bars,benchmarkStatus:'available'});
