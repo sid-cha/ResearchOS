@@ -7,7 +7,7 @@ const SOURCES=Object.freeze({
  nber:{name:'NBER Business Cycle Dating',url:'https://www.nber.org/research/business-cycle-dating'},
  fred:{name:'FRED 10y–3m Treasury Spread',url:'https://fred.stlouisfed.org/series/T10Y3M'},
  credit:{name:'FRED High Yield Credit Spread',url:'https://fred.stlouisfed.org/series/BAMLH0A0HYM2'},
- alf:{name:'ALFRED Vintage Data',url:'https://fred.stlouisfed.org/docs/api/fred/alfred.html'},
+ alf:{name:'ALFRED Vintage Data',url:'https://fred.stlouisfed.org/docs/api/fred/realtime_period.html'},
  who:{name:'WHO COVID-19 Timeline',url:'https://www.who.int/emergencies/diseases/novel-coronavirus-2019/interactive-timeline'},
  ens:{name:'NOAA CPC ENSO Monitoring',url:'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/enso_advisory/'},
  oni:{name:'NOAA CPC Oceanic Niño Index',url:'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php'},
