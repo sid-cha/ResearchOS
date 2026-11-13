@@ -1,3 +1,13 @@
+# TradeScope v0.23 — Scenario Registry and FRED Research Explorer
+
+**New:** [12-scenario transmission lab](transmission-lab.html) · [FRED/ALFRED source explorer](fred-research.html) · [Provider reliability center](source-control.html) · [v0.23 implementation guide](docs/V023_SCENARIO_REGISTRY_AND_FRED.md).
+
+The three v0.22 economic pathways remain available. A versioned scenario registry now supports **12 research pathways** across climate, energy, geopolitics, shipping, credit, industrial supply and health. Only **3** have prior research-context pipelines, **2** have partial source bindings, and **7** are explicitly `TEMPLATE_ONLY`; all causal edges remain unvalidated. No additional template implies actual market impact, historical forecasting or an autonomous agent.
+
+FRED/ALFRED explorer adds official server-only series discovery, metadata, vintage dates, economic releases and historical calendar-day as-of observations. Use **new/rotated credentials** in private `apps/tradescope/.env`; never commit or paste live keys into GitHub. This build is local-first, CI tested with mocked providers and **not yet live-provider/browser accepted**.
+
+---
+
 # TradeScope v0.22 — Evidence-Backed Economic Transmission Lab
 
 **New:** [Economic Transmission Lab](transmission-lab.html) · [v0.22 evidence & validation guide](docs/V022_TRANSMISSION_LAB.md) · [Source Control Center](source-control.html) · [Unified draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
