@@ -17,6 +17,18 @@ The new narrow product experiment lives at `/commodity.html` and is documented i
 
 **Product freeze:** do not add unrelated chart indicators, equity screening features, trading execution, generic chat or mobile functionality until target users show a recurring need. Finish actual source quality, specific commodity/company exposure proof, end-to-end usability, licensing and meaningful design-partner evaluation before expanding.
 
+## v0.22 delivery — evidence-backed economic transmission (pilot built)
+
+**Code:** `lib/transmission-dossier.mjs`, `transmission-lab.html`, `transmission-lab.js`, `transmission-lab.css` and `tests/transmission-dossier.test.mjs`.
+
+- **Built:** read-only three-scenario dossier API; node-by-node research context from existing NASA POWER, USDA FAS, EIA v2, UN Comtrade, GDELT, locally captured USGS statistics and SEC issuer activity. Live provider keys and upstream quality have not yet been acceptance-tested.
+- **Built:** a distinct issue-dated NOAA CPC historical ENSO mode that refuses to mix later-revised economic or meteorology datasets into the evidence for an earlier as-of date.
+- **Built:** inspectable transmission stages, per-source coverage, unvalidated edge queue, evidence gaps and a downloadable source-attributed text dossier. Verified market/issuer causal effects and predictive accuracy remain **zero/not established**.
+- **Pending:** original release-vintage archives and verification, actual geographic/economic exposure joins, event-specific cost/demand quantification, measured propagation lags, 2008/2020 historical negative controls and live browser/provider acceptance.
+- **Next technical focus:** make provenance archival durable, validate primary upstream source schemas and historical release clocks, and extend evidence-sourced region/facility links only when observed.
+
+Full scope and manual checks: [V022_TRANSMISSION_LAB.md](V022_TRANSMISSION_LAB.md). **Do not present conditional graph edges as risk probabilities or investment advice.**
+
 ## Future concept — Research Agent Desk (deferred; design discovery only)
 
 **User-requested concept (Nov 13, 2026):** a one-click mission launches up to **six specialist research agents** that visibly work in parallel in TradeScope, each showing a live phase/status, source citations, observations, open questions, costs and confidence limits, then produce a single consolidated report. Human research tasks should eventually be delegated to explicit tools. **Do not implement this now**; revisit after provider validation, evidenced company exposure and source-licensed datasets.
