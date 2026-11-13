@@ -7,6 +7,20 @@ const req=async route=>{const r=await fetch('/api/transmission-dossier/'+route,{
  const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Unable to load research evidence');return d;};
 let catalog=null,last=null,selected=null,runId=0;
 const setStatus=s=>el('status').textContent=s;
+function currentScenario(){return catalog?.scenarios.find(x=>x.id===el('scenario').value)||null;}
+function populateScenarioList(){
+ if(!catalog)return;
+ const prior=el('scenario').value,kind=el('eventClass').value,q=el('scenarioSearch').value.trim().toLowerCase();
+ const items=catalog.scenarios.filter(x=>(kind==='all'||x.eventClass===kind)&&
+  (!q||(x.title+' '+x.industry+' '+x.eventClass).toLowerCase().includes(q)));
+ if(!items.length){el('scenario').innerHTML='<option value="">No matching scenario</option>';
+  el('analyze').disabled=true;el('scenarioMaturity').textContent='No scenario matches the filters';return;}
+ el('scenario').innerHTML=items.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.title)+
+  ' ['+esc(x.currentMode==='TEMPLATE_ONLY'?'TEMPLATE':'SOURCE CONTEXT')+']</option>').join('');
+ if(items.some(x=>x.id===prior))el('scenario').value=prior;
+ else el('scenario').value=items[0].id;
+ el('analyze').disabled=false;regionOptions();settings();
+}
 function regionOptions(){
  if(!catalog)return;
  const scope=catalog.scenarios.find(x=>x.id===el('scenario').value);
@@ -18,14 +32,16 @@ function regionOptions(){
 function settings(){
  if(!catalog)return;
  const scenario=el('scenario').value;
- const enso=scenario==='enso-fertilizer';
+ const detail=currentScenario();const needsYear=detail?.providerBindings?.includes('NASA_POWER_MONTHLY_CURRENT_REVISION');
  const historical=el('mode').value==='historical';
- el('commodityWrap').hidden=!enso;
- el('yearWrap').hidden=historical;
+ el('commodityWrap').hidden=!(detail?.commodities?.length);
+ el('yearWrap').hidden=historical||!needsYear;
  el('asOfWrap').hidden=!historical;
  const opt=[...el('mode').options].find(x=>x.value==='historical');
- opt.disabled=!enso;
- if(!enso&&historical){el('mode').value='current';el('yearWrap').hidden=false;el('asOfWrap').hidden=true;}
+ opt.disabled=!detail?.historicalMode;
+ if(!detail?.historicalMode&&historical){el('mode').value='current';el('yearWrap').hidden=!needsYear;el('asOfWrap').hidden=true;}
+ el('scenarioMaturity').textContent=(detail?.currentMode||'UNKNOWN').replace(/_/g,' ')+
+  ' · '+(detail?.historicalMode?'NOAA issued-source history supported':'Historical first-available evidence not connected');
  el('export').disabled=true;
  last=null;
 }
@@ -93,7 +109,7 @@ function draw(d){
   '<div class="empty">All nodes may have input context, but the mechanism edges remain UNVERIFIED.</div>';
  inspectNode(d.nodes.find(x=>x.id===selected)?.id||d.nodes[0]?.id);
  el('export').disabled=false;
- setStatus('Dossier generated '+d.generatedAt+' · '+d.coverage.contextEvidenceRows+
+ setStatus('Scenario '+(d.availability||'RESEARCH_CONTEXT').replace(/_/g,' ')+' · Dossier generated '+d.generatedAt+' · '+d.coverage.contextEvidenceRows+
   ' contextual rows, '+d.coverage.validatedEdges+' causally validated edges. '+(d.mode==='historical'?
    'Historical view excludes revised economic series and model weather data.':
    'Current/revised datasets are not historical first-published vintages.'));
@@ -104,10 +120,10 @@ async function run(){
  const id=el('scenario').value,mode=el('mode').value,region=el('region').value,
   year=el('year').value.trim(),asOf=el('asOf').value;
  const p=new URLSearchParams({id,mode,region});
- if(id==='enso-fertilizer')p.set('commodity',el('commodity').value);
+ if(currentScenario()?.commodities?.length)p.set('commodity',el('commodity').value);
  if(mode==='historical'){
   if(!asOf){setStatus('Select an as-of date.');return;}p.set('asOf',asOf);
- }else{
+ }else if(currentScenario()?.providerBindings?.includes('NASA_POWER_MONTHLY_CURRENT_REVISION')){
   if(!/^\d{4}$/.test(year)){setStatus('Choose a valid complete four-digit historical meteorology year.');return;}
   p.set('year',year);
  }
@@ -131,12 +147,17 @@ function exportReport(){
 async function init(){
  try{
   catalog=await req('catalog');
+  el('eventClass').innerHTML='<option value="all">All event classes</option>'+
+   (catalog.eventClasses||[]).map(x=>'<option value="'+esc(x)+'">'+esc(x.replace(/_/g,' '))+'</option>').join('');
+  populateScenarioList();
   el('year').max=String(new Date().getUTCFullYear()-1);
   el('year').value=String(new Date().getUTCFullYear()-1);
   regionOptions();settings();
   setStatus('Ready. All paths are research hypotheses until validated with independent, time-aligned source evidence.');
  }catch(e){setStatus('Unable to initialize economic analysis: '+e.message);}
 }
+el('eventClass').addEventListener('change',populateScenarioList);
+el('scenarioSearch').addEventListener('input',populateScenarioList);
 el('scenario').addEventListener('change',()=>{regionOptions();settings();});
 el('mode').addEventListener('change',settings);
 el('analyze').addEventListener('click',()=>void run());
