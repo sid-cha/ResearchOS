@@ -160,7 +160,9 @@ export function createExposureRegistry({filename,now=()=>new Date(),maxAssets=12
   if(x?.version!==1||!Number.isSafeInteger(x.revision)||x.revision<0||
    !Array.isArray(x.assets)||x.assets.length>maxAssets||x.assets.some(a=>
     typeof a.id!=='string'||!ID.test(a.id)||!a.claim||a.claim.evidenceStatus!=='ANALYST_SUBMITTED_UNVERIFIED'||
-    a.claim.independentlyVerified!==false))throw fail('Local exposure registry schema mismatch',409);
+    a.claim.independentlyVerified!==false||a.claim.operationsVerified!==false||
+    a.claim.historicalFirstAvailableVerified!==false||sha(a.claim)!==a.evidenceHash))
+   throw fail('Local exposure registry schema or evidence integrity mismatch',409);
   return x;
  }
  async function list(){
@@ -229,9 +231,10 @@ export function createGeoExposureService({events=createUsgsEventFeed(),registry=
   if(asOf!==null&&!day(asOf))throw fail('Invalid as-of cutoff');
   const feed=await events.recent(tier),event=feed.events.find(x=>x.id===eventId);
   if(!event)throw fail('Event ID not present in current source feed',404);
+  if(asOf&&event.occurredAt.slice(0,10)>asOf)throw fail('Event occurred after requested calendar cutoff');
   const stored=await listing();
   return {source:feed.source,event,screeningRadiusKm:radiusKm,requestedAsOf:asOf,
-   facilityClaims:stored.total,
+   candidateScenarioId:'earthquake-facility',scenarioStatus:'TEMPLATE_ONLY',facilityClaims:stored.total,
    observedCurrentFeed:true,historicalAsOfEligible:false,
    matches:proximityScreen(event,stored.assets,{radiusKm,asOf}),
    warning:'Proximity reflects epicenter distance only; independently verify shaking intensity, actual asset ownership, operations, and financial materiality.'};
