@@ -80,7 +80,8 @@ async function openBrief(id){
 async function watches(){
  const d=await api('watches');
  get('watches').innerHTML=d.watches.length?d.watches.map(w=>{
-  const details=w.lastResult?' Last scan: '+w.lastResult.candidateDocuments+
+  const details=w.lastResult?.status==='failed'?' Last scan FAILED: official source unavailable; previous observation preserved.':
+   w.lastResult?' Last scan: '+w.lastResult.candidateDocuments+
    ' candidates, '+w.lastResult.newCandidates+' new after baseline.':' Not scanned yet.';
   return '<article class="watch"><strong>'+esc(w.name)+'</strong><small>'+
    esc(w.commodity)+' · every '+esc(w.intervalMinutes)+'m · '+(w.enabled?'ENABLED':'DISABLED')+'</small>'+
