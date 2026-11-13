@@ -63,7 +63,7 @@ test('missing or unsupported sections do not manufacture summaries from metadata
  assert.match(result.limitations.join(' '),/No supported substantive/);
  assert(!JSON.stringify(result).includes('never-copy-this'));
  assert(!result.summary.some(item=>item.text===filing.headline));
- assert.throws(()=>analyzeFilingDocument('x'.repeat(2*1024*1024+1),context),{status:413});
+ assert.throws(()=>analyzeFilingDocument('x'.repeat(24*1024*1024+1),context),{status:413});
  assert.deepEqual(analyzeFilingDocument('<p>Cover only.</p>',{filing:null}).summary,[]);
 });
 
@@ -142,12 +142,28 @@ test('parsed-document cache evicts oldest entries at its fixed bound',async()=>{
 
 test('declared and streamed document limits abort before oversized HTML can be analyzed',async()=>{
  let cancelled=false;
- const oversized=()=>new ReadableStream({start(controller){controller.enqueue(new Uint8Array(1024*1024));controller.enqueue(new Uint8Array(1024*1024));controller.enqueue(new Uint8Array(1));},cancel(){cancelled=true;}});
+ const oversized=()=>new ReadableStream({start(controller){controller.enqueue(new Uint8Array(12*1024*1024));controller.enqueue(new Uint8Array(12*1024*1024));controller.enqueue(new Uint8Array(1));},cancel(){cancelled=true;}});
  const reader=createFilingReader({env,fetchImpl:async()=>new Response(oversized(),{headers:{'content-type':'text/html'}})});
  await assert.rejects(reader.read(context),{status:413});assert.equal(cancelled,true);
  cancelled=false;
- const declared=createFilingReader({env,fetchImpl:async()=>new Response(new ReadableStream({cancel(){cancelled=true;}}),{headers:{'content-type':'text/html','content-length':String(2*1024*1024+1)}})});
+ const declared=createFilingReader({env,fetchImpl:async()=>new Response(new ReadableStream({cancel(){cancelled=true;}}),{headers:{'content-type':'text/html','content-length':String(24*1024*1024+1)}})});
  await assert.rejects(declared.read(context),{status:413});assert.equal(cancelled,true);
  const binary=createFilingReader({env,fetchImpl:async()=>new Response('%PDF fake',{headers:{'content-type':'application/pdf'}})});
  await assert.rejects(binary.read(context),{status:502});
+});
+
+test('large 9 MiB SEC 10-Q primary HTML is processed with bounded citations and no raw HTML retention',async()=>{
+ const report={...filing,form:'10-Q'};
+ const large='<html><head><title>10-Q</title><script>'+('var x=0;'.repeat(1_200_000))+'</script></head><body>'
+  +'<h2>PART I</h2><h2>Item 1. Financial Statements</h2><p>Financial statements contain the unaudited balance sheets, operating results, and consolidated statements of cash flows for the issuer in the quarterly reporting period.</p>'
+  +'<h2>Item 2. Management Discussion and Analysis</h2><p>The issuer describes its operating performance, revenues, funding and risk factors in a cited source passage with a clear fiscal period.</p></body></html>';
+ assert(Buffer.byteLength(large)>9*1024*1024);
+ const result=analyzeFilingDocument(large,{...context,filing:report});
+ assert.equal(result.coverage.documentBytes,Buffer.byteLength(large));
+ assert.equal(result.coverage.documentByteLimit,24*1024*1024);
+ assert.equal(result.coverage.rawDocumentStored,false);
+ assert(result.items.some(item=>item.section==='Part I / Item 1'));
+ assert(result.items.some(item=>item.section==='Part I / Item 2'));
+ assert(!JSON.stringify(result).includes('var x=0;'));
+ assert(result.evidence.every(item=>item.sourceUrl===report.sourceUrl));
 });
