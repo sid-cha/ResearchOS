@@ -1,3 +1,9 @@
+# TradeScope v0.21 — Data Source Control Center
+
+**New:** [Source Control](source-control.html) · [v0.21 integration guide](docs/V021_PROVIDER_SOURCE_CONTROL.md) · [Six-agent concept and external repository research backlog](docs/V018_PRIORITIZED_BACKLOG.md). The EIA integration now uses v2 endpoints. This is a **local pilot**, not production-grade provider monitoring; source checks run only on user request. Live API credentials remain local and are not tested by CI.
+
+---
+
 # TradeScope v0.20 — Original Market Research Workspace
 
 **New:** [Market Data workbench](market-hub.html) · [v0.20 technical guide](docs/V020_MARKET_RESEARCH_WORKSPACE.md) · [Cumulative PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
