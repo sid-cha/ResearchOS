@@ -64,7 +64,7 @@ test('historical macro replay correctly records missing market 2008 without fabr
  const study=await service.replay({caseId:'financial-2008'});
  assert.equal(study.timeline.length,7);
  assert.equal(study.coverage.warningDecisions,7);
- assert.equal(study.coverage.benchmarkStatus,'unsupported_before_2016');
+ assert.equal(study.coverage.benchmarkStatus,'unavailable_long_history_not_configured');
  assert.equal(study.coverage.benchmarkLabelledDecisions,0);
  assert.equal(study.outcomes.descriptiveConfusion,null);
  assert.equal(study.outcomes.precision,null);
