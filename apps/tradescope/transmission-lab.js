@@ -150,6 +150,10 @@ async function init(){
   el('eventClass').innerHTML='<option value="all">All event classes</option>'+
    (catalog.eventClasses||[]).map(x=>'<option value="'+esc(x)+'">'+esc(x.replace(/_/g,' '))+'</option>').join('');
   populateScenarioList();
+  const fromLink=new URLSearchParams(window.location.search).get('scenario');
+  if(fromLink&&catalog.scenarios.some(x=>x.id===fromLink)){
+   el('scenario').value=fromLink;regionOptions();settings();
+  }
   el('year').max=String(new Date().getUTCFullYear()-1);
   el('year').value=String(new Date().getUTCFullYear()-1);
   regionOptions();settings();
