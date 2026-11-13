@@ -3,6 +3,14 @@
 **Audit date:** 2026-11-13
 **Source:** current implementation on feature/tradescope-v018-unified-development, original V018_PRIORITIZED_BACKLOG.md, FEATURE_STATUS.md, v0.19 M1–M4, v0.20–v0.25 release docs and the cumulative draft PR #19. This is a scope audit, NOT a user-acceptance or production-compliance signoff.
 
+## v0.26 addendum — source corroboration & research challenge
+
+**Built:** official EPA Facility Registry Service (FRS) exact ID lookup, government-reported NAD83 site coordinates, facility ID and EPA program ID evidence, source-to-local asset point reconciliation, typed deterministic contradiction queue. This is **not** a verified SEC CIK/operator crosswalk; matching names/positions are not proof. Tests use mocked source responses. Details: [V026_FRS_FACILITY_AND_CRITIC.md](V026_FRS_FACILITY_AND_CRITIC.md).
+
+**New product concept:** 5–6 autonomous specialist agents plus an **independent adversarial Red-Team/Anti-Agent**, whose job is to find source-backed contradictions, alternative explanations and lookahead leakage, then challenge findings before the final report. Actual workers, independent tool-based counterresearch, adjudication and NVIDIA inference remain deferred. The typed deterministic evidence challenger is only a first precursor.
+
+**Still P0:** independent legal operator/subsidiary/CIK corroboration, effective dates, original vintage clock verification, hazard polygons/intensity, real providers, rights, design partners and out-of-sample negative controls.
+
 ## Scope delivered as local engineering pilots
 
 | Workstream | Engineering status | Remaining acceptance limitation |
