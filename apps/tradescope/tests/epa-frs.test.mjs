@@ -112,6 +112,7 @@ test('critic surfaces facility coordinate conflict, alternative name, unobserved
  assert(report.critic.challenges.some(x=>x.id==='FACILITY_NAME_VARIANT'));
  assert(report.critic.challenges.some(x=>x.id==='SOURCE_DATE_AFTER_AS_OF'));
  assert(report.critic.critical>=3);
+ assert.throws(()=>adversarialFacilityReview({asset:asset(),frs:normalizeFrsRecord(epa(),{registryId:id}),asOf:'2020-02-30'}),e=>e.status===400);
  const missing=adversarialFacilityReview({asset:asset(),frs:normalizeFrsRecord({FRSFacility:[]},{registryId:id})});
  assert.equal(missing.locationStatus,'EPA_REGISTRY_ID_NOT_RESOLVED');
  assert(missing.critic.challenges.some(x=>x.id==='EPA_ID_NOT_FOUND'));
