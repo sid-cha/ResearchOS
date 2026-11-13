@@ -43,12 +43,12 @@
 </section>
 <section id="view-compare" class="view" aria-labelledby="headCompare">
  <div class="section-heading"><div><h2 id="headCompare">Relative stock performance</h2><p>Compare up to 10 US-listed instruments from a common observed start, using split-adjusted IEX close prices.</p></div>
- <div class="tools"><label>Range <select id="compareRange"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="3M">3 months</option><option value="1M">1 month</option></select></label><button id="compareRefresh" type="button" class="primary">Compare</button></div></div>
+ <div class="tools"><label>Range <select id="compareRange"><option value="1Y">1 year</option><option value="3Y">3 years</option><option value="3M">3 months</option><option value="1M">1 month</option></select></label><button id="compareRefresh" type="button" class="primary">Compare</button><button type="button" id="compareSave">Save selection</button><button type="button" id="compareExport">Export CSV</button></div></div>
  <div class="selection-line"><div id="compareChips" class="chips"></div><label class="append"><select id="compareAdd"><option value="">Add ticker…</option></select></label></div>
  <div class="surface large-chart"><h3>Price performance from common start (%)</h3><p id="compareSource" class="micro">Waiting for a comparison.</p><div id="compareChart" class="plot"></div></div>
 </section>
 <section id="view-financials" class="view" aria-labelledby="headFinancials">
- <div class="section-heading"><div><h2 id="headFinancials">Financial statements · <span id="financialSymbol">AAPL</span></h2><p>SEC EDGAR XBRL annual results with fiscal end and filing cutoffs. Not a 40-year standardized vendor dataset.</p></div><button id="financialRefresh" type="button" class="quiet">↻ Reload</button></div>
+ <div class="section-heading"><div><h2 id="headFinancials">Financial statements · <span id="financialSymbol">AAPL</span></h2><p>SEC EDGAR XBRL annual results with fiscal end and filing cutoffs. Not a 40-year standardized vendor dataset.</p></div><div class="tools"><button id="financialRefresh" type="button" class="quiet">↻ Reload</button><button id="financialExport" type="button">Export CSV</button></div></div>
  <div class="pane-caption" id="financialSource"></div><div class="surface table-panel"><div id="financialTable"></div></div>
  <div class="surface" id="financialDetail"><h3 id="financialDetailTitle">Choose a financial metric</h3><div class="plot" id="financialDetailPlot"></div></div>
 </section>
@@ -70,7 +70,7 @@
 </section>
 <section id="view-themes" class="view" aria-labelledby="headThemes">
  <div class="section-heading"><div><h2 id="headThemes">ETF themes & subsectors</h2><p>Comparable historical returns, price ranges and thematic fund proxies. All values require a supported live data entitlement.</p></div>
- <div class="tools"><label>Group <select id="themeGroup"></select></label><button id="themeRefresh" type="button" class="quiet">↻ Refresh</button></div></div>
+ <div class="tools"><label>Group <select id="themeGroup"></select></label><button id="themeRefresh" type="button" class="quiet">↻ Refresh</button><button id="themeExport" type="button">Export CSV</button></div></div>
  <div class="pane-caption" id="themeSource">Thematic categories are editorial, not a live holdings analysis.</div><div class="surface table-panel" id="themeTable"></div>
 </section>
 <section id="view-macro" class="view" aria-labelledby="headMacro">
