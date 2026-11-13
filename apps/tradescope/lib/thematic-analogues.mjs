@@ -1,12 +1,14 @@
 /** Source-backed exploratory thematic analogues, never causal, predictive or cross-provider exposure inference.
  * This module uses bounded LIVE provider result lists, not a complete archival backtest.
  */
-const THEMES=Object.freeze(['corporate','news','geopolitical','natural']);
+import {createTsunamiResearch} from './tsunami-events.mjs';
+const THEMES=Object.freeze(['corporate','news','geopolitical','natural','tsunami']);
 const TOPICS=Object.freeze(['sanctions','conflict','supply']);
 const stop=new Set(['the','and','for','with','from','that','this','company','corporation','inc','incorporated','filing','report','reports','official','issued','financial','results','form','issuer','group','during','current','other']);
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 const validSymbol=value=>typeof value==='string'&&/^[A-Z][A-Z0-9.-]{0,11}$/.test(value);
 const timeOf=event=>{
+ if(event.timeBasis==='calendar_day_only'&&typeof event.comparisonTime==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(event.comparisonTime)&&Number.isFinite(Date.parse(event.comparisonTime)))return {value:event.comparisonTime,basis:'calendar_day_only'};
  const occurred=event.occurredAt;
  if(typeof occurred==='string'&&Number.isFinite(Date.parse(occurred)))return {value:new Date(occurred).toISOString(),basis:'occurred_at'};
  const published=event.publishedAt;
@@ -28,9 +30,9 @@ const normalize=(item,theme)=>{
  return {id:item.id,title,headline:title,type,form:item.form||null,category:theme.toUpperCase(),
   source:String(item.source||'SOURCE').slice(0,120),sourceUrl:safeLink(item.sourceUrl),
   occurredAt:date.basis==='occurred_at'?date.value:null,publishedAt:date.basis==='publication_or_acceptance'?date.value:null,
-  comparisonTime:date.value,timeBasis:date.basis,
+  comparisonTime:date.value,timeBasis:date.basis,timePrecision:date.basis==='calendar_day_only'?'day':event.timePrecision||null,
   symbols:Array.isArray(item.symbols)?item.symbols.filter(validSymbol).slice(0,12):[],
-  evidenceLevel:String(item.evidenceLevel||'metadata_or_report').slice(0,80),
+  evidenceLevel:String(item.evidenceLevel||'metadata_or_report').slice(0,80),location:typeof item.location==='string'?item.location.slice(0,180):null,eqMagnitude:typeof item.eqMagnitude==='number'?item.eqMagnitude:null,causeCode:typeof item.causeCode==='number'?item.causeCode:null,
   limitations:theme==='corporate'?'Filing form and metadata do not establish a specific disclosed economic event.':theme==='geopolitical'?'Media coverage does not prove a reported event occurred.':null};
 };
 export function rankThematicAnalogues(events,{eventId,theme,limit=5,now=Date.now()}={}){
@@ -64,24 +66,26 @@ export function rankThematicAnalogues(events,{eventId,theme,limit=5,now=Date.now
    'Source coverage is limited to currently returned records and can omit earlier or unindexed events.',
    'Similarity is a descriptive ranking, never a calibrated likelihood of direction, magnitude or causation.']};
 }
-export function createThematicResearch({sources,now=Date.now}={}){
+export function createThematicResearch({sources,now=Date.now,tsunamis=createTsunamiResearch({now})}={}){
  if(!sources||typeof sources.filings!=='function')throw new TypeError('Thematic research requires a sourced SEC adapter');
  async function list({theme='corporate',symbol='AAPL',topic='sanctions'}={}){
   if(!THEMES.includes(theme))throw fail('Unsupported research event theme.');
   if(!validSymbol(symbol))throw fail('Choose a supported uppercase instrument symbol.');
   if(!TOPICS.includes(topic))throw fail('Choose a supported geopolitical topic.');
   let data,items;
-  if(theme==='corporate'){data=await sources.filings(symbol);items=data.filings;}
+  if(theme==='tsunami'){data=await tsunamis.list();items=data.events;}
+  else if(theme==='corporate'){data=await sources.filings(symbol);items=data.filings;}
   else if(theme==='news'){if(typeof sources.news!=='function')throw fail('Company news source is not configured.',503);data=await sources.news(symbol,30);items=data.events;}
   else if(theme==='natural'){if(typeof sources.hazards!=='function')throw fail('Natural hazard source is not configured.',503);data=await sources.hazards('all');items=data.events;}
   else{if(typeof sources.geopolitics!=='function')throw fail('Geopolitical media source is not configured.',503);data=await sources.geopolitics(topic);items=data.events;}
   const instant=Number(now());
   const normalized=(Array.isArray(items)?items:[]).slice(0,100).map(item=>normalize(item,theme)).filter(item=>item&&Date.parse(item.comparisonTime)<=instant)
    .sort((a,b)=>b.comparisonTime.localeCompare(a.comparisonTime)||a.id.localeCompare(b.id));
-  return {theme,symbol,topic,events:normalized,source:theme==='corporate'?'SEC_EDGAR':theme==='news'?'ALPACA_NEWS':theme==='natural'?'USGS_NASA':'GDELT_MEDIA',
+  return {theme,symbol,topic,events:normalized,source:theme==='corporate'?'SEC_EDGAR':theme==='news'?'ALPACA_NEWS':theme==='natural'?'USGS_NASA':theme==='tsunami'?'NOAA_NCEI_HAZEL':'GDELT_MEDIA',
    fetchedAt:data?.fetchedAt||new Date(instant).toISOString(),coverage:{receivedCount:items?.length||0,usableCount:normalized.length,maxEvents:100,historicalCompleteness:'NOT_COMPLETE'},
    limitations:['The returned source list is not a complete historical catalogue; use the archive for true as-observed revision history.',
-    theme==='geopolitical'?'GDELT entries are media coverage candidates, not independent confirmation of the reported event.':'No source title alone confirms company exposure or economic impact.']};
+    theme==='geopolitical'?'GDELT entries are media coverage candidates, not independent confirmation of the reported event.':theme==='tsunami'?'NOAA historical tsunami data is retrospective, may be revised, and time may have day-only precision. This is not a real-time warning feed.':'No source title alone confirms company exposure or economic impact.',
+    ...((data?.limitations||[]).filter(x=>typeof x==='string').slice(0,5))]};
  }
  async function analogues(options={}){
   const data=await list(options);
