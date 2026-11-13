@@ -25,7 +25,7 @@
   $('discoveryRegister').disabled=!state.selected||registered();
   $('discoveryLoadIssuer').disabled=!registered();
   $('discoveryRegisteredCount').textContent=`${state.registered.length} REGISTERED / UP TO 50`;
-  $('discoveryWatchSymbol').value=selectedSymbol();
+  if(!state.watchlist && !$('discoveryWatchSymbols').value.trim()) $('discoveryWatchSymbols').value=selectedSymbol();
  }
  function renderMatches(){
   const results=$('discoveryMatches');
