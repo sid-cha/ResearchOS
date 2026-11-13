@@ -74,7 +74,7 @@ test('local hash-chained proof cases are durable across reopen, exact case queri
  assert.equal((await second.integrity()).integrity,'LOCAL_HASH_CHAIN_VALID');
  assert.equal((await second.list({symbol:'MOS'})).cases.length,1);
  assert.equal((await second.list({symbol:'NVDA'})).cases.length,0);
- assert.equal((await second.list({limit:500})).length,undefined);
+ await assert.rejects(second.list({limit:500}),e=>e.status===400);
 });
 test('current EPA and SEC source captures are stored with no automatic operator-to-issuer validation',async t=>{
  const {service,store}=await setup(t),opened=await service.openCase(form()),caseId=opened.caseId;
