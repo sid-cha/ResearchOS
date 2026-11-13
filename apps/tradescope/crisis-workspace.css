@@ -43,3 +43,18 @@
 .crisis-replay-bar.is-warning{background:var(--amber)}
 .crisis-replay-point strong{color:var(--head-text);text-align:right}
 @media(max-width:650px){.crisis-replay-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.crisis-replay-point{grid-template-columns:46px 1fr 63px}}
+
+.crisis-graph-stages{display:flex;flex-direction:column;gap:12px;margin:16px 0}
+.crisis-graph-stage{padding:10px;border:1px solid var(--border-soft);background:var(--surface-2)}
+.crisis-graph-stage h5{margin:0 0 8px;font:700 10px var(--mono);color:var(--accent)}
+.crisis-graph-nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:8px}
+.crisis-graph-node{padding:10px;background:var(--surface-1);border:1px solid var(--border)}
+.crisis-graph-node small,.crisis-graph-node span{display:block;color:var(--muted);font:9px/1.6 var(--mono);overflow-wrap:anywhere}
+.crisis-graph-node strong{display:block;color:var(--head-text);font:700 11px/1.5 var(--mono);margin:4px 0}
+.crisis-graph-node details{font:10px/1.5 var(--mono);color:var(--muted);margin-top:8px}
+.crisis-graph-node summary{cursor:pointer}
+.crisis-graph-node p{margin:4px 0}
+.crisis-graph-edges{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin:10px 0}
+.crisis-graph-edge{border:1px solid var(--border-soft);background:var(--surface-1);padding:10px;min-width:0}
+.crisis-graph-edge strong{font:700 11px/1.5 var(--mono);color:var(--head-text)}
+.crisis-graph-edge small{font:9px/1.5 var(--mono);color:var(--muted);overflow-wrap:anywhere}
