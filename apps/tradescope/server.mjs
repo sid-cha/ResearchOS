@@ -21,6 +21,7 @@ import {createIntradayChartApi} from './lib/intraday-chart.mjs';
 import {createCrisisAtlasApi} from './lib/crisis-atlas.mjs';
 import {createMacroVintage,createMacroVintageApi} from './lib/macro-vintage.mjs';
 import {createHistoricalBacktest,createHistoricalBacktestApi} from './lib/historical-backtest.mjs';
+import {createLongHistoryMarket} from './lib/long-history-market.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -42,7 +43,8 @@ const defaultIntradayChartApi=createIntradayChartApi({sources:sharedSources});
 const defaultCrisisAtlasApi=createCrisisAtlasApi();
 const sharedMacroVintage=createMacroVintage();
 const defaultMacroVintageApi=createMacroVintageApi({service:sharedMacroVintage});
-const defaultBacktestApi=createHistoricalBacktestApi({service:createHistoricalBacktest({macro:sharedMacroVintage,marketSources:directorySources})});
+const sharedLongHistoryMarket=createLongHistoryMarket();
+const defaultBacktestApi=createHistoricalBacktestApi({service:createHistoricalBacktest({macro:sharedMacroVintage,marketSources:directorySources,longHistoryMarket:sharedLongHistoryMarket})});
 const caseFile = process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json');
 const defaultCaseStore = createCaseStore(caseFile);
 const researchFile=process.env.RESEARCH_STORE_PATH||path.join(ROOT,'.local-data','research.json');
