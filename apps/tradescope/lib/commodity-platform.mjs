@@ -232,7 +232,9 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
    return {selfReportedSamples:n,minutesBeforeMean:mean('minutesBefore'),
     minutesWithMean:mean('minutesWith'),qualityMean:mean('sourceQuality'),
     independentTimeSavingValidation:false,confirmedPayingCustomers:null,
-    enabledWatches:s.watches.filter(x=>x.enabled).length,completedWatchRuns:s.runs.length,
+    enabledWatches:s.watches.filter(x=>x.enabled).length,
+    completedWatchRuns:s.runs.filter(x=>x.status==='completed').length,
+    failedWatchRuns:s.runs.filter(x=>x.status==='failed').length,
     externalNotificationDelivery:false,clientAdoptionEvidence:false};
   });}
  };
