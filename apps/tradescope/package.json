@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.19.0",
-  "description": "TradeScope commodity disruption research pilot: official document discovery, issuer business evidence, source briefs and local monitoring",
+  "version": "0.20.0",
+  "description": "TradeScope source-backed market research, macro, ETF themes and commodity disruption intelligence",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
