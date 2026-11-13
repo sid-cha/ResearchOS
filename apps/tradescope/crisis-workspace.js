@@ -37,6 +37,19 @@
     '<div class="crisis-macro-controls"><label for="crisisMacroDate">HISTORICAL AS-OF DATE</label><input id="crisisMacroDate" type="date" min="2005-01-01" value="'+initial+'">'+
     '<button type="button" id="crisisMacroRun">RECONSTRUCT INDICATORS</button></div><p id="crisisMacroStatus" role="status">Choose a date to request sourced macro vintages. Server FRED_API_KEY required.</p><div id="crisisMacroResults"></div></section>');
   }
+  if(item.kind==='retrospective_crisis'){
+   const is2008=item.id==='financial-2008';
+   node.insertAdjacentHTML('beforeend','<section class="crisis-section" id="crisisReplaySection">'+
+    '<h4>Historical early-warning replay · v0.16</h4><p>Replay fixed candidate macro-warning rules over a bounded series of historical dates, then compare with strictly subsequent SPY market outcomes where sourced. This is not a trained forecast.</p>'+
+    '<div class="crisis-macro-controls"><label>START <input type="date" id="crisisReplayStart" value="'+(is2008?'2007-06-01':'2020-01-03')+'"></label>'+
+    '<label>END <input type="date" id="crisisReplayEnd" value="'+(is2008?'2007-09-06':'2020-04-03')+'"></label>'+
+    '<label>CADENCE <select id="crisisReplayCadence"><option value="7">7 calendar days</option><option value="14" selected>14 calendar days</option><option value="28">28 calendar days</option></select></label>'+
+    '<label>FORWARD HORIZON <select id="crisisReplayHorizon"><option value="5">5 sessions</option><option value="20" selected>20 sessions</option><option value="63">63 sessions</option></select></label>'+
+    '<label>LOSS THRESHOLD <select id="crisisReplayThreshold"><option value="5">5%</option><option value="10" selected>10%</option><option value="20">20%</option></select></label>'+
+    '<button type="button" id="crisisReplayRun">REPLAY WARNING HISTORY</button></div>'+
+    '<p id="crisisReplayStatus" role="status">Historical source credentials are required. The 2008 preset does not have market-price outcome coverage in the current Alpaca adapter.</p>'+
+    '<div id="crisisReplayResults"></div></section>');
+  }
   selected=item.id||null;
  }
  async function open(id){
@@ -80,6 +93,55 @@
   }catch(error){if(requestId===token&&selected===caseId)message.textContent=error.message;}
   finally{if($('crisisMacroRun')===button)button.disabled=false;}
  }
+
+ function renderReplay(data){
+  const node=$('crisisReplayResults');
+  const coverage=data.coverage||{},stats=data.outcomes||{},timeline=Array.isArray(data.timeline)?data.timeline:[];
+  const label=state=>String(state||'unavailable').replaceAll('_',' ').toUpperCase();
+  const percent=value=>typeof value==='number'&&Number.isFinite(value)?value.toFixed(2)+'%':'—';
+  const rows=timeline.map(row=>{
+   const signal=row.signal==='candidate_warning'?'CANDIDATE WARNING':row.signal==='insufficient_data'?'INSUFFICIENT':'NO COMPOSITE WARNING';
+   const market=row.market?.status==='measured'?percent(row.market.worstReturnPct):
+    'UNAVAILABLE';
+   return '<tr><td>'+safe(row.asOf)+'</td><td>'+safe(signal)+'</td><td>'+safe(row.triggeredIndicators+'/'+row.usableIndicators)+'</td>'+
+    '<td>'+safe(market)+'</td><td>'+safe(row.market?.status==='measured'?(row.market.eventOccurred?'DRAW DOWN REACHED':'NOT REACHED'):row.market?.reason||'No outcome')+'</td></tr>';
+  }).join('');
+  const values=timeline.filter(r=>r.market?.status==='measured').map(r=>({date:r.asOf,loss:r.market.worstReturnPct,warning:r.signal==='candidate_warning'}));
+  const min=values.length?Math.min(-1,...values.map(x=>x.loss)):null;
+  const plot=values.length?'<div class="crisis-replay-plot" role="img" aria-label="Worst forward SPY close return after each historical decision date.">'+
+   values.map(v=>'<div class="crisis-replay-point"><span class="crisis-replay-date">'+safe(v.date.slice(5))+'</span>'+
+    '<span class="crisis-replay-track"><span class="crisis-replay-bar '+(v.warning?'is-warning':'')+'" style="width:'+Math.min(100,Math.max(0,Math.abs(Math.min(v.loss,0))/Math.abs(min)*100)).toFixed(1)+'%"></span></span>'+
+    '<strong>'+safe(percent(v.loss))+'</strong></div>').join('')+'</div>':'<p class="crisis-warning">No verified market outcome bars for this window. Signal replay can still be inspected without inferred returns.</p>';
+  node.innerHTML='<div class="crisis-replay-summary"><div><small>SAMPLED DECISIONS</small><strong>'+safe(coverage.totalDecisions)+'</strong></div>'+
+   '<div><small>WARNING CANDIDATES</small><strong>'+safe(coverage.warningDecisions)+'</strong></div>'+
+   '<div><small>MARKET-LABELLED</small><strong>'+safe(coverage.benchmarkLabelledDecisions)+'</strong></div>'+
+   '<div><small>INDEPENDENT SAMPLES</small><strong>'+safe(coverage.independentLabelledDecisions)+'</strong></div></div>'+
+   '<p><strong>Outcome rate status:</strong> '+safe(label(stats.ratesStatus))+'. Precision, recall and false-alarm rates are withheld unless sufficient non-overlapping observations exist.</p>'+
+   '<h5>Worst subsequent SPY closing return by sampled decision</h5>'+plot+
+   '<div class="crisis-macro-table"><table><thead><tr><th>Decision</th><th>Signal</th><th>Triggered / usable</th><th>Worst forward</th><th>Outcome</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+   '<p><strong>Definitions:</strong> '+safe(data.compositeRule)+'. Labels use the next available session close as entry, then '+safe(data.window?.horizonSessions)+' subsequent closing sessions. Threshold '+safe(data.window?.lossThresholdPct)+'%.</p>'+
+   '<p><strong>Data:</strong> ALFRED historical calendar-day macro vintages; '+safe(coverage.benchmarkStatus)+'. No trading strategy, crash probability, or model training is claimed.</p>'+
+   '<details><summary>Study limitations</summary><ul>'+(data.limitations||[]).map(x=>'<li>'+safe(x)+'</li>').join('')+'</ul></details>';
+ }
+ async function replayWarningHistory(){
+  const node=$('crisisReplayResults'),button=$('crisisReplayRun'),message=$('crisisReplayStatus');
+  if(!node||!button||!message)return;
+  const caseId=selected,token=requestId;
+  const params=new URLSearchParams({case:caseId,start:$('crisisReplayStart').value,end:$('crisisReplayEnd').value,
+   cadence:$('crisisReplayCadence').value,horizon:$('crisisReplayHorizon').value,threshold:$('crisisReplayThreshold').value});
+  button.disabled=true;message.textContent='Reconstructing point-in-time macro decisions and checking market label coverage…';
+  node.replaceChildren();
+  try{
+   const data=await read('/api/backtest/replay?'+params);
+   if(token!==requestId||selected!==caseId||!$('crisisReplayResults'))return;
+   if(data.caseId!==caseId||!Array.isArray(data.timeline)||data.calibratedForecast!==false)
+    throw Error('Unexpected historical study payload');
+   renderReplay(data);
+   message.textContent='Historical replay complete · '+data.coverage.totalDecisions+' sampled decision dates. Results are retrospective research only.';
+  }catch(error){if(token===requestId&&selected===caseId)message.textContent=error.message;}
+  finally{if($('crisisReplayRun')===button)button.disabled=false;}
+ }
+ $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisReplayRun'))void replayWarningHistory();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisMacroRun'))void loadMacro();});
  $('crisisLoad')?.addEventListener('click',()=>void load());
  $('crisisOpen')?.addEventListener('click',()=>void open($('crisisSelect').value));
