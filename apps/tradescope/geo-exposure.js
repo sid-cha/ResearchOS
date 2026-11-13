@@ -3,6 +3,8 @@
 'use strict';
 const el=id=>document.getElementById(id);
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const officialReview=async route=>{const res=await fetch('/api/facility-verification/'+route,{cache:'no-store'});
+ const d=await res.json().catch(()=>({}));if(!res.ok)throw Error(d.error||'EPA facility review unavailable');return d;};
 const api=async(route,opts={})=>{const res=await fetch('/api/geo-exposure/'+route,{cache:'no-store',...opts});
  const d=await res.json().catch(()=>({}));if(!res.ok)throw Error(d.error||'Source unavailable');return d;};
 const official=s=>{try{const u=new URL(s);return u.protocol==='https:'&&
@@ -22,6 +24,8 @@ function drawIssuers(rows){
   '<div class="empty">No matching source-anchored issuer business profiles.</div>';
 }
 function drawClaims(){
+ el('reviewAsset').innerHTML='<option value="">Choose a saved asset claim</option>'+
+  claims.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.symbol)+' · '+esc(x.assetName)+'</option>').join('');
  el('assetCount').textContent=claims.length;
  el('assets').innerHTML=claims.length?claims.map(a=>'<div class="asset"><strong>'+esc(a.symbol)+' · '+esc(a.assetName)+'</strong>'+
   '<span class="pill">Unverified local claim</span><small>'+esc(a.assetType)+' · '+esc(a.country)+'</small>'+
@@ -102,6 +106,50 @@ async function submit(e){
  }catch(err){status('Asset source claim rejected: '+err.message);}
  finally{el('saveClaim').disabled=false;}
 }
+async function lookupFacility(){
+ const registryId=el('frsId').value.trim();
+ if(!/^\d{10,14}$/.test(registryId)){el('frsResult').textContent='Enter an official 10–14 digit EPA FRS Registry ID.';return;}
+ el('lookupFrs').disabled=true;
+ el('frsResult').textContent='Checking the official EPA FRS Registry ID…';
+ try{
+  const d=await officialReview('lookup?registryId='+encodeURIComponent(registryId));
+  if(!d.record){
+   el('frsResult').innerHTML='<div class="source-result">No official record was returned for this exact Registry ID. This is not evidence that the facility does not exist.</div>';return;
+  }
+  const x=d.record;
+  el('frsResult').innerHTML='<div class="source-record"><strong>'+esc(x.facilityName)+'</strong>'+
+   '<small>EPA FRS Registry ID '+esc(x.registryId)+' · '+esc(x.coordinateStatus.replace(/_/g,' '))+'</small>'+
+   '<small>'+esc(x.locationAddress||'Address not supplied')+', '+esc(x.city||'')+', '+esc(x.state||'')+'</small>'+
+   '<small>Official NAD83 point: '+(x.latitude===null?'not available':esc(x.latitude))+
+   ' / '+(x.longitude===null?'not available':esc(x.longitude))+'</small>'+
+   '<small>Program links: '+esc(x.programLinks.length)+' government program identifiers; none are an SEC CIK.</small>'+
+   '<small>Record retrieved at '+esc(d.fetchedAt)+' · original publication: NOT VERIFIED</small>'+
+   link(d.sourceDocumentation,'EPA API documentation')+'</div>';
+ }catch(e){el('frsResult').textContent='Official FRS source unavailable: '+e.message;}
+ finally{el('lookupFrs').disabled=false;}
+}
+async function challengeFacility(){
+ const registryId=el('frsId').value.trim(),assetId=el('reviewAsset').value,asOf=el('reviewAsOf').value;
+ if(!assetId||!/^\d{10,14}$/.test(registryId)){
+  el('challenges').textContent='Choose a saved local asset claim and valid EPA Registry ID.';return;
+ }
+ const q=new URLSearchParams({registryId,assetId});if(asOf)q.set('asOf',asOf);
+ el('challengeClaim').disabled=true;
+ el('challenges').textContent='Checking official source coordinates and open contradictions…';
+ try{
+  const d=await officialReview('challenge?'+q.toString());
+  el('challenges').innerHTML='<div class="source-record"><strong>'+esc(d.locationStatus.replace(/_/g,' '))+'</strong>'+
+   '<small>EPA location difference: '+(d.distanceKm===null?'not available':esc(d.distanceKm)+' km')+
+   ' · Issuer/operator relationship: NOT VERIFIED</small>'+
+   '<small>Open questions: '+esc(d.critic.issueCount)+' · Critical: '+esc(d.critic.critical)+'</small>'+
+   '<small>Deterministic evidence challenger. No AI agent, internet search or claim adjudication was run.</small></div>'+
+   d.critic.challenges.map(x=>'<article class="challenge"><span class="pill">'+esc(x.priority)+'</span>'+
+    '<strong>'+esc(x.id.replace(/_/g,' '))+'</strong>'+
+    '<p>'+esc(x.observation)+'</p><small>Required: '+esc(x.requiredProof)+'</small>'+
+    '<small>Disposition: OPEN · Independently verified: NO</small></article>').join('');
+ }catch(e){el('challenges').textContent='Evidence challenge unavailable: '+e.message;}
+ finally{el('challengeClaim').disabled=false;}
+}
 el('loadEvents').addEventListener('click',()=>void loadEvents());
 el('tier').addEventListener('change',()=>{observed=null;selected=null;el('screen').disabled=true;
  el('events').innerHTML='<div class="empty">Load this official feed to browse its events.</div>';});
@@ -117,5 +165,7 @@ el('events').addEventListener('click',e=>{
 });
 el('screen').addEventListener('click',()=>void screen());
 el('claimForm').addEventListener('submit',e=>void submit(e));
+el('lookupFrs').addEventListener('click',()=>void lookupFacility());
+el('challengeClaim').addEventListener('click',()=>void challengeFacility());
 void initialize();
 })();
