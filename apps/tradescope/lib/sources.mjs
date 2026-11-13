@@ -108,6 +108,27 @@ export function makeSources({fetchImpl=fetch,env=process.env,instrumentResolver}
     return {symbol,source:`ALPACA_${feed.toUpperCase()}`,feed,coverage:feed==='iex'?'single-venue':'entitled SIP',bars,hasMore,partialHistory:hasMore,pages,adjustment,start:first,end:last,fetchedAt:new Date().toISOString()};
    });
   },
+  async intradayBars(symbol,{interval='5Min',days=7,feed='iex'}={}){
+   const intervals=new Set(['1Min','5Min','15Min','1Hour']);
+   if(!intervals.has(interval)||!Number.isInteger(days)||days<1||days>14||feed!=='iex')throw sourceError('Choose a bounded intraday interval and IEX feed');
+   await requireInstrument(symbol);
+   return cached('intraday:'+symbol+':'+interval+':'+days,45000,async()=>{
+    const first=new Date(Date.now()-days*86400000).toISOString(),last=new Date().toISOString();
+    const bars=[],seenTokens=new Set();let token=null,pages=0,hasMore=false;
+    do{
+     const params=new URLSearchParams({timeframe:interval,start:first,end:last,feed:'iex',adjustment:'split',limit:'1000',sort:'asc'});
+     if(token)params.set('page_token',token);
+     const data=await alpaca('/v2/stocks/'+encodeURIComponent(symbol)+'/bars?'+params);
+     if(!Array.isArray(data.bars)||data.bars.length>1000)throw sourceError('Malformed intraday IEX bars',502);
+     bars.push(...data.bars);pages++;
+     const next=data.next_page_token;hasMore=typeof next==='string'&&next.length>0;
+     if(hasMore&&(next.length>2048||seenTokens.has(next)))throw sourceError('Invalid intraday pagination',502);
+     if(hasMore)seenTokens.add(next);token=hasMore?next:null;
+    }while(token&&pages<4);
+    return {source:'ALPACA_IEX',feed:'iex',coverage:'single-venue',interval,adjustment:'split',symbol,
+     bars,hasMore,partialHistory:hasMore,pages,start:first,end:last,fetchedAt:new Date().toISOString()};
+   });
+  },
   async hazards(source='all'){
     const tasks=[];if(source==='all'||source==='usgs')tasks.push(cached('hazards:usgs',120000,()=>get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_week.geojson')).then(normalizeUsgs));
     if(source==='all'||source==='nasa')tasks.push(cached('hazards:nasa',180000,()=>get('https://eonet.gsfc.nasa.gov/api/v3/events?limit=50&days=30&status=all')).then(normalizeNasa));
