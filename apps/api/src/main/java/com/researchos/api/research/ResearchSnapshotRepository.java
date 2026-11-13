@@ -10,6 +10,8 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 public class ResearchSnapshotRepository {
@@ -20,13 +22,33 @@ public class ResearchSnapshotRepository {
     private static LocalDate date(ObjectNode value,String field){String result=string(value,field);return result==null?null:LocalDate.parse(result);}
     @Transactional
     public int save(ResearchContract.Snapshot snapshot){
-        ObjectNode instrument=snapshot.instrument();Timestamp captured=Timestamp.from(snapshot.capturedAt());
+        ObjectNode instrument=snapshot.instrument().deepCopy();Timestamp captured=Timestamp.from(snapshot.capturedAt());
+        // The transaction lock serializes registry capacity and identity checks across API workers.
+        jdbc.query("SELECT pg_advisory_xact_lock(1381191507, 50)",row->{});
+        var existing=jdbc.queryForList("""
+            SELECT cik,issuer_id,identity_source,source_url,exchange,
+            to_char(verified_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS verified_at,
+            COALESCE(verified_at > CAST(? AS timestamptz),verified_at IS NOT NULL) AS retain_identity
+            FROM research_instrument WHERE instrument_id=? FOR UPDATE
+            """,string(instrument,"verifiedAt"),string(instrument,"instrumentId"));
+        if(existing.isEmpty()){
+            if(jdbc.queryForObject("SELECT count(*) FROM research_instrument",Integer.class)>=50)throw new ResponseStatusException(HttpStatus.CONFLICT,"Research instrument registry is full (50)");
+        }else{
+            Map<String,Object> previous=existing.getFirst();String previousCik=(String)previous.get("cik"),incomingCik=string(instrument,"cik");
+            if(previousCik!=null&&incomingCik!=null&&!previousCik.equals(incomingCik))throw new ResponseStatusException(HttpStatus.CONFLICT,"Stored issuer identity differs; an explicit identity migration is required");
+            if(previousCik!=null&&incomingCik==null||Boolean.TRUE.equals(previous.get("retain_identity"))){
+                for(String[] field:new String[][]{{"cik","cik"},{"issuerId","issuer_id"},{"identitySource","identity_source"},{"sourceUrl","source_url"},{"verifiedAt","verified_at"},{"exchange","exchange"}}){Object value=previous.get(field[1]);if(value==null)instrument.putNull(field[0]);else instrument.put(field[0],value.toString());}
+            }
+        }
         jdbc.update("""
-            INSERT INTO research_instrument(instrument_id,symbol,name,instrument_type,currency,coverage,classification,captured_at)
-            VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(instrument_id) DO UPDATE SET
+            INSERT INTO research_instrument(instrument_id,symbol,name,instrument_type,currency,coverage,classification,captured_at,cik,issuer_id,identity_source,source_url,verified_at,exchange)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,CAST(? AS timestamptz),?) ON CONFLICT(instrument_id) DO UPDATE SET
             name=EXCLUDED.name,instrument_type=EXCLUDED.instrument_type,currency=EXCLUDED.currency,coverage=EXCLUDED.coverage,
-            classification=EXCLUDED.classification,captured_at=EXCLUDED.captured_at WHERE EXCLUDED.captured_at>=research_instrument.captured_at
-            """,string(instrument,"instrumentId"),string(instrument,"symbol"),string(instrument,"name"),string(instrument,"type"),string(instrument,"currency"),string(instrument,"coverage"),string(instrument,"classification"),captured);
+            classification=EXCLUDED.classification,captured_at=EXCLUDED.captured_at,cik=EXCLUDED.cik,issuer_id=EXCLUDED.issuer_id,
+            identity_source=EXCLUDED.identity_source,source_url=EXCLUDED.source_url,verified_at=EXCLUDED.verified_at,exchange=EXCLUDED.exchange
+            WHERE EXCLUDED.captured_at>=research_instrument.captured_at
+            """,string(instrument,"instrumentId"),string(instrument,"symbol"),string(instrument,"name"),string(instrument,"type"),string(instrument,"currency"),string(instrument,"coverage"),string(instrument,"classification"),captured,
+            string(instrument,"cik"),string(instrument,"issuerId"),string(instrument,"identitySource"),string(instrument,"sourceUrl"),string(instrument,"verifiedAt"),string(instrument,"exchange"));
         int saved=0;
         for(ObjectNode value:snapshot.observations()){
             var measurement=value.path("value");
@@ -42,7 +64,8 @@ public class ResearchSnapshotRepository {
                 string(value,"unit"),string(value,"source"),string(value,"availableAt"),date(value,"periodStart"),date(value,"periodEnd"),captured,value.toString());
         }return saved;
     }
-    public List<Map<String,Object>> instruments(){return jdbc.queryForList("SELECT instrument_id AS \"instrumentId\",symbol,name,instrument_type AS type,currency,coverage,classification,captured_at AS \"capturedAt\" FROM research_instrument ORDER BY symbol LIMIT 10");}
+    public List<Map<String,Object>> instruments(){return jdbc.queryForList("SELECT instrument_id AS \"instrumentId\",symbol,name,instrument_type AS type,currency,coverage,classification,captured_at AS \"capturedAt\",cik,issuer_id AS \"issuerId\",identity_source AS \"identitySource\",source_url AS \"sourceUrl\",verified_at AS \"verifiedAt\",exchange FROM research_instrument ORDER BY symbol LIMIT 50");}
+    public boolean hasInstrument(String symbol){return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM research_instrument WHERE symbol=?)",Boolean.class,symbol));}
     public List<ObjectNode> observations(String symbol,int limit){
         return jdbc.query("""
             SELECT s.payload FROM research_metric_snapshot s JOIN research_instrument i ON i.instrument_id=s.instrument_id

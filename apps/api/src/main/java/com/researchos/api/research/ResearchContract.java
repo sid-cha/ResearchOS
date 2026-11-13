@@ -21,6 +21,8 @@ import java.util.*;
 @Component
 public class ResearchContract {
     public static final Set<String> SYMBOLS = Set.of("NVDA","AAPL","MSFT","TSLA","SPY","AMD","QQQ","META","AMZN","PLTR");
+    private static final Map<String,String> SEED_CIK=Map.of("NVDA","0001045810","AAPL","0000320193","MSFT","0000789019","TSLA","0001318605","AMD","0000002488","META","0001326801","AMZN","0001018724","PLTR","0001321655");
+    private static final String DIRECTORY_SOURCE="SEC_COMPANY_TICKERS_EXCHANGE",DIRECTORY_URL="https://www.sec.gov/files/company_tickers_exchange.json";
     private static final Set<String> STATES = Set.of("available","insufficient_data","missing_data","unsupported","period_mismatch");
     private final ObjectMapper mapper;
     private final Map<String,String> units;
@@ -51,18 +53,40 @@ public class ResearchContract {
     }
     private void optionalText(ObjectNode target,JsonNode input,String field,int limit){String value=text(input,field,limit,false);if(value==null)target.putNull(field);else target.put(field,value);}
     private void optionalDate(ObjectNode target,JsonNode input,String field,boolean timeAllowed){String value=date(input,field,timeAllowed);if(value==null)target.putNull(field);else target.put(field,value);}
+    public static boolean validSymbol(String symbol){return symbol!=null&&symbol.matches("[A-Z][A-Z0-9.\\-]{0,11}");}
+    private void identity(ObjectNode instrument,JsonNode input,String symbol,Instant capturedAt){
+        String identitySource=text(input,"identitySource",64,false),cik=text(input,"cik",10,false),issuerId=text(input,"issuerId",32,false),sourceUrl=text(input,"sourceUrl",512,false),verified=text(input,"verifiedAt",45,false),exchange=text(input,"exchange",40,false);
+        boolean validCik=cik!=null&&cik.matches("[0-9]{10}")&&!cik.equals("0000000000");
+        if(DIRECTORY_SOURCE.equals(identitySource)){
+            Instant verifiedAt;
+            try{verifiedAt=Instant.parse(verified);}catch(Exception e){throw invalid("SEC directory identity requires an actual verification timestamp");}
+            if(!validCik||!("SEC_CIK:"+cik).equals(issuerId)||!DIRECTORY_URL.equals(sourceUrl)||verifiedAt.isBefore(Instant.EPOCH)||verifiedAt.isAfter(capturedAt.plusSeconds(300)))throw invalid("Registered identity requires matching dated SEC directory provenance");
+            if(SEED_CIK.containsKey(symbol)&&!SEED_CIK.get(symbol).equals(cik))throw invalid("Registered identity conflicts with the compatibility seed issuer");
+        }else{
+            if(!SYMBOLS.contains(symbol)||(identitySource!=null&&!"TRADESCOPE_SEED_MAPPING".equals(identitySource)))throw invalid("New symbols require registered SEC directory identity");
+            if(cik!=null&&(!validCik||!cik.equals(SEED_CIK.get(symbol)))||issuerId!=null&&!("SEC_CIK:"+SEED_CIK.get(symbol)).equals(issuerId)||verified!=null)throw invalid("Pilot identity does not match the known seed mapping");
+        }
+        if(exchange!=null&&!exchange.matches("[A-Za-z0-9 ._-]{1,40}"))throw invalid("Invalid registered exchange metadata");
+        for(String field:List.of("cik","issuerId","identitySource","sourceUrl","verifiedAt","exchange"))instrument.putNull(field);
+        if(identitySource!=null){
+            instrument.put("identitySource",identitySource);if(cik!=null){instrument.put("cik",cik);instrument.put("issuerId","SEC_CIK:"+cik);}
+            if(DIRECTORY_SOURCE.equals(identitySource)){instrument.put("sourceUrl",DIRECTORY_URL);instrument.put("verifiedAt",verified);}
+            if(exchange!=null)instrument.put("exchange",exchange);
+        }
+    }
     public Snapshot validate(JsonNode input){
         if(input==null||!input.isObject()||!input.path("schemaVersion").isIntegralNumber()||input.path("schemaVersion").asInt(-1)!=1)throw invalid("Use research schemaVersion 1");
         JsonNode rawInstrument=input.path("instrument");if(!rawInstrument.isObject())throw invalid("A research instrument is required");
         String symbol=text(rawInstrument,"symbol",12,true),instrumentId=text(rawInstrument,"instrumentId",80,true);
-        if(!SYMBOLS.contains(symbol)||!instrumentId.equals("US_EQUITY:"+symbol))throw invalid("Choose a supported pilot instrument");
+        if(!validSymbol(symbol)||!instrumentId.equals("US_EQUITY:"+symbol))throw invalid("Choose a supported registered instrument");
         String type=text(rawInstrument,"type",20,true),currency=text(rawInstrument,"currency",10,true);
-        if(!Set.of("equity","ETF").contains(type)||!"USD".equals(currency))throw invalid("Unsupported research instrument type/currency");
+        if(!Set.of("equity","ETF","unknown").contains(type)||!"USD".equals(currency))throw invalid("Unsupported research instrument type/currency");
         ObjectNode instrument=mapper.createObjectNode();instrument.put("instrumentId",instrumentId);instrument.put("symbol",symbol);instrument.put("type",type);instrument.put("currency",currency);
         instrument.put("name",text(rawInstrument,"name",255,true));optionalText(instrument,rawInstrument,"coverage",255);optionalText(instrument,rawInstrument,"classification",100);
         Instant capturedAt;
         try{capturedAt=Instant.parse(text(input,"capturedAt",45,true));}catch(DateTimeParseException e){throw invalid("Use a full ISO capturedAt timestamp");}
         if(capturedAt.isBefore(Instant.EPOCH)||capturedAt.isAfter(clock.instant().plusSeconds(300)))throw invalid("Research capture time is outside the supported range");
+        identity(instrument,rawInstrument,symbol,capturedAt);
         JsonNode values=input.path("observations");if(!values.isArray()||values.isEmpty()||values.size()>100)throw invalid("Send between one and one hundred metric observations");
         List<ObjectNode> observations=new ArrayList<>();Set<String> identities=new HashSet<>();
         for(JsonNode raw:values){

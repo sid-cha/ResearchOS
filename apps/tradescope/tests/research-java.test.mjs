@@ -10,6 +10,30 @@ const TOKEN='controlled-test-token-000000000000';
 const env={RESEARCH_API_TOKEN:TOKEN};
 const snapshot=()=>({instrument:INSTRUMENTS.find(item=>item.symbol==='MSFT'),checkedAt:new Date(RESEARCH_NOW).toISOString(),observations:[...buildTechnicalMetrics(dailyBars(),{symbol:'MSFT',now:RESEARCH_NOW,fetchedAt:new Date(RESEARCH_NOW).toISOString()}).observations,...buildFinancialMetrics(companyFactsFixture(),{symbol:'MSFT',asOf:'2026-11-12',fetchedAt:new Date(RESEARCH_NOW).toISOString()}).observations]});
 const receipt=payload=>({schemaVersion:1,instrumentId:payload.instrument.instrumentId,capturedAt:payload.capturedAt,receivedCount:payload.observations.length,upsertedCount:payload.observations.length});
+const registeredInstrument=()=>({instrumentId:'US_EQUITY:COST',symbol:'COST',name:'COSTCO WHOLESALE CORP',type:'unknown',currency:'USD',classification:'unavailable',cik:'0000909832',issuerId:'SEC_CIK:0000909832',identitySource:'SEC_COMPANY_TICKERS_EXCHANGE',sourceUrl:'https://www.sec.gov/files/company_tickers_exchange.json',verifiedAt:'2026-11-12T17:00:00Z',exchange:'Nasdaq'});
+
+test('registered SEC identities beyond the seed preserve unknown type and dated issuer provenance',async()=>{
+ const input=snapshot();input.instrument=registeredInstrument();input.instrument.privateField='PRIVATE';let sent;
+ const adapter=createJavaResearchAdapter({env,fetchImpl:async(url,options)=>{sent=JSON.parse(options.body);return Response.json(receipt(sent));}});
+ assert.equal((await adapter.syncSnapshot(input)).instrumentId,'US_EQUITY:COST');
+ assert.equal(sent.instrument.type,'unknown');assert.equal(sent.instrument.cik,'0000909832');assert.equal(sent.instrument.issuerId,'SEC_CIK:0000909832');
+ assert.equal(sent.instrument.verifiedAt,'2026-11-12T17:00:00Z');assert(!JSON.stringify(sent).includes('PRIVATE'));
+});
+
+test('new symbols require matching directory attestation and reject arbitrary issuer reassignment before network',async()=>{
+ let calls=0;const adapter=createJavaResearchAdapter({env,fetchImpl:async()=>{calls++;throw Error();}});
+ const changes=[item=>delete item.identitySource,item=>item.cik='909832',item=>item.cik='0000000000',item=>item.issuerId='SEC_CIK:0000123456',item=>item.sourceUrl='https://foreign.example/company_tickers_exchange.json',item=>item.verifiedAt='2099-01-01T00:00:00Z',item=>item.symbol='COST?secret',item=>item.exchange='Nasdaq\nprivate'];
+ for(const change of changes){const input=snapshot();input.instrument=registeredInstrument();change(input.instrument);await assert.rejects(adapter.syncSnapshot(input),{status:400});}
+ const mismatch=snapshot();mismatch.instrument={...registeredInstrument(),symbol:'MSFT',instrumentId:'US_EQUITY:MSFT'};await assert.rejects(adapter.syncSnapshot(mismatch),{status:400});
+ assert.equal(calls,0);
+});
+
+test('bridge health reports broader identity support only when the Java service advertises it',async()=>{
+ const current=createJavaResearchAdapter({env,fetchImpl:async()=>Response.json({schemaVersion:1,ready:true,storage:'postgresql',identityContractVersion:1,maxInstruments:50})});
+ assert.equal((await current.health()).maxInstruments,50);
+ const legacy=createJavaResearchAdapter({env,fetchImpl:async()=>Response.json({schemaVersion:1,ready:true,storage:'postgresql'})});
+ assert.equal((await legacy.health()).maxInstruments,10);assert.equal((await legacy.health()).identityContractVersion,0);
+});
 
 test('Java metric identifiers and units stay compatible with the workstation catalog',async()=>{
  const resource=await readFile(new URL('../../api/src/main/resources/research-metrics-v1.tsv',import.meta.url),'utf8');

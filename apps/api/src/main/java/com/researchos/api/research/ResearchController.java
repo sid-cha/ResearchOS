@@ -22,7 +22,7 @@ public class ResearchController {
         if(supplied==null||supplied.length()>512||!MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8),supplied.getBytes(StandardCharsets.UTF_8)))throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Research bridge authentication failed");
     }
     @GetMapping("/health")
-    public Map<String,Object> health(@RequestHeader(value="X-Research-Token",required=false) String supplied){authorize(supplied);repository.ready();return Map.of("schemaVersion",1,"ready",true,"storage","postgresql","metricCatalogVersion",1);}
+    public Map<String,Object> health(@RequestHeader(value="X-Research-Token",required=false) String supplied){authorize(supplied);repository.ready();return Map.of("schemaVersion",1,"ready",true,"storage","postgresql","metricCatalogVersion",1,"identityContractVersion",1,"maxInstruments",50);}
     @GetMapping("/instruments")
     public Map<String,Object> instruments(@RequestHeader(value="X-Research-Token",required=false) String supplied){authorize(supplied);return Map.of("schemaVersion",1,"instruments",repository.instruments());}
     @PostMapping("/metric-snapshots")
@@ -32,7 +32,8 @@ public class ResearchController {
     }
     @GetMapping("/metric-snapshots")
     public Map<String,Object> list(@RequestHeader(value="X-Research-Token",required=false) String supplied,@RequestParam String symbol,@RequestParam(defaultValue="100") int limit){
-        authorize(supplied);if(!ResearchContract.SYMBOLS.contains(symbol)||limit<1||limit>100)throw ResearchContract.invalid("Choose a pilot symbol and limit between one and one hundred");
+        authorize(supplied);if(!ResearchContract.validSymbol(symbol)||limit<1||limit>100)throw ResearchContract.invalid("Choose a registered symbol and limit between one and one hundred");
+        if(!repository.hasInstrument(symbol))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Research instrument has not been registered in this store");
         return Map.of("schemaVersion",1,"symbol",symbol,"observations",repository.observations(symbol,limit),"limit",limit);
     }
 }
