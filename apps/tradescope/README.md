@@ -1,3 +1,13 @@
+# TradeScope v0.20 — Original Market Research Workspace
+
+**New:** [Market Data workbench](market-hub.html) · [v0.20 technical guide](docs/V020_MARKET_RESEARCH_WORKSPACE.md) · [Cumulative PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
+
+TradeScope now offers an original, responsive light/dark stock-and-market research interface informed by the supplied Macrotrends, Koyfin and ETF sector table *UX patterns*. Tabs: **Market Overview**, **Stock Dashboard**, **Compare**, **Financials**, **Watchlists**, **Screener**, **ETF Themes** and **Macro**. The implementation uses existing registered SEC research identities, source-labeled Alpaca IEX completed-session daily bars, and FRED current-revision macro observations. Unavailable provider data is not replaced with synthetic values.
+
+`http://127.0.0.1:8000/market-hub.html` after `npm start` (or change `PORT`). Configure `APCA_API_KEY_ID`, `APCA_API_SECRET_KEY`, `SEC_USER_AGENT` and `FRED_API_KEY` for corresponding live sources. The new research UI **supplements rather than replaces** the v0.19 commodity disruption application and existing surveillance terminal. It is not a source of consolidated real-time quotes, 5,000-stock screening or validated ETF holdings, and has not yet been live-provider/browser-accepted.
+
+---
+
 # TradeScope Commodity Intelligence — Focused v0.19 Research Pilot
 
 **Current development:** [PR #19](https://github.com/sid-cha/ResearchOS/pull/19) on `feature/tradescope-v018-unified-development`; no changes merged to `main`.
