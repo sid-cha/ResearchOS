@@ -4,6 +4,14 @@
 
 Legend: **Built pilot** = modules/UI or logic exists in current branch but coverage remains bounded; **In progress** = partial implementation; **Pending** = no confirmed complete delivered implementation; **Validation** = final release gate is deliberately deferred.
 
+## v0.25 delivery — geographic and issuer exposure screening, plus backlog audit
+
+**Built pilot:** official USGS observed earthquake GeoJSON feed (keyless), local-only opt-in double-sourced SEC/coordinate asset **claim** registry, proximity candidate screening by a bounded distance to the observed earthquake epicenter, honest issuer-disclosure country context and a research UI linking to the existing `earthquake-facility` template-only economic pathway. This does **not** validate facility ownership, operations, shaking intensity, disruption, issuer losses or forecast performance.
+
+The functional status and missing evidence gates are in [V025_GEO_ISSUER_EXPOSURE.md](V025_GEO_ISSUER_EXPOSURE.md). **Full delivered/pending audit:** [V025_PRODUCT_BACKLOG_AUDIT.md](V025_PRODUCT_BACKLOG_AUDIT.md).
+
+**Top next priorities:** verify official plant/facility identity and legal operator-to-CIK relationships with separate date/source checks; verify exact hazard footprints and publication clocks; run real provider/license/browser acceptance and then historical negative-control studies. Avoid expanding templates or market dashboards until this commercial wedge is credible.
+
 ## Focused commodity research product — M1–M4 (v0.19 delivery)
 
 The new narrow product experiment lives at `/commodity.html` and is documented in [V019_COMMODITY_PILOT_M1_M4.md](V019_COMMODITY_PILOT_M1_M4.md). Its development scope is intentionally separate from the legacy broad trading terminal.
@@ -131,7 +139,7 @@ These are **hypothesis templates to research, not connected pipelines or verifie
 | Point-in-time macro replay | Built pilot | Persist original observations and source publication/ingestion clocks; optimize bounded timeline fetch | Live ALFRED original vintages and release timing |
 | Historical outcome validation | Built pilot | Licensed benchmark cross-check; additional independent market regimes and control periods | Entitlement, adjusted basis, missingness, look-ahead leakage, false alarms |
 | Climate outlook evidence | **Initial v0.18 implementation** | Source-dated NOAA CPC monthly historical ENSO discussions and as-of UI, rejecting future issues | Live archive HTML and original issue/revision verification still deferred |
-| Versioned research provenance | **Partial** — normalized NASA POWER climate snapshots carry retrieval times and content SHA-256 receipts; no durable evidence ledger | Immutable source/event/assertion records, original source publication/first-seen clocks, corrections, replay and audit diffs | Chronology, source auth, durable storage and migrations |
+| Versioned research provenance | **v0.24 local journal built** — SHA-256 chain and source captures; not independently anchored/WORM | Source original publication/release verification and remote authoritative audit anchors | Historical first-available semantics, licensing and distributed persistence |
 | Signal quality and negative controls | In progress | More honest baseline comparisons, independently sampled decisions, coverage-weighted diagnostics, randomized-control alternatives | Research design, holdout and error analysis |
 | Unified data-quality status | In progress | Shared provider health/coverage/entitlement statuses, no silent stale/future imputation | Provider contract and failure injection |
 
@@ -142,9 +150,9 @@ These are **hypothesis templates to research, not connected pipelines or verifie
 | ENSO and rainfall | **Partial** — dated CPC ENSO discussion and NASA POWER monthly representative-point precipitation / temperature with current-revision provenance | Original-issued ENSO probabilities, dated regional precipitation polygons, NOAA weather stations, publication-time archives and historical normals |
 | Drought, snowpack and monsoon | **Pending** — representative Colorado temperature/precipitation point is not snowpack, drought or monsoon measurement | NOAA/US Drought Monitor/NRCS and regional monsoon agency archives with original issue dates, watersheds and crop regions |
 | Wildfire and catastrophe | Built event pilot only | Historic perimeter/intensity, insured location and catastrophe loss evidence, time-specific publication and region matching |
-| Commodity and supply chain | Pending | USDA crop reports, USGS potash, trade data, shipping and inventory shock pathways with versioned source evidence |
-| Transmission graph | **v0.22 three-scenario pilot built** | v0.23 versioned multi-domain scenario registry, documented provenance contracts, reusable evidence joins and honest scenario availability; next validate georeferenced issuer relationships |
-| Issuer exposure | Pending | SEC facility/subsidiary, supplier, property, revenue and insurance exposure mapping with effective dates and source excerpts |
+| Commodity and supply chain | **Partial** — USDA FAS/EIA v2/UN Comtrade source connector pilots and local USGS minerals capture | Live provider/source contracts, crop region/commodity/issuer impact studies and supply-chain source rights |
+| Transmission graph | **v0.23 12-scenario registry built** — 3 context, 2 partial, 7 template only | Independently verify event/location/company relationships and measured edges, not additional template count |
+| Issuer exposure | **v0.25 candidate screening pilot** — double-cited local asset assertions and official USGS epicenter distance; no proven facility | Independently verified official site and legal owner/subsidiary/CIK source crosswalk, effective dates, facility intensity and economics |
 | Corporate event attribution | Built pilot | Join validated occurrence sources, issuer exposure and benchmark-adjusted outcome studies, distinguishing association from causation |
 | Global events | Partial pilot | Regulatory, sanctions, macro and political evidence from original dated sources; first-seen and correction logs |
 
