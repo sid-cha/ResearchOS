@@ -114,7 +114,7 @@ test('malformed provider history, entitlement and response size failure never tu
  await assert.rejects(massive.series(['SPY'],'1Y'),e=>e.status===502);
 });
 test('SEC annual financial history respects filing cutoff and never treats latest revision as historic point-in-time',()=>{
- const out=normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2025-12-31',now:date});
+ const out=normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2025-12-31',now:date()});
  assert.equal(out.source,'SEC_EDGAR_XBRL');
  assert.equal(out.company,'Example Corp');
  assert.deepEqual(out.series.revenue.map(x=>x.value),[100e9,120e9]);
@@ -125,10 +125,10 @@ test('SEC annual financial history respects filing cutoff and never treats lates
  assert(!out.series.revenue.some(x=>x.value===900e9));
  assert.equal(out.metrics.find(x=>x.id==='eps').unit,'USD/share');
  assert(out.limitations.some(x=>x.includes('calendar')));
- const now=normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2026-11-12',now:date});
+ const now=normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2026-11-12',now:date()});
  assert.equal(now.series.revenue.at(-1).value,900e9);
  assert.equal(now.series.revenue.find(x=>x.fiscalEnd==='2024-12-31').value,125e9);
- assert.throws(()=>normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2027-01-01',now:date}),e=>e.status===400);
+ assert.throws(()=>normalizeCompanyFinancials(sec,{symbol:'AAPL',asOf:'2027-01-01',now:date()}),e=>e.status===400);
 });
 test('registered SEC historical source adapter and FRED latest/current-revision semantics',async()=>{
  const service=createMarketHub({fetchImpl:dataEndpoint,now:date,env,
