@@ -189,3 +189,22 @@ and must not be hosted for external users. No login/signup has been implemented 
 Details, APIs, evidence invariants, caveats and the manual walkthrough:
 [Discovery / archive / investigation workflow](docs/V010_DISCOVERY_ARCHIVE_CASE_WORKFLOW.md).
 
+## v0.13 — Monitor Completed Daily Candles (draft)
+
+In MONITOR → PRICE & ACTIVITY, LIVE and HISTORICAL TRADES modes now display
+**completed-session 1-day IEX candlesticks** for the selected pilot security,
+with 20/60/120/250-session windows, historical OHLCV/volume, SMA20/SMA50,
+and relative daily volume where available. The last observed LIVE trade price
+remains separate from the last completed historical daily close.
+
+The historical chart is served by the local Node API, not the static preview,
+and requires working server-side Alpaca credentials/entitlements. It cannot
+manufacture intraday candles from sparse REST snapshots. DEMO replay retains
+its synthetic chart. No ML probability or consolidated-market claim is made.
+
+Run `npm test` and `npm start` from this folder. Detailed architecture and
+acceptance notes: [v0.13 monitor chart documentation](docs/V013_MONITOR_DAILY_CANDLES.md).
+
+Draft PR #14 remains unmerged; real-provider and interactive-browser review
+are outstanding, despite passing CI. The source ZIP is a review build, not a
+packaged release.
