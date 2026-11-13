@@ -24,3 +24,5 @@
 .candle-empty{min-height:235px;display:flex;align-items:center;justify-content:center;text-align:center;padding:15px;color:var(--muted);font:11px/1.7 var(--mono)}
 .candle-meta{border-top:1px solid var(--border-soft);padding:10px 14px;color:var(--muted);font:10px/1.65 var(--mono);overflow-wrap:anywhere;margin:0}
 @media(max-width:700px){.chart-panel:has(.candle-controls:not([hidden])){min-height:410px}.chart-panel:has(.candle-controls:not([hidden])) .market-chart{min-height:240px}.candle-svg{min-height:180px}.candle-controls label{flex:1 1 130px}.candle-history-scope{flex-basis:100%}.candle-metrics{gap:4px 10px}.candle-metrics span{flex:1 1 140px}}
+
+.candle-controls [hidden]{display:none!important}
