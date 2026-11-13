@@ -289,7 +289,11 @@ export function createExposureProofService({store,assets,frs,sec,now=()=>new Dat
     fetchedAt:s.fetchedAt,latestFilingDate:s.latestFilingDate,identityScope:s.identityScope}:null,
    status:{epa:e?.status||'SOURCE_UNAVAILABLE',sec:s?'CURRENT_REGISTRANT_ONLY':'SOURCE_UNAVAILABLE'}};
   const prior=(await store.history(id)).events.filter(x=>x.type==='SOURCE_CAPTURED').at(-1);
-  const priorHash=prior?.payload.snapshotHash||null,sourceHash=hash({epa:snapshot.epa,sec:snapshot.sec});
+  const priorHash=prior?.payload.snapshotHash||null,
+   sourceHash=hash({epa:snapshot.epa?{status:snapshot.epa.status,
+    registryId:snapshot.epa.registryId,recordHash:snapshot.epa.recordHash}:null,
+    sec:snapshot.sec?{cik:snapshot.sec.cik,registrantName:snapshot.sec.registrantName,
+     tickers:snapshot.sec.tickers,latestFilingDate:snapshot.sec.latestFilingDate}:null});
   const result=await store.addSource(id,{...snapshot,snapshotHash:sourceHash,previousSnapshotHash:priorHash,
    changedFromPriorCapture:priorHash!==null&&priorHash!==sourceHash,
    independentIssuerLinkVerified:false,pointInTimeEligible:false});
@@ -339,7 +343,7 @@ export function createExposureProofApi({service=null,enabled=false}={}){
   try{
    const name=url.pathname.slice('/api/exposure-proof/'.length),q=url.searchParams;
    const permitted={catalog:[],integrity:[],cases:['symbol','limit'],case:['id','asOf'],
-    history:['id'],report:['id','asOf'],source:['id']};
+    history:['id'],report:['id','asOf']};
    if(req.method==='GET'){
     if(!Object.hasOwn(permitted,name)||[...q.keys()].some(k=>!permitted[name].includes(k)||q.getAll(k).length!==1))
      throw fail('Unknown or invalid research case query',404);
