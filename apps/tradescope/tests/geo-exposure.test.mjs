@@ -141,7 +141,7 @@ test('geo research catalog does not quietly convert country-level company disclo
  assert.equal(screening.facilityClaims,0);
  assert.equal(screening.matches.length,0);
  assert.equal(screening.historicalAsOfEligible,false);
- await assert.rejects(svc.record(claim()),e=>e.status===403);
+ assert.throws(()=>svc.record(claim()),e=>e.status===403);
 });
 test('local evidence HTTP recording requires explicit server enablement and same-origin JSON',async t=>{
  const filename=await fixture(t);
