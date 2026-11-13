@@ -17,6 +17,41 @@ The new narrow product experiment lives at `/commodity.html` and is documented i
 
 **Product freeze:** do not add unrelated chart indicators, equity screening features, trading execution, generic chat or mobile functionality until target users show a recurring need. Finish actual source quality, specific commodity/company exposure proof, end-to-end usability, licensing and meaningful design-partner evaluation before expanding.
 
+## Future concept — Research Agent Desk (deferred; design discovery only)
+
+**User-requested concept (Nov 13, 2026):** a one-click mission launches up to **six specialist research agents** that visibly work in parallel in TradeScope, each showing a live phase/status, source citations, observations, open questions, costs and confidence limits, then produce a single consolidated report. Human research tasks should eventually be delegated to explicit tools. **Do not implement this now**; revisit after provider validation, evidenced company exposure and source-licensed datasets.
+
+### Proposed agents (roles, not deployed workers)
+1. **Global Event Scout:** scan dated official sources and GDELT; cluster candidate disruptions, report ambiguity and source quality.
+2. **Macro & Climate Analyst:** as-of ALFRED, original NOAA/ENSO vintages, weather/climate observations and relevant baselines.
+3. **Commodity & Supply Chain Analyst:** EIA, USDA, USGS and UN Comtrade; measure commodity fundamentals, sources, lags and missingness.
+4. **Issuer Exposure Analyst:** SEC filings, facilities, commodity-linked business activity, period-valid issuer relationships; abstain from unverified exposure.
+5. **Market History & Risk Analyst:** licensed price/outcome labels, event chronology, negative controls, benchmark attribution, false alarms; no prediction without validation.
+6. **Synthesis & Critic Agent:** independently check citations and contradictions; refuse unsupported causal claims, produce cited summary and user review queue.
+
+**Visual workflow design:** project → create research mission → choose an explicit research question and capped source/model budget → six independent status cards (queued/running/blocked/review-needed/done) → streaming timeline of source-backed findings and cross-agent disagreements → final human-approved evidence report. Include stop/cancel, retry, error and uncertainty states; never fabricate running workers or completed research.
+
+**Security/production gates:** human-approved mission limits and tools; scoped per-provider read-only credentials; deterministic source snapshots; tenant isolation; bounded parallelism, timeout, rate limits, concurrency/budget quotas, prompt-injection defenses, trace logs and immutable provenance; license checks and redacted secrets. Disallow autonomous financial trades, external communication, file/code modification or deployments by default. Ensure agent work remains distinguishable from validated observations. User must explicitly authorize any high-impact write action.
+
+**NVIDIA candidate:** [NVIDIA API Catalog](https://build.nvidia.com/models) NIM-hosted inference and/or self-hosted NIM for specialized language, reasoning, extraction and embedding/rerank workers. Trial access may be no-cost but is quota-limited and not a production entitlement. Need server-side `NVIDIA_API_KEY` (model-specific hosted API entitlement), model whitelist, cost/rate accounting, endpoint validation, data-residency and production license review. Never put token in public JS. **No key needed until we choose to prototype the agent desk.**
+
+**ECC research:** [affaan-m/ECC](https://github.com/affaan-m/ECC), MIT licensed; workflow/configuration toolkit (plan → test → implement → review → verify, skills, hooks, AgentShield). High value for TradeScope **development quality**, not a market data feed or an orchestration backend to embed unreviewed. Evaluate a minimal reviewed subset (test/review/security practices) only; audit plugin/hook code and installation permissions before adoption.
+
+**Jane Street OSS research:** [magic-trace](https://github.com/janestreet/magic-trace) (Linux/Intel PT diagnostics, later performance); [incremental](https://github.com/janestreet/incremental) (dependency-driven recomputation model, concept reference); [async](https://github.com/janestreet/async) (OCaml concurrency, conceptual); [bonsai](https://github.com/janestreet/bonsai) (reactive OCaml web UI, design reference); [agent_skills](https://github.com/janestreet/agent_skills) (Socratic tutor, not a finance research agent). No justification currently for migrating the Node.js/Java platform to OCaml, and these OSS projects do not provide Jane Street's proprietary trading technology.
+
+### Proposed acceptance criteria for future agent prototype
+- Replayable source-evidence record for each tool call and claim; explicit original publication/fetched clocks and commercial source rights.
+- Demonstrate six independent tasks completing with truthful state (including cancelled/failing), deduplicated results and bounded cost.
+- Score citation support, disagreement detection, source quality and research time saved on pre-registered real tasks.
+- Human review and escalation on low-quality/restricted data; no unmanaged external side effects.
+
+## Immediate next build — v0.21 Provider Reliability & Source Control Center
+
+- Migrate the EIA natural-gas research source from deprecated v1 to explicitly documented v2, with stable series provenance, response schema verification, missing-value handling, bounded history and test fixtures.
+- Add read-only source status/health for Alpaca, SEC, FRED, EIA, USDA FAS, UN Comtrade, GDELT, Federal Register, NOAA CPC, NASA POWER, USGS capture and optional EODHD. Show **configured vs unconfigured vs not probed vs successful vs failed** separately, without exposing tokens.
+- Provide explicit opt-in single-provider live probes, bounded timeouts and server-side status history; never automatically run expensive sources on page load.
+- Run CI, static public-file allowlist and mock-provider regression tests. Real keys, license review and external browser acceptance remain a separate gate.
+
 ## Critical path (P0) — make the existing terminal scientifically useful
 
 | Workstream | Status | Next deliverable | Gate |
