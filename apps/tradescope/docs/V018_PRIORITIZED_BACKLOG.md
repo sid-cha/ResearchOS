@@ -4,6 +4,19 @@
 
 Legend: **Built pilot** = modules/UI or logic exists in current branch but coverage remains bounded; **In progress** = partial implementation; **Pending** = no confirmed complete delivered implementation; **Validation** = final release gate is deliberately deferred.
 
+## Focused commodity research product — M1–M4 (v0.19 delivery)
+
+The new narrow product experiment lives at `/commodity.html` and is documented in [V019_COMMODITY_PILOT_M1_M4.md](V019_COMMODITY_PILOT_M1_M4.md). Its development scope is intentionally separate from the legacy broad trading terminal.
+
+| Milestone | Engineering delivery | Limit still requiring research/commercial evidence |
+| --- | --- | --- |
+| **M1: Source-first disruption feed** | **Local pilot delivered** — Federal Register fertilizer keyword discovery, canonical source/date, captured content revisions, analyst assessments | Keyword document mentions do not establish verified supply disruptions, international coverage or first intraday issue time |
+| **M2: Issuer evidence** | **Limited pilot delivered** — MOS, CF and IPI SEC-10-K-linked business/activity edges and on-demand original SEC excerpt reader | No verified event-specific company impact, named supplier relationship or quantified exposure |
+| **M3: Research workbench** | **Local pilot delivered** — original citations, source-observation timeline, as-of filing cutoff, prior-document context, exportable brief | No verified historical market analogue model or end-to-end financial causality |
+| **M4: Pilot monitoring and feedback** | **Local pilot delivered** — revision-controlled opt-in watches, baseline/new candidates, audit history, self-reported time/usefulness metrics | No confirmed client trials, revenue, independent time saving, email delivery, multi-user or SaaS reliability |
+
+**Product freeze:** do not add unrelated chart indicators, equity screening features, trading execution, generic chat or mobile functionality until target users show a recurring need. Finish actual source quality, specific commodity/company exposure proof, end-to-end usability, licensing and meaningful design-partner evaluation before expanding.
+
 ## Critical path (P0) — make the existing terminal scientifically useful
 
 | Workstream | Status | Next deliverable | Gate |
