@@ -17,7 +17,7 @@ async function body(req){if(!/^application\/json(?:\s*;|$)/i.test(req.headers['c
  try{const parsed=JSON.parse(Buffer.concat(parts).toString('utf8'));if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw Error();return parsed;}catch{throw fail('Capture request must be a JSON object');}}
 const symbolOf=u=>{const value=(u.searchParams.get('symbol')||'').toUpperCase();if(!VALID_SYMBOL.test(value))throw fail('Choose a valid registered issuer symbol');return value;};
 const safeError=error=>{
- const status=[400,403,404,409,413,415,422,429,503,504].includes(error?.status)?error.status:502;
+ const status=[400,403,404,405,409,413,415,422,429,503,504].includes(error?.status)?error.status:502;
  return {status,message:status===502?'Regulatory research provider or local store is unavailable':String(error.message||'Request rejected').slice(0,240)};
 };
 
