@@ -1,3 +1,17 @@
+# TradeScope Commodity Intelligence — Focused v0.19 Research Pilot
+
+**Current development:** [PR #19](https://github.com/sid-cha/ResearchOS/pull/19) on `feature/tradescope-v018-unified-development`; no changes merged to `main`.
+
+The new [Commodity Intelligence workbench](commodity.html) is the narrow user-facing product experiment. **M1** previews and captures official Federal Register fertilizer regulatory-document keyword matches; **M2** presents source-anchored nutrient business activity for MOS, CF and IPI, with optional original SEC excerpt retrieval; **M3** prepares downloadable source-attributed briefs and analyst review history; **M4** adds local scheduled watches and self-reported design-partner metrics.
+
+Open **`http://127.0.0.1:8000/commodity.html`** after `npm start`. Use `SEC_USER_AGENT` with an actual contact address for SEC excerpt verification; other third-party services have separate credentials. The official Federal Register discovery endpoint is keyless but requires network access.
+
+**Critical boundaries:** A source keyword match does not prove a trade or supply disruption; an SEC issuer-to-commodity link does not establish loss, supplier dependence or share-price sensitivity; no research-time savings, paying customers or predictive efficacy have been independently verified. This remains a local single-user prototype, not a public web service.
+
+Read the [M1–M4 implementation and acceptance guide](docs/V019_COMMODITY_PILOT_M1_M4.md), the [prioritized backlog](docs/V018_PRIORITIZED_BACKLOG.md), and the [release-validation gate](docs/STACKED_RELEASE_VALIDATION_GATE.md).
+
+---
+
 # TradeScope AI — ResearchOS Unified Development (v0.6–v0.18)
 
 > **Current development source:** [cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19), branch `feature/tradescope-v018-unified-development`. All earlier TradeScope PR heads were verified as included in this branch and their drafts closed as superseded. **Nothing has been merged into `main`**; full historical/live-source and browser validation is intentionally deferred.
