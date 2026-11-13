@@ -1,3 +1,13 @@
+# TradeScope v0.26 — Official Facility Identity & Evidence Challenger
+
+**New on shared development branch:** [Geo Exposure & EPA source challenge](geo-exposure.html) · [v0.26 source contract](docs/V026_FRS_FACILITY_AND_CRITIC.md) · [prioritized backlog](docs/V018_PRIORITIZED_BACKLOG.md) · [cumulative draft PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
+
+Official EPA FRS current facility Registry ID/coordinates and program IDs can now be fetched read-only (no API key). The user’s prior local SEC/asset claim can be compared to the government site point; a deterministic **Evidence Challenger** identifies missing legal operator-to-SEC CIK evidence, position inconsistencies, and historical source-clock leakage. A match is **not** verified ownership, site damage, issuer earnings impact or causation. The user’s future autonomous 5–6 researcher **plus adversarial Red-Team/Anti-Agent** concept is now in backlog; v0.26 implements only the deterministic challenge protocol, not autonomous agent workers.
+
+All previous TradeScope workspaces remain intact. Real-provider source response, data rights and browser acceptance remain outstanding. PR #19 stays draft and unmerged.
+
+---
+
 # TradeScope v0.25 — Geographic & Issuer Exposure Research
 
 **New:** [Geo Exposure](geo-exposure.html) · [v0.25 implementation guide](docs/V025_GEO_ISSUER_EXPOSURE.md) · [Current prioritized backlog audit](docs/V025_PRODUCT_BACKLOG_AUDIT.md) · [Draft cumulative PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
