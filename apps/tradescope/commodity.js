@@ -40,6 +40,7 @@ async function companies(){
   return '<article class="profile"><div class="profile-head"><strong>'+esc(p.symbol)+'</strong>'+
    '<small>'+esc(p.company)+'</small></div><p>'+esc(p.claim)+'</p>'+
    '<small>Business activity: '+esc(p.commodities.join(', '))+'</small>'+
+   '<div class="evidence-edge">'+esc(p.commodityEdge?.from||p.symbol)+' → '+esc(p.commodityEdge?.to||'COMMODITY') +'<br><small>SEC disclosure-backed business link; specific event impact NOT VERIFIED</small></div>'+
    '<p class="subtle">Filed '+esc(p.filingDate)+' · Specific disruption impact UNVERIFIED</p>'+
    (url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">SEC original filing</a>':'')+'</article>';
  }).join(''):'<div class="empty">No annual filings available for this period.</div>';
@@ -84,6 +85,7 @@ async function watches(){
    '<p>'+esc(details)+'</p><div class="item-actions">'+
    '<button data-toggle="'+esc(w.id)+'" data-revision="'+esc(w.revision)+'" data-enabled="'+esc(w.enabled)+'">'+
    (w.enabled?'Disable':'Enable')+'</button>'+
+   '<button data-delete="'+esc(w.id)+'" data-revision="'+esc(w.revision)+'">Remove</button>'+
    '<button data-run="'+esc(w.id)+'">Run once</button></div></article>';
  }).join(''):'<div class="empty">No local commodity watches created yet.</div>';
 }
@@ -122,12 +124,13 @@ get('watchForm').addEventListener('submit',async e=>{
  }catch(err){say('watchStatus',err.message);}
 });
 get('watches').addEventListener('click',async e=>{
- const toggle=e.target.closest('[data-toggle]'),run=e.target.closest('[data-run]');
- if(!toggle&&!run)return;
- const id=toggle?.dataset.toggle||run?.dataset.run;
+ const toggle=e.target.closest('[data-toggle]'),run=e.target.closest('[data-run]'),del=e.target.closest('[data-delete]');
+ if(!toggle&&!run&&!del)return;
+ const id=toggle?.dataset.toggle||run?.dataset.run||del?.dataset.delete;
  try{
   if(toggle)await api('watches/'+encodeURIComponent(id),'PATCH',{enabled:toggle.dataset.enabled!=='true',
    expectedRevision:Number(toggle.dataset.revision)});
+  else if(del)await api('watches/'+encodeURIComponent(id),'DELETE',{expectedRevision:Number(del.dataset.revision)});
   else await api('watches/'+encodeURIComponent(id)+'/scan','POST',{});
   await watches();if(run)await local();
   say('watchStatus','Local watch action complete. New documents remain unreviewed research candidates.');
