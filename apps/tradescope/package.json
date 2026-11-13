@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.24.0",
-  "description": "TradeScope reproducible source evidence journal, economic scenarios, FRED/ALFRED and market intelligence",
+  "version": "0.25.0",
+  "description": "TradeScope geographic exposure evidence, multi-scenario research, market and macro intelligence",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
