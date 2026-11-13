@@ -96,6 +96,16 @@ These are **hypothesis templates to research, not connected pipelines or verifie
 - Run provider entitlement/coverage tests and full regression CI on the unified development branch; keep PR #19 draft until release acceptance.
 - The six-agent Research Desk remains deferred: it will eventually consume this registry and evidence graph, rather than generating unconstrained claims from scratch.
 
+## v0.27 delivered — 15-feature company exposure proof and researcher challenge batch
+
+**Built pilot (15 connected capabilities):** official SEC registrant identity and bounded filing links; source-cited local operator hypothesis intake; separate official dated operator and SEC-affiliation excerpts; asserted effective dates; durable append-only hash-chain research case audit; on-demand official EPA and SEC source capture; stable source-content drift comparison; conservative typed contradiction queue; historical as-of date leakage flags; human research challenges; challenge-linked rebuttals; source-limited review dispositions and issuer case filters; source-cited report export; and new responsive /exposure-review.html workbench.
+
+**Engineering delivery:** `lib/sec-registrant.mjs`, `lib/exposure-proof.mjs`, proof UI/CSS/JS, fixed server routes, local loopback opt-in, SEC_USER_AGENT requirement, tests, static allowlist. Full details: [V027_PROOF_BATCH_15_FEATURES.md](V027_PROOF_BATCH_15_FEATURES.md). Existing features remain on the same single development branch and PR #19 remains draft/unmerged.
+
+**Very important:** no claim in this release is a verified operator-to-subsidiary-to-public-CIK link; the official SEC source verifies the CURRENT registrant metadata only. User-entered SEC/operator excerpts have **not** been independently matched to original documents. The deterministic contradiction queue is **not** the future standalone AI Anti-Agent. All economic-loss, current-operations and historical-first-available assertions remain unverified.
+
+**Next from product backlog:** live SEC/EPA/provider response acceptance and source rights; original dated SEC property/subsidiary filing extraction with independently checked legal entity; facility operating permits and ownership-effective dates; source-vintage archive; hazard intensity footprint join; historical negative controls; real analyst design partner feedback; production auth and tenant separation. Only then evaluate the parallel NVIDIA-backed researchers and independent Red-Team Agent.
+
 ## v0.26 delivery — official EPA FRS facility identity and adversarial evidence contract
 
 **Built pilot:** Official public EPA FRS Registry ID lookup via fixed HTTPS GET endpoint, bounded/restricted JSON normalizer, NAD83 site coordinates and program-system identifiers, explicit snapshot/fetch clock, no credential required. Local v0.25 analyst asset claims can be compared with FRS coordinates and challenged through a read-only evidence review API. A matching site location **never** verifies legal operator/subsidiary/SEC CIK, operational damage or financial impact. Distances and alternate names are research review questions, not automatic identity proof.
