@@ -47,3 +47,6 @@ h1{font-size:clamp(29px,4vw,49px);line-height:1.1;letter-spacing:-.04em;margin:1
 .review-form label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:#9db2c2}
 .review-form button{width:max-content}.review-form [role=status]{max-width:680px}
 @media(max-width:700px){.review-form{grid-template-columns:1fr}.review-form button{width:100%}}
+
+.evidence-edge{border-left:3px solid #319aa6;background:#0f2733;padding:9px 12px;margin:12px 0;color:#a4e7e1;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.evidence-edge small{color:#8dafbd;line-height:1.4}
