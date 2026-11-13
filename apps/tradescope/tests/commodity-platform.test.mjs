@@ -154,6 +154,17 @@ test('pilot feedback never invents revenue or verified research-time savings',as
  assert.equal(saved.clientAdoptionEvidence,false);
  await assert.rejects(ledger.feedback({minutesBefore:-4,minutesWith:1,sourceQuality:5}),e=>e.status===400);
 });
+test('scheduled document-source errors are retained as explicit failures, never mistaken for zero risk',async t=>{
+ const filename=await temp(t),svc=createCommodityWorkbench({filename,feed:async()=>{throw Object.assign(Error('provider token leak'),{status:502});}});
+ const w=await svc.ledger.createWatch({commodity:'potash',intervalMinutes:60});
+ await assert.rejects(svc.scanWatch(w.id),e=>e.status===502);
+ const latest=await svc.ledger.watch(w.id);
+ assert.equal(latest.lastResult.status,'failed');
+ assert.equal(latest.lastResult.candidateDocuments,null);
+ assert.equal(latest.lastResult.newCandidates,null);
+ assert(!JSON.stringify(latest).includes('provider token leak'));
+ assert.equal((await svc.ledger.runs()).length,1);
+});
 test('on-demand SEC disclosure reader extracts true 10-K passages but cannot assert event loss or trading alpha',async t=>{
  const filename=await temp(t);let reads=0;
  const reader={read:async({filing,symbol})=>{
