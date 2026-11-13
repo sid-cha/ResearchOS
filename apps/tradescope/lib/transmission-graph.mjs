@@ -131,7 +131,7 @@ export function createTransmissionGraph({atlas=createCrisisAtlas(),climate=creat
       const node=graph.nodes.find(n=>n.id==='enso_outlook');
       node.observation={source:item.source,issueDate:item.issueDate,asOf,sourceUrl:item.sourceUrl,
        synopsis:item.synopsis,verifiedOriginalPublicationClock:false};
-      node.evidenceStatus:'ISSUE_DATED_DISCUSSION_ONLY';
+      node.evidenceStatus='ISSUE_DATED_DISCUSSION_ONLY';
      }else datedEvidence={status:'NO_ELIGIBLE_ISSUED_EVIDENCE',asOf,source:null};
     }catch(e){
      if(e.status===400)throw e;
