@@ -8,6 +8,10 @@ import {createResearchStore} from './research-store.mjs';
 import {createFilingReader} from './filing-intelligence.mjs';
 import {createEarthquakeResearch,compareEventOutcomes} from './event-analogues.mjs';
 import {validEventTimestamp} from './market-events.mjs';
+import {join,dirname} from 'node:path';
+import {createResearchMonitor} from './research-monitor.mjs';
+import {buildMarketAtlas} from './research-atlas.mjs';
+import {createJavaResearchAdapter} from './research-java.mjs';
 
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 const safeCopy=value=>structuredClone(value);
@@ -52,7 +56,9 @@ const checkedSymbols=value=>{
 const isoDay=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
 
 export function createResearchApi({filename,sources=makeSources(),store=createResearchStore(filename),
- filingReader=createFilingReader(),earthquakes=createEarthquakeResearch(),now=Date.now}={}){
+ filingReader=createFilingReader(),earthquakes=createEarthquakeResearch(),now=Date.now,
+ monitorFilename=join(dirname(filename),'monitors.json'),monitorFactory=createResearchMonitor,
+ javaAdapter=createJavaResearchAdapter()}={}){
  const companies=new Map(),inflight=new Map(),queue=[];
  let active=0;
  const previousObservations=record=>record.observations.filter(item=>item.details?.previousAsOf).map(item=>({...item,
@@ -108,6 +114,42 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
    coverage:{requested:symbols.length,available:records.filter(record=>record.observations.some(metric=>metric.status==='available')).length,
     universe:'requested subset of ten pilot symbols',completeMarket:false}};
  }
+ async function runMonitor({monitor,signal}){
+  const summary={evaluated:0,triggered:0,ready:0,unavailable:0,warmingUp:0,alertsCreated:0,alertsUpdated:0,alertsResolved:0,suppressed:0};
+  for(let offset=0;offset<monitor.symbols.length;offset+=2){
+   if(signal.aborted)throw fail('Monitoring run cancelled',409);
+   const symbols=monitor.symbols.slice(offset,offset+2);
+   const records=await Promise.allSettled(symbols.map(symbol=>company(symbol)));
+   for(let index=0;index<records.length;index++){
+    if(signal.aborted)throw fail('Monitoring run cancelled',409);
+    const outcome=records[index],record=outcome.status==='fulfilled'?outcome.value:{symbol:symbols[index],observations:[]};
+    const result=evaluateRule(monitor.rule,{symbol:record.symbol,observations:record.observations,previousObservations:previousObservations(record),now:now(),mode:'LIVE'});
+    result.ruleName=monitor.name;result.category='Scheduled research';
+    summary.evaluated++;summary[result.status==='warming_up'?'warmingUp':result.status]++;
+    if(signal.aborted)throw fail('Monitoring run cancelled',409);
+    const saved=await store.recordEvaluation(result,{now:now(),cooldownSeconds:monitor.rule.cooldownSeconds??300});
+    if(saved.action==='created')summary.alertsCreated++;
+    if(saved.action==='updated')summary.alertsUpdated++;
+    if(saved.action==='recovered')summary.alertsResolved++;
+    if(saved.suppressed||saved.action==='duplicate')summary.suppressed++;
+   }
+  }
+  return summary;
+ }
+ const monitors=monitorFactory({filename:monitorFilename,evaluate:runMonitor,now,allowedSymbols:RESEARCH_SYMBOLS,metricIds:METRIC_IDS});
+ async function atlas(body){
+  const symbols=checkedSymbols(body.symbols),windowSessions=body.windowSessions??20;
+  if(![20,63].includes(windowSessions))throw fail('Choose a 20- or 63-session comparison window');
+  const comparisonSymbols=body.comparisonSymbols===undefined?symbols.slice(0,5):checkedSymbols(body.comparisonSymbols);
+  if(comparisonSymbols.length>5||comparisonSymbols.some(symbol=>!symbols.includes(symbol)))throw fail('Compare up to five symbols from the requested Atlas universe');
+  const outcomes=await Promise.allSettled(symbols.map(symbol=>company(symbol)));
+  const records=outcomes.map((result,index)=>result.status==='fulfilled'?result.value:{symbol:symbols[index],observations:[],series:[]});
+  return buildMarketAtlas(records,{instruments:INSTRUMENTS.filter(item=>symbols.includes(item.symbol)),now:now(),windowSessions,comparisonSymbols});
+ }
+ async function backendHealth(){
+  try{return await javaAdapter.health();}
+  catch{return {configured:true,status:'unavailable',storage:'postgresql',error:'The configured local Java research service is unavailable. Check its startup and shared token.'};}
+ }
  async function eventOutcomes(symbol,eventTime){
   const timestamp=Date.parse(eventTime);
   if(!validEventTimestamp(eventTime)||!Number.isFinite(timestamp)||timestamp>now()||timestamp<Date.parse('2016-01-01T00:00:00Z'))throw fail('Choose a past ISO event time covered by market history');
@@ -122,7 +164,7 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
    study:compareEventOutcomes(eventTime,stock.bars,benchmark.bars,{now:now()}),
    coverage:'Supported US-listed IEX daily price proxy; not a global exposure or forecast model'};
  }
- return async function handleResearch(req,res,url){
+ async function handleResearch(req,res,url){
   if(!url.pathname.startsWith('/api/research/'))return false;
   try{
    if(!sameOrigin(req))throw fail('Use the same-origin local TradeScope terminal',403);
@@ -131,6 +173,30 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
    if(method==='GET'&&resource==='company'){respond(res,200,await company(checkedSymbol(url.searchParams.get('symbol'))));return true;}
    if(method==='POST'&&resource==='evaluate'){const body=await readBody(req);respond(res,200,await evaluations(checkedSymbol(body.symbol)));return true;}
    if(method==='POST'&&resource==='screen'){respond(res,200,await runScreen(await readBody(req)));return true;}
+   if(method==='POST'&&resource==='atlas'){respond(res,200,await atlas(await readBody(req)));return true;}
+   if(method==='GET'&&resource==='monitors'){respond(res,200,{monitors:await monitors.list(),health:monitors.getHealth()});return true;}
+   if(method==='POST'&&resource==='monitors'){
+    const body=await readBody(req);
+    if(typeof body.screenId!=='string')throw fail('Choose a saved screen to monitor');
+    const screen=await store.getScreen(body.screenId);
+    if(body.symbols!==undefined)checkedSymbols(body.symbols);
+    respond(res,201,await monitors.create({screen,symbols:body.symbols,name:body.name,intervalMinutes:body.intervalMinutes,enabled:body.enabled??false}));return true;
+   }
+   if(parts[0]==='monitors'&&parts.length===2&&method==='PATCH'){respond(res,200,await monitors.update(parts[1],await readBody(req)));return true;}
+   if(parts[0]==='monitors'&&parts.length===2&&method==='DELETE'){respond(res,200,await monitors.delete(parts[1],await readBody(req)));return true;}
+   if(parts[0]==='monitors'&&parts.length===3&&parts[2]==='run'&&method==='POST'){
+    await readBody(req);respond(res,200,await monitors.runNow(parts[1]));return true;
+   }
+   if(resource==='backend'&&method==='GET'){respond(res,200,await backendHealth());return true;}
+   if(resource==='backend/sync'&&method==='POST'){
+    const body=await readBody(req),symbol=checkedSymbol(body.symbol),health=await backendHealth();
+    if(!health.configured||health.status!=='available')throw fail('Configure and start the local Java research service before saving snapshots.',503);
+    const record=await company(symbol);
+    if(!record.observations.some(metric=>metric.status==='available'))throw fail('Load available provider data before saving a research snapshot',422);
+    try{respond(res,200,await javaAdapter.syncSnapshot(record));}
+    catch(error){throw fail(error?.status===503?'Configure and start the local Java research service before saving snapshots.':'The local Java research snapshot could not be saved. Check service health and retry.',error?.status===503?503:502);}
+    return true;
+   }
    if(method==='GET'&&resource==='screens'){respond(res,200,{screens:await store.listScreens(),presets:BUILTIN_SCREENS});return true;}
    if(method==='POST'&&resource==='screens'){
     const body=await readBody(req),screen=validateScreen(body.screen||body,{metricIds:METRIC_IDS});
@@ -161,5 +227,8 @@ export function createResearchApi({filename,sources=makeSources(),store=createRe
    respond(res,status,{error:status===500?'Local research service error; retry or inspect the server.':error.message});
   }
   return true;
- };
+ }
+ handleResearch.start=()=>monitors.start();
+ handleResearch.close=()=>monitors.close();
+ return handleResearch;
 }

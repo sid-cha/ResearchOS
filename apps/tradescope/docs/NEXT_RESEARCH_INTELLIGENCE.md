@@ -1,6 +1,6 @@
 # Research intelligence — requirements and delivery boundary
 
-Prepared November 12, 2026; updated for `feature/tradescope-research-intelligence`. This document retains the broader requirements and records the bounded implementation now present. **Built** means implemented in this branch, subject to final integration checks and local provider verification; **limited** means a narrower pilot than the full requirement; **pending** means no shipped implementation. The full proposed roadmap has not shipped. See [the implementation guide](RESEARCH_INTELLIGENCE_FOUNDATION.md) and [feature inventory](FEATURE_STATUS.md).
+Prepared November 12, 2026; updated for `feature/tradescope-monitoring-atlas`. This document retains the broader requirements and records the bounded implementation now present. **Built** means implemented in this branch, subject to final integration checks and local provider verification; **limited** means a narrower pilot than the full requirement; **pending** means no shipped implementation. The full proposed roadmap has not shipped. See [the foundation guide](RESEARCH_INTELLIGENCE_FOUNDATION.md), [monitoring/Atlas/storage guide](MONITORING_ATLAS_STORAGE.md) and [feature inventory](FEATURE_STATUS.md).
 
 The owner's follow-up request for internet research is addressed in [the public-platform comparison](PLATFORM_RESEARCH_2026-11-12.md), using official documentation for Reflexivity, TradingView, Koyfin, RavenPack, AlphaSense, Dataminr, S&P Global and USGS. Those sources inform the proposed workflow; they do not validate our forecasting capability.
 
@@ -8,21 +8,22 @@ The owner's follow-up request for internet research is addressed in [the public-
 
 Inputs reviewed: the supplied startup brief, engineering handoff, reconstructed conversation history, current source, and the owner's MSFT/SEC/Signal Monitor examples. The history references a consolidated roadmap DOCX, but that DOCX was not supplied and is not represented as reviewed here.
 
-The application retains IEX observations/fallback, event discovery, the earlier technical/SEC snapshot, daily event studies and local investigations. The new foundation adds a shared 65-definition catalog (33 technical/price and 32 financial), company research, a reusable safe rule/screen engine, manual signal evaluation, saved screens/alerts, extractive filing evidence and bounded retrospective earthquake retrieval/outcomes. Coverage remains ten US-listed pilot instruments and eight mapped SEC companies. Catalog definitions can be unavailable or unsupported; no verified company exposure graph or validated event-conditioned forecast exists.
+The application retains IEX observations/fallback, event discovery, daily event studies and local investigations. The foundation adds a shared 65-definition catalog (33 technical/price and 32 financial), company research, a safe rule/screen engine, saved alerts and extractive filing/earthquake research. The next increment adds optional saved-screen schedules, requested-pilot Market Atlas comparisons and explicit Java/PostgreSQL metric snapshot synchronization. Coverage remains ten US-listed pilot instruments and eight mapped SEC companies. Catalog definitions can be unavailable or unsupported; no verified company exposure graph or validated event-conditioned forecast exists.
 
-The original sequence proposed Java/PostgreSQL integration after v0.7, then macro/Market Atlas, corporate metrics, event exposure and broader screening. The owner's request to finish useful pending work brings the bounded research slice forward. It exercises common instrument, dated metric, rule and alert contracts in the locally runnable Node workstation; **full Java/PostgreSQL integration is still pending**. The remainder of the roadmap remains visible below rather than being represented as delivered.
+The original sequence proposed Java/PostgreSQL integration after v0.7, then macro/Market Atlas, corporate metrics, event exposure and broader screening. The owner's follow-up requests bring useful bounded slices forward. The optional versioned Java API now persists pilot instruments and dated metric snapshots in separate PostgreSQL tables; screens, alerts, monitors and cases remain local JSON. **Full authenticated multi-user workflow migration is still pending.** The remaining roadmap is recorded below.
 
 ## Current delivery against work packages
 
 | Package | Current branch status | Remaining boundary |
 |---|---|---|
-| RI-101 | **Limited:** local pilot instrument catalog, dated observations and `/api/research` boundary | Authoritative security master, broader coverage, persistent observation repositories and Java/PostgreSQL integration |
+| RI-101 | **Limited:** local instrument/dated-observation contracts plus optional authenticated Java/PostgreSQL snapshot persistence | Authoritative security master, broader coverage, original-revision archive and full authenticated workflow migration |
 | RI-102 | **Built pilot:** 65 versioned definitions and explicit availability/reasons | Additional factors and provider-dependent metrics; forward P/E, PEG and EV/EBITDA are unsupported definitions |
 | RI-103 | **Built pilot:** bounded paginated daily history, completed prior sessions, declared split/all adjustment paths | Complete market calendar, licensed wider history and retained point-in-time corporate-action/revision data |
 | RI-104 | **Built pilot:** compatible reported SEC cash flow/balance sheet/TTM, ROE and supported valuation | Custom tags, broader accounting regimes, ROIC/ROCE, consensus and ambiguous share classes |
 | RI-105 | **Built:** grouped company research with methods, source dates, quality and unavailable states | Peer/sector comparisons and broader universe |
-| RI-106 | **Limited:** shared condition engine, nine built-ins, manual evaluation, saved deduplicated alert lifecycle | Scheduled/background scanning, quote/price alert families, external/corporate alert ingestion and notifications |
-| RI-107 | **Built pilot:** three presets, custom ALL/ANY screens, manual scans and revision-checked local persistence | Full-market scan service, database-backed multi-user operation and scheduling |
+| RI-106 | **Limited:** nine built-ins, saved alert lifecycle and opt-in local scheduling of immutable saved-screen criteria | Additional quote/corporate/external alert families, external notifications and hosted/OS-service monitoring |
+| RI-107 | **Built pilot:** three presets, custom ALL/ANY screens, revision-checked persistence, manual scans and local scheduled copies | Full-market scan service, database-backed multi-user operation and broader scheduling infrastructure |
+| Atlas pilot | **Limited:** requested-symbol returns/trend breadth, compatible equal-weight display-category averages and normalized common-date comparisons | Authoritative sectors/peers/constituents, broad-market rotation/treemaps, cross-asset data and verified event overlays |
 | RI-108 | **Limited:** selected fixed-host primary filing reader, recognized headings and source-linked extractive passages | Exhibit/transcript crawling, structured earnings/guidance history and comprehensive semantic classification |
 | HA-201 | **Limited:** official current catalog/detail plus earlier bounded historical query; unknown historical publication remains null | Persisted original revisions and known-at-time historical archive |
 | HA-202 | **Pending:** exposures explicitly unverified | Sourced facility/port/supplier/issuer/sector/region graph with effective dates |
@@ -31,7 +32,7 @@ The original sequence proposed Java/PostgreSQL integration after v0.7, then macr
 | HA-205 | **Limited:** historical analogue workspace, selected-case outcomes and investigation evidence actions | Verified impact-channel view and fully reproducible historical source/revision snapshots |
 | Increment 3 | **Pending:** no calibrated event forecast | Chronological evaluation, baseline comparison, point-in-time features, uncertainty and abstention methodology |
 
-Saved screens/alerts use bounded `.local-data/research.json`; cases use `.local-data/cases.json`. These local single-user files are not PostgreSQL, a raw data archive, scheduled monitoring or a deployment. Preserve both `.env` and `.local-data` during Windows folder/ZIP updates.
+Saved screens/alerts use bounded `.local-data/research.json`, monitor configurations and run summaries use `.local-data/monitors.json`, and cases use `.local-data/cases.json`. Schedules run only while the local Node process runs; no external notifications or OS service are installed. Optional explicit snapshot synchronization uses separate Java/PostgreSQL tables without replacing those local stores. Preserve both `.env` and `.local-data` during Windows folder/ZIP updates.
 
 ## Priority 0 — finish truthful v0.7 behavior
 
@@ -225,4 +226,4 @@ Keep analyst scenarios separate from forecasts: plausible pathways can be useful
 | Options, CFTC/positioning and cross-asset intelligence | Separate licensed/official datasets, schemas, update cadence and methodology |
 | CPZAI-style reproducibility and agents | Versioned evidence, calculations, rules, saved studies and evaluation; no broker execution implied |
 
-The Research Intelligence Foundation is implemented as the bounded pilot recorded above. Full Java integration, macro/SignalDock coverage, Market Atlas, exposure intelligence and forecasting remain separate pending work. Version labels alone must not imply those requirements are complete; use the delivered scope and final verification evidence.
+The Research Intelligence Foundation, local schedules, requested-pilot Atlas and optional dated-snapshot storage are implemented within the boundaries above. Full Java workflow integration, broad-market Atlas, macro/SignalDock coverage, verified exposure intelligence and evaluated forecasting remain pending. Version labels alone must not imply those broader requirements are complete; use delivered scope and final verification evidence.

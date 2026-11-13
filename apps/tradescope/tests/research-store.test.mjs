@@ -85,6 +85,23 @@ test('historical and unavailable evaluations cannot create fresh alert records',
   assert.deepEqual(await store.listAlerts(),[]);
 });
 
+test('new evidence deferred after a resolved episode can alert once its cooldown expires',async t=>{
+  const {filename,store}=await setup(t);
+  const first=await store.recordEvaluation(result(3),{now:time});
+  await store.updateAlert(first.alert.id,{expectedRevision:1,status:'resolved'});
+  const deferred=await store.recordEvaluation(result(4),{now:'2026-11-12T20:01:00Z'});
+  assert.equal(deferred.action,'cooldown');assert.equal(deferred.created,false);
+  assert.equal((await store.listAlerts()).length,1);
+  assert.equal(JSON.parse(await readFile(filename,'utf8')).seenKeys.length,1,'uncaptured evidence must remain eligible');
+  const reopened=createResearchStore(filename);
+  const later=await reopened.recordEvaluation(result(4),{now:'2026-11-12T20:06:00Z'});
+  assert.equal(later.action,'created');assert.equal(later.alert.status,'active');assert.equal(later.alert.evidence[0].value,4);
+  assert.notEqual(later.alert.id,first.alert.id);
+  assert.equal((await reopened.recordEvaluation(result(4),{now:'2026-11-12T20:07:00Z'})).action,'duplicate');
+  assert.equal((await reopened.recordEvaluation(result(3),{now:'2026-11-12T20:08:00Z'})).action,'duplicate','already captured old evidence must not respawn');
+  assert.equal((await reopened.listAlerts()).length,2);
+});
+
 test('screen, alert and identity capacity remains bounded and resolved records are evicted first',async t=>{
   const {filename,store}=await setup(t,{maxScreens:1,maxAlerts:2,maxSeenKeys:2});
   await store.saveScreen({...rule,id:undefined});

@@ -12,7 +12,7 @@
   const message = value => typeof value === 'string' ? value : value?.message || value?.reason || value?.text || '';
   const validTime = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
   const time = value => validTime(value) ? value : 'Not supplied';
-  const tabs = ['company','signals','screener','filings','analogues'];
+  const tabs = ['company','signals','screener','filings','analogues','atlas','monitoring'];
   const state = {
     tab:'company',symbol:'AAPL',generation:0,screenGeneration:0,eventGeneration:0,
     catalog:null,catalogPromise:null,company:null,evaluations:[],alerts:null,screens:[],presets:[],
@@ -23,6 +23,19 @@
   const actionButtons = {catalog:'researchCatalogRetry',company:'researchLoad',evaluate:'researchEvaluate',alerts:'researchRefreshAlerts',
     screens:'researchScreenSelect',saveScreen:'researchSaveScreen',deleteScreen:'researchDeleteScreen',scan:'researchRunScreen',
     filings:'researchLoadFilings',earthquakes:'researchLoadEarthquakes',analogues:'researchFindAnalogues'};
+  let alertsTimer=null,workspaceActive=false;
+  function watchAlerts(){
+    clearTimeout(alertsTimer);alertsTimer=null;
+    if(!workspaceActive||state.tab!=='signals'||document.visibilityState!=='visible')return;
+    alertsTimer=setTimeout(async()=>{
+      alertsTimer=null;
+      if(workspaceActive&&state.tab==='signals'&&document.visibilityState==='visible'){
+        if(!state.actions.has('alerts')&&!state.actions.has('evaluate'))await loadAlerts({quiet:true});
+        watchAlerts();
+      }
+    },15000);
+    alertsTimer?.unref?.();
+  }
   const scopeVersion = scope => scope === 'symbol' ? state.generation : scope === 'screen' ? state.screenGeneration : scope === 'event' ? state.eventGeneration : scope === 'outcome' ? state.generation+':'+state.eventGeneration : 0;
   const cancelled = () => Object.assign(Error('The selection changed; this response was ignored.'),{cancelled:true});
   function guard(context) { if (context && scopeVersion(context.scope) !== context.version) throw cancelled(); }
@@ -217,13 +230,23 @@
       if(data.company?.symbol && data.company.symbol!==symbol)throw Error('The rule evidence does not match the selected security.');
       if(data.company){state.company=data.company;renderCompany();}
       state.evaluations=array(data.evaluations);renderEvaluations();
-      const saved=await read('/api/research/alerts',{key:'alerts',context});state.alerts=array(saved.alerts);
+      const saved=await read('/api/research/alerts',{key:'alerts',context});acceptAlerts(saved.alerts);
       renderAlerts();status('Conditions evaluated for '+symbol+'. Unavailable inputs do not create positive matches.','success');
     });
   }
-  async function loadAlerts() {
+  function acceptAlerts(incoming){
+    const current=new Map(array(state.alerts).map(item=>[item.id,item]));
+    state.alerts=array(incoming).map(item=>current.get(item.id)?.revision>item.revision?current.get(item.id):item);
+    renderAlerts();
+  }
+  async function loadAlerts({quiet=false}={}) {
+    if(quiet){
+      try{const data=await read('/api/research/alerts',{key:'alerts'});acceptAlerts(data.alerts);}
+      catch(error){if(!error.cancelled)status('Saved alerts could not refresh. Use REFRESH SAVED ALERTS to retry.','error');}
+      return;
+    }
     return action('alerts','global','Loading locally saved research alerts…',async context=>{
-      const data=await read('/api/research/alerts',{key:'alerts',context});state.alerts=array(data.alerts);renderAlerts();status(state.alerts.length+' saved research alerts loaded.','success');
+      const data=await read('/api/research/alerts',{key:'alerts',context});acceptAlerts(data.alerts);status(state.alerts.length+' saved research alerts loaded.','success');
     });
   }
   async function updateAlert(index,newStatus) {
@@ -449,8 +472,10 @@
     if(!tabs.includes(tab))tab='company';state.tab=tab;
     document.querySelectorAll('[data-research-tab]').forEach(button=>{const selected=button.dataset.researchTab===tab;button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
     document.querySelectorAll('[data-research-panel]').forEach(panel=>{panel.hidden=panel.dataset.researchPanel!==tab;});
-    if(tab==='signals'){renderEvaluations();if(state.alerts===null)void loadAlerts();}
+    if(tab==='signals'){renderEvaluations();void loadAlerts();}
     if(tab==='screener')void loadScreens();
+    watchAlerts();
+    document.dispatchEvent(new CustomEvent('tradescope:research-tab',{detail:{tab}}));
   }
   function changeSymbol(value) {
     if(value===state.symbol)return;
@@ -497,11 +522,14 @@
   document.querySelectorAll('[data-research-tab]').forEach(button=>button.addEventListener('click',()=>showTab(button.dataset.researchTab)));
   document.querySelectorAll('[data-research-tab]').forEach((button,index,buttons)=>button.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowRight'?1:-1)+buttons.length)%buttons.length;showTab(buttons[next].dataset.researchTab);buttons[next].focus();}));
   document.addEventListener('tradescope:workspace',event=>{
-    if(event.detail?.view!=='research')return;
+    workspaceActive=event.detail?.view==='research';
+    if(!workspaceActive){watchAlerts();return;}
     showTab(event.detail.nav==='signals'?'signals':event.detail.nav==='screener'?'screener':'company');
     void action('catalog','global','Loading research catalog…',async()=>{await ensureCatalog();status('Research catalog ready. Choose a security and load sources, or open a research tool.','success');});
   });
   document.addEventListener('tradescope:research-investigation-result',event=>{if(event.detail?.error)status(event.detail.error,'error');else if(event.detail?.id)status('Research evidence saved in investigation '+event.detail.id+'.','success');});
-  window.addEventListener('pagehide',()=>{for(const job of state.requests.values())job.controller.abort();state.requests.clear();});
+  document.addEventListener('tradescope:research-alerts-changed',()=>{void loadAlerts();});
+  document.addEventListener('visibilitychange',watchAlerts);
+  window.addEventListener('pagehide',()=>{clearTimeout(alertsTimer);for(const job of state.requests.values())job.controller.abort();state.requests.clear();});
   window.TradeScopeResearch=Object.freeze({openTab:showTab,getSelection:()=>({symbol:state.symbol,tab:state.tab,company:state.company?structuredClone(state.company):null})});
 })();

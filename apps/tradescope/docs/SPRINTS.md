@@ -43,10 +43,10 @@ This is a local review increment. Provider tests use mock connections; authentic
 - Case storage: `lib/cases.mjs` and `lib/case-api.mjs`, with UI `case-workspace.js` + `cases.css`, stored only in `.local-data/cases.json`. The snapshot is bounded and preserves source labels; individual report values remain identified as captured, not predictive.
 - v0.7 separates the canonical observation contract, server-owned connector, browser transport and presentation while retaining the Node local application and REST fallback. It introduces no durable tick storage.
 - Research Intelligence Foundation adds `lib/research-catalog.mjs`, `research-technical.mjs`, `research-fundamentals.mjs`, `research-rules.mjs`, `research-store.mjs`, `research-api.mjs`, `filing-intelligence.mjs` and `event-analogues.mjs`, with `research-workspace.js` / `research.css`. It exposes local instrument/dated-observation/rule contracts without completing a Java migration.
-- Screens/alerts persist in bounded `.local-data/research.json` through atomic single-process JSON writes. Cases remain separate in `.local-data/cases.json`. This is not background monitoring, PostgreSQL, a multi-user transaction boundary or a historical raw-source archive.
-- Pending migration: reuse the canonical/research contracts with Java 21 Spring Boot and PostgreSQL domain APIs, then add production authentication and broader licensed subscriptions as needed. Durable archives and Kafka/Kinesis/MSK remain conditional choices, not required infrastructure for this pilot.
+- Screens/alerts persist in bounded `.local-data/research.json`, cases in `.local-data/cases.json`, and local schedule configurations/run summaries in `.local-data/monitors.json`, through atomic single-process JSON writes. These stores are not a multi-user transaction boundary or a historical raw-source archive.
+- The optional Java 21 Spring Boot/PostgreSQL bridge now stores dated instrument/metric snapshots through a separate versioned API and Flyway tables. Full workflow migration, user authentication and broader licensed subscriptions remain pending. Durable archives and Kafka/Kinesis/MSK remain conditional choices, not required infrastructure for this pilot.
 
-## Research Intelligence Foundation — current branch increment
+## Research Intelligence Foundation — v0.8 baseline
 
 The owner's request to inspect and finish pending work brings a bounded research slice forward from the broader roadmap. The implementation is on `feature/tradescope-research-intelligence`; v0.8 research foundation is a scope label, not a claim that the originally proposed Java/PostgreSQL integration is complete. See [RESEARCH_INTELLIGENCE_FOUNDATION.md](RESEARCH_INTELLIGENCE_FOUNDATION.md) for architecture, methods, APIs, Windows setup and verification.
 
@@ -65,6 +65,20 @@ The owner's request to inspect and finish pending work brings a bounded research
 
 The expanded **SIGNALS** navigation opens the research workbench. The MONITOR card remains the separate observed-trade-size VOL-01 pilot. Research condition runs are explicit user actions, not always-on monitoring. Missing provider credentials, incomplete financial tags or unavailable historical outcomes remain explicit results; no generated values are substituted under real-data labels.
 
+## v0.9 — Monitoring, Atlas and optional snapshot storage
+
+The continued-build increment is on `feature/tradescope-monitoring-atlas`. It extends the baseline without claiming full Java workflow migration or broad-market coverage. See [MONITORING_ATLAS_STORAGE.md](MONITORING_ATLAS_STORAGE.md) for setup, contracts and methods, and [V09_VERIFICATION.md](V09_VERIFICATION.md) for actual executed checks.
+
+| Ticket | Delivery boundary | Required verification |
+|---|---|---|
+| RI-106-SCHEDULE | Immutable saved-screen copies, explicit disabled/enabled lifecycle, 5–1,440 minute local cadence, one active scan and persistent run summaries | Revisions, restart coalescing, no overlap, aborted/late run handling, missing-provider readiness and saved alert actions |
+| RI-107-MONITOR | Reuse the safe condition engine and local saved-alert lifecycle for scheduled criteria | Matching source/fiscal periods, freshness, crossover evidence, cooldown and duplicates; new evidence deferred by cooldown can become eligible later |
+| ATLAS-901 | Requested ten-symbol return/trend table, eligible breadth, compatible equal-weight display-category averages, up to five common-date normalized curves | Missing/stale/conflicting inputs excluded, exact eligible/contributor counts, context mismatch, no forward-fill, 20/63-session windows |
+| RI-101-STORE | Optional token-protected loopback Java API, separate Flyway instrument/dated-metric tables and explicit Node snapshot sync | Catalog/units/status/provenance validation, bounded writes/reads, source-aware upsert, repeated sync, older capture handling, migration and real database checks reported separately |
+| TS-OPS-902 | Market Atlas / Local Monitoring UI, storage health/sync, preserved local startup and static package | Same-origin routes, safe rendering, stale-request handling, actual browser workflows and exactly sixteen allowlisted static assets |
+
+Monitoring runs while the local Node server is open; it does not install an OS service, cloud scheduler or external delivery. Editing/deleting a source saved screen does not silently change an existing monitor. The Java bridge stores selected calculated snapshots only; cases, screens, alerts and monitor configurations remain local JSON. Atlas averages describe requested pilot members, not complete sector/index returns. Real provider authentication remains separate from fixture-based application checks.
+
 ## Open work that must NOT be presented as complete
 
 1. Streaming news and validated market/event correlation. v0.7's IEX connector is a single-venue observation transport, not a complete market tape, causal-correlation engine or live-provider certification.
@@ -72,9 +86,9 @@ The expanded **SIGNALS** navigation opens the research workbench. The MONITOR ca
 3. Authoritative entity-to-facility exposure graph. Natural hazards and geopolitical articles have no inferred stock association.
 4. Full provider licensing, institution-level compliance and evidence-based causal attribution.
 5. Production Vercel live-data deployment and server-side persistent case database; this branch is prepared for review and is not merged into the live site.
-6. Multi-user authentication, role-based review permissions, and durable transactional PostgreSQL storage.
+6. Multi-user authentication, role-based review permissions, and migration of case/screen/alert/monitor workflows to transactional PostgreSQL storage. Optional dated-metric persistence is a narrower implemented boundary.
 7. Complete SignalDock-style macro releases/briefings with vintages and consensus, earnings/guidance history, Form 4/13F ownership, licensed options/CFTC positioning and cross-asset data.
-8. Market Atlas, authoritative sectors/peers/constituents, broad-market screen coverage, scheduled alert monitoring and external notification delivery.
+8. Broad-market Atlas/rotation/treemaps, authoritative sectors/peers/constituents, larger screen coverage, hosted/OS-service monitoring and external notification delivery. Requested-pilot Atlas and local saved-screen schedules are now implemented.
 9. Historical first-alert revision archive, tsunami-warning adapter, verified economic/political/social impacts and reproducible global exposure/outcome cohorts.
 
 ## Test procedure
@@ -85,6 +99,6 @@ For Windows updates, preserve `apps/tradescope/.env` and `.local-data` before re
 
 ## Proposed later priorities
 
-The earlier version proposal placed Java/PostgreSQL before macro/Market Atlas, earnings/financial metrics, event investigation and broad screening/ownership/derivatives. The current research foundation brings a bounded metric/rule/screener/filing/earthquake slice forward. Remaining priorities are full common-instrument/Java integration; macro/calendar/Market Atlas; earnings/consensus and broader metrics; verified exposure/history; then evaluated forecasts and broader ownership/derivatives as suitable data becomes available. Version assignments remain proposals and are not completion evidence.
+The earlier version proposal placed Java/PostgreSQL before macro/Market Atlas, earnings/financial metrics, event investigation and broad screening/ownership/derivatives. The current increments bring bounded metrics, rules, screens, filings, earthquakes, local schedules, pilot comparisons and optional snapshot storage forward. Remaining priorities are full common-instrument/authenticated Java workflow integration; macro/calendar and broad-market classifications/coverage; earnings/consensus and broader metrics; verified exposure/history; then evaluated forecasts and ownership/derivatives as suitable data becomes available. Version assignments remain proposals and are not completion evidence.
 
 The expanded November 12 requirements and official-platform comparison are mapped in [NEXT_RESEARCH_INTELLIGENCE.md](NEXT_RESEARCH_INTELLIGENCE.md) and [PLATFORM_RESEARCH_2026-11-12.md](PLATFORM_RESEARCH_2026-11-12.md). The delivered subset and missing larger requirements are kept separate in [FEATURE_STATUS.md](FEATURE_STATUS.md). The referenced consolidated roadmap DOCX was not supplied; it is not represented as reviewed.

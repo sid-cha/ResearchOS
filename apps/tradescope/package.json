@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.8.0",
-  "description": "TradeScope research metrics, screens, alerts and source-grounded event investigations",
+  "version": "0.9.0",
+  "description": "TradeScope scheduled research monitoring, pilot Market Atlas and optional Java snapshot storage",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",

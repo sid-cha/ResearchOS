@@ -5,7 +5,7 @@ import {readFile, readdir} from 'node:fs/promises';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const PUBLIC = ['index.html','styles.css','app.js','live-adapter.js','event-workspace.js','intelligence.css','case-workspace.js','cases.css','assistant-workspace.js','theme-controls.js','terminal-theme.css','workspace-nav.js','research-workspace.js','research.css'];
+const PUBLIC = ['index.html','styles.css','app.js','live-adapter.js','event-workspace.js','intelligence.css','case-workspace.js','cases.css','assistant-workspace.js','theme-controls.js','terminal-theme.css','workspace-nav.js','research-workspace.js','research.css','research-operations.js','research-operations.css'];
 test('static preview packages only public files and never .env or server code', async () => {
   execFileSync(process.execPath, [join(ROOT,'scripts/build-static.mjs')], {cwd:ROOT, stdio:'pipe'});
   const files=(await readdir(join(ROOT,'dist'))).sort();

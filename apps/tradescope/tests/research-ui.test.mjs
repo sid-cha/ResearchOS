@@ -31,7 +31,7 @@ const evidence={metricId:'technical.rsi14',operator:'lt',value:25,threshold:30,p
 const trigger={ruleId:'oversold',name:'Observed RSI below 30',ruleVersion:'rules-v1',symbol:'AAPL',status:'triggered',triggered:true,reason:'RSI was below the threshold.',evidence:[evidence]};
 const alert={id:'alert:1',revision:2,ruleId:'oversold',ruleName:trigger.name,ruleVersion:'rules-v1',symbol:'AAPL',status:'active',createdAt:'2026-11-12T10:00:00Z',evidence:[evidence]};
 
-function harness(fetchImpl=async()=>response({})){
+function harness(fetchImpl=async()=>response({}),timerFunctions={setTimeout,clearTimeout}){
  const elements=new Map(),requests=[],events=[],listeners=new Map(),tabs=[],panels=[],nav=[];
  class Element{
   constructor(id=''){this.id=id;this.handlers=new Map();this.textContent='';this.innerHTML='';this.value='';this.disabled=false;this.hidden=false;this.className='';this.dataset={};this.attributes={};this.tabIndex=0;this.focused=false;this.classList={toggle:(name,active)=>{this.attributes['class:'+name]=active;}};}
@@ -57,7 +57,7 @@ function harness(fetchImpl=async()=>response({})){
  const window={addEventListener(){},scrollTo(){}};
  element('researchMetricGroup').value='ALL';element('researchMetricAvailability').value='ALL';
  element('researchScreenName').value='My research screen';element('researchScreenMatch').value='all';
- const context=vm.createContext({document,window,URL,Date,structuredClone,AbortController,setTimeout,clearTimeout,
+ const context=vm.createContext({document,window,URL,Date,structuredClone,AbortController,...timerFunctions,
   CustomEvent:class {constructor(type,options={}){this.type=type;this.detail=options.detail;}},
   requestAnimationFrame:callback=>callback(),
   fetch:(url,options)=>{requests.push({url,options});return fetchImpl(url,options);}
@@ -73,6 +73,24 @@ function harness(fetchImpl=async()=>response({})){
  };
 }
 function route(fn){return async(url,options)=>url==='/api/research/catalog'?response(catalog):fn(url,options);}
+
+test('visible Signals refreshes scheduled alerts without reverting acknowledgements and stops watching when hidden',async()=>{
+ let serial=0,remote=[{...alert}],reads=0;const timers=new Map();
+ const h=harness(route(async(url,options)=>{
+  if(url==='/api/research/alerts'){reads++;return response({alerts:remote});}
+  if(options?.method==='PATCH')return response({alert:{...alert,revision:3,status:'acknowledged'}});
+  return response({});
+ }),{setTimeout:(fn,delay)=>{const id=++serial;timers.set(id,{fn,delay});return id;},clearTimeout:id=>timers.delete(id)});
+ h.document.visibilityState='visible';await h.open('signals');assert.equal(h.element('navCount').textContent,'01');
+ await h.delegate('researchAlerts',{researchAlertState:'acknowledged',researchAlertIndex:'0'});assert.equal(h.element('navCount').textContent,'00');
+ remote=[{...alert},{...alert,id:'alert:2',symbol:'NVDA'}];
+ const timer=[...timers].find(([,job])=>job.delay===15000);assert(timer);timers.delete(timer[0]);await timer[1].fn();await settle();
+ assert.equal(reads,2);assert.equal(h.element('navCount').textContent,'01');assert(h.element('researchAlerts').innerHTML.includes('ACKNOWLEDGED'));
+ h.document.visibilityState='hidden';h.document.dispatchEvent({type:'visibilitychange'});
+ assert(![...timers.values()].some(job=>job.delay===15000));
+ h.document.visibilityState='visible';h.document.dispatchEvent({type:'visibilitychange'});assert([...timers.values()].some(job=>job.delay===15000));
+ h.document.dispatchEvent({type:'tradescope:workspace',detail:{view:'monitor',nav:'monitor'}});assert(![...timers.values()].some(job=>job.delay===15000));
+});
 
 test('Research loads catalog separately and shows actual metric availability, readiness and provenance',async()=>{
  const h=harness(route(async()=>response(company())));

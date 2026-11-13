@@ -5,6 +5,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createServer} from '../server.mjs';
 import {createCaseStore} from '../lib/cases.mjs';
+import {createResearchApi} from '../lib/research-api.mjs';
+import {researchSourcesFixture,RESEARCH_NOW} from './helpers/research-fixtures.mjs';
 
 test('actual server shares fresh investigation state with assistant across sequential creates and edits',async t=>{
  const directory=await mkdtemp(join(tmpdir(),'research-server-'));
@@ -22,4 +24,19 @@ test('actual server shares fresh investigation state with assistant across seque
  response=await fetch(base+`/api/assistant/cases/${second.id}/brief`);assert.equal(response.status,200);assert.equal((await response.json()).symbol,'AAPL');
  await post(`/api/cases/${second.id}`,{expectedRevision:1,status:'IN_REVIEW'},'PATCH');
  const brief=await post(`/api/assistant/cases/${second.id}/ask`,{question:'Explain the case'});assert.equal(brief.status,'IN_REVIEW');
+});
+
+test('server monitoring lifecycle has one owner and closing a server leaves another scheduler usable',async t=>{
+ const directory=await mkdtemp(join(tmpdir(),'research-lifecycle-')),servers=[];
+ t.after(async()=>{for(const server of servers){server.closeResearch();server.closeMarketData();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}await rm(directory,{recursive:true,force:true});});
+ for(const name of ['first','second']){
+  const researchApi=createResearchApi({filename:join(directory,name+'.json'),monitorFilename:join(directory,name+'-monitors.json'),sources:researchSourcesFixture(),now:()=>RESEARCH_NOW});
+  const server=createServer({researchApi,caseStore:createCaseStore(join(directory,name+'-cases.json'))});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));servers.push(server);
+ }
+ const url=server=>`http://127.0.0.1:${server.address().port}/api/research/monitors`;
+ assert.equal((await(await fetch(url(servers[0]))).json()).health.started,true);
+ servers[0].closeResearch();
+ const second=await(await fetch(url(servers[1]))).json();assert.equal(second.health.started,true);assert.equal(second.health.closed,false);
+ const first=await(await fetch(url(servers[0]))).json();assert.equal(first.health.closed,true);
 });

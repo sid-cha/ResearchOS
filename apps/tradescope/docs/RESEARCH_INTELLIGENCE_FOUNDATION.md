@@ -2,6 +2,8 @@
 
 Implementation guide for `feature/tradescope-research-intelligence`, prepared November 12, 2026. This increment brings company metrics, manually evaluated conditions, saved screens, filing passages and retrospective earthquake comparisons into the existing local TradeScope workstation. It can be described as the v0.8 research foundation; the package/version and final verification result are recorded by the integrating change.
 
+This guide records the v0.8 baseline. The subsequent `feature/tradescope-monitoring-atlas` increment adds local saved-screen schedules, requested-pilot comparisons and optional Java/PostgreSQL metric snapshot storage; see [MONITORING_ATLAS_STORAGE.md](MONITORING_ATLAS_STORAGE.md) for those current capabilities and setup.
+
 ## What is implemented
 
 Open **RESEARCH** for five tabs: **COMPANY RESEARCH**, **SIGNALS**, **SCREENER**, **FILING READER** and **HISTORICAL ANALOGUES**. The primary **SIGNALS** navigation opens the research signal workbench. MONITOR retains its separate experimental observed-trade-size Signal Monitor.

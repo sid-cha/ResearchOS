@@ -145,14 +145,19 @@ export function createResearchStore(filename,{maxScreens=50,maxAlerts=500,maxSee
         if(evaluation.status!=='triggered')return {action:'ignored_unavailable',created:false,suppressed:false,alert:null};
         const key=evaluationKey(evaluation);
         if(document.seenKeys.includes(key))return {action:'duplicate',created:false,suppressed:true,alert:related.find(item=>item.evaluationKey===key||item.latestEvaluationKey===key)||open||null};
-        document.seenKeys.push(key);document.seenKeys=document.seenKeys.slice(-maxSeenKeys);
+        // A closed episode's cooldown may defer genuinely new evidence. Remember
+        // the key only when an alert captures it; otherwise a later scan would
+        // suppress that uncaptured observation forever as a duplicate.
+        const remember=()=>{document.seenKeys.push(key);document.seenKeys=document.seenKeys.slice(-maxSeenKeys);};
         if(open){
+          remember();
           const cooling=clock-Date.parse(open.lastTriggeredAt)<cooldownSeconds*1000;
           Object.assign(open,{...evaluation,status:open.status,latestEvaluationKey:key,lastTriggeredAt:timestamp,updatedAt:timestamp,triggerCount:open.triggerCount+1,revision:open.revision+1});
           return {action:cooling?'cooldown':'updated',created:false,suppressed:cooling,alert:open};
         }
         const latest=related.slice().sort((a,b)=>b.lastTriggeredAt.localeCompare(a.lastTriggeredAt))[0];
         if(latest&&clock-Date.parse(latest.lastTriggeredAt)<cooldownSeconds*1000)return {action:'cooldown',created:false,suppressed:true,alert:latest};
+        remember();
         const created={...evaluation,id:`ALERT-${randomUUID()}`,status:'active',revision:1,createdAt:timestamp,updatedAt:timestamp,
           firstTriggeredAt:timestamp,lastTriggeredAt:timestamp,acknowledgedAt:null,resolvedAt:null,resolutionReason:null,triggerCount:1,evaluationKey:key,latestEvaluationKey:key};
         document.alerts.unshift(created);
