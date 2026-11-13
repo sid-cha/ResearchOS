@@ -111,7 +111,7 @@ function annualFactRows(payload,id,tags,unit,asOf,instant){
 }
 export function normalizeCompanyFinancials(raw,{symbol,asOf,now=new Date()}={}){
  if(!/^[A-Z][A-Z0-9.-]{0,11}$/.test(symbol)||!validDay(asOf)||asOf>todayEt(now))throw fault('Choose a registered issuer and valid as-of date');
- const payload=raw?.facts||raw;
+ const payload=raw?.facts?.['us-gaap']?raw:raw?.facts?.facts?.['us-gaap']?raw.facts:raw;
  if(!payload||typeof payload!=='object')throw fault('Official SEC filing facts are missing',502);
  const series={};
  for(const [id,label,unit,tags] of FACTS)series[id]=annualFactRows(payload,id,tags,unit,asOf,['assets','cash','equity'].includes(id));
