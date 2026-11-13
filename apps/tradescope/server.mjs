@@ -23,7 +23,8 @@ import {createMacroVintage,createMacroVintageApi} from './lib/macro-vintage.mjs'
 import {createHistoricalBacktest,createHistoricalBacktestApi} from './lib/historical-backtest.mjs';
 import {createLongHistoryMarket} from './lib/long-history-market.mjs';
 import {createCpcEnsoApi} from './lib/climate-enso.mjs';
-import {createTransmissionApi} from './lib/transmission-graph.mjs';
+import {createTransmissionGraph,createTransmissionApi} from './lib/transmission-graph.mjs';
+import {createTransmissionDossier,createTransmissionDossierApi} from './lib/transmission-dossier.mjs';
 import {createRegionalClimateApi} from './lib/regional-climate.mjs';
 import {createCommodityWorkbench,createCommodityApi} from './lib/commodity-platform.mjs';
 import {createCommodityFundamentals,createCommodityFundamentalsApi} from './lib/commodity-fundamentals.mjs';
@@ -55,6 +56,7 @@ const commodityFile=process.env.COMMODITY_PILOT_STORE_PATH||path.join(ROOT,'.loc
 const fundamentalsFile=process.env.COMMODITY_FUNDAMENTALS_STORE_PATH||path.join(ROOT,'.local-data','commodity-fundamentals.json');
 const defaultCommodityWorkbench=createCommodityWorkbench({filename:commodityFile,fundamentals:createCommodityFundamentals({usgsFile:fundamentalsFile,officialDocuments:()=>defaultCommodityWorkbench.ledger.list(null)})});
 const defaultFundamentalsApi=createCommodityFundamentalsApi({service:defaultCommodityWorkbench.fundamentals});
+const defaultTransmissionDossierApi=createTransmissionDossierApi({service:createTransmissionDossier({graph:createTransmissionGraph(),fundamentals:defaultCommodityWorkbench.fundamentals})});
 const defaultCommodityApi=createCommodityApi({service:defaultCommodityWorkbench});
 const defaultMarketHub=createMarketHub({companyFacts:sharedSources.companyFacts,validateSymbol:async symbol=>{
  try{await sharedUniverse.getInstrument(symbol);return true;}catch{return false;}
@@ -121,7 +123,7 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
@@ -132,6 +134,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await intradayChartApi(req,res,u))return;
     if(await crisisAtlasApi(req,res,u))return;
     if(await climateApi(req,res,u))return;
+    if(await transmissionDossierApi(req,res,u))return;
     if(await transmissionApi(req,res,u))return;
     if(await regionalClimateApi(req,res,u))return;
     if(await providerControlApi(req,res,u))return;
@@ -163,7 +166,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css','/transmission-lab.html':'transmission-lab.html','/transmission-lab.js':'transmission-lab.js','/transmission-lab.css':'transmission-lab.css'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
