@@ -58,6 +58,22 @@
     '<p id="crisisClimateStatus" role="status">Select a date to inspect sourced ENSO discussion evidence; no crop or equity impact is inferred.</p><div id="crisisClimateResults"></div></section>');
   }
   if(['enso-fertilizer','wildfire-insurance','snow-hydropower'].includes(item.id)){
+   const options=item.id==='enso-fertilizer'?
+    [['argentina-pampas','Argentina · Pampas point'],['brazil-south','Brazil · Southern point']]:
+    item.id==='wildfire-insurance'?[['california-foothills','California foothills point']]:
+    [['colorado-high-country','Colorado high-country point']];
+   node.insertAdjacentHTML('beforeend','<section class="crisis-section" id="crisisGeoClimateSection">'+
+    '<h4>Geographic climate history · monthly evidence</h4>'+
+    '<p>NASA POWER currently revised model/reanalysis data at a <strong>single representative geographic point</strong>. It is not a region-wide rainfall index, a historically published forecast or proof of commodity/company impact.</p>'+
+    '<div class="crisis-macro-controls"><label>RESEARCH POINT <select id="crisisGeoRegion">'+
+     options.map(x=>'<option value="'+safe(x[0])+'">'+safe(x[1])+'</option>').join('')+
+    '</select></label><label>HISTORICAL YEAR <input id="crisisGeoYear" type="number" min="1981" max="2025" value="'+(item.id==='enso-fertilizer'?'2007':'2020')+'"></label>'+
+    '<label>OPTIONAL CALENDAR CUTOFF <input id="crisisGeoAsOf" type="date"></label>'+
+    '<button type="button" id="crisisGeoRun">LOAD RETROSPECTIVE MONTHLY DATA</button></div>'+
+    '<p id="crisisGeoStatus" role="status">Select a year to inspect sourced monthly precipitation and temperature; no release-time or company impact is inferred.</p>'+
+    '<div id="crisisGeoResults"></div></section>');
+  }
+  if(['enso-fertilizer','wildfire-insurance','snow-hydropower'].includes(item.id)){
    node.insertAdjacentHTML('beforeend','<section class="crisis-section" id="crisisGraphSection">'+
     '<h4>Economic transmission graph · conditional research links</h4>'+
     '<p>Trace potential climate-to-industry mechanisms. No geography-specific effects, company exposure, market returns or causal relationships are confirmed by this graph.</p>'+
@@ -225,6 +241,42 @@
   }catch(error){if(token===requestId&&selected===id)message.textContent=error.message;}
   finally{if($('crisisGraphRun')===button)button.disabled=false;}
  }
+ function renderGeoClimate(data){
+  const target=$('crisisGeoResults'),rows=Array.isArray(data.months)?data.months:[];
+  const pct=x=>typeof x==='number'&&Number.isFinite(x)?x.toFixed(2):'—';
+  const max=Math.max(1,...rows.map(x=>x.precipitationMmPerDay??0));
+  const tableRows=rows.map(x=>'<tr><th>'+safe(x.month.slice(0,4)+'-'+x.month.slice(4))+'</th>'+
+   '<td><span class="crisis-geo-meter"><span style="width:'+Math.min(100,Math.max(0,100*(x.precipitationMmPerDay??0)/max)).toFixed(1)+'%"></span></span> '+
+   safe(pct(x.precipitationMmPerDay))+'</td><td>'+safe(pct(x.temperatureC))+'</td></tr>').join('');
+  const cover=data.coverage||{},pr=data.provenance||{};
+  target.innerHTML='<p><strong>'+safe(data.region?.label)+' · '+safe(data.year)+'</strong> · '+safe(data.geoScope)+'</p>'+
+   '<p>Source state: '+safe(data.dataStatus)+' · '+safe(data.asOfSemantics)+'</p>'+
+   '<div class="crisis-macro-table"><table><thead><tr><th>Month</th><th>Mean precipitation (mm/day)</th><th>Mean temperature (°C)</th></tr></thead>'+
+   '<tbody>'+tableRows+'</tbody></table></div>'+
+   '<p><strong>Coverage:</strong> '+safe(cover.precipitationMonths)+' precipitation and '+safe(cover.temperatureMonths)+' temperature months from '+
+   safe(cover.monthsReturned)+' eligible months. A dash means missing, not zero.</p>'+
+   '<p><strong>Provenance:</strong> '+safe(data.source)+' · retrieved '+safe(pr.fetchedAt)+' · received-snapshot SHA-256: <code>'+safe(pr.receipt?.digest)+'</code>.</p>'+
+   '<p class="crisis-warning">The historical values are currently revised and cannot establish what an analyst knew on the selected date. Not an anomaly, forecast, insurance-loss estimate or equity signal.</p>'+
+   '<p><a target="_blank" rel="noopener noreferrer" href="'+safe(allowedUrl(data.sourceDocumentation)||'#')+'">NASA POWER monthly methodology</a></p>';
+ }
+ async function loadGeoClimate(){
+  const button=$('crisisGeoRun'),statusNode=$('crisisGeoStatus'),target=$('crisisGeoResults');
+  if(!button||!statusNode||!target)return;
+  const token=requestId,id=selected,region=$('crisisGeoRegion')?.value,year=$('crisisGeoYear')?.value,asOf=$('crisisGeoAsOf')?.value;
+  const query=new URLSearchParams({region,year});if(asOf)query.set('asOf',asOf);
+  button.disabled=true;statusNode.textContent='Checking NASA POWER historical point values…';target.replaceChildren();
+  try{
+   const data=await read('/api/geoclimate/monthly?'+query.toString());
+   if(requestId!==token||selected!==id||!$('crisisGeoResults'))return;
+   if(data.region?.id!==region||String(data.year)!==year||data.validForHistoricalExAnteSignal!==false||
+      data.calibratedForecast!==false||!Array.isArray(data.months))
+    throw Error('Unexpected retrospective geographic climate response');
+   renderGeoClimate(data);
+   statusNode.textContent='Retrieved monthly point history. Original historical publication and revised-source timing are not verified.';
+  }catch(e){if(requestId===token&&selected===id)statusNode.textContent=e.message;}
+  finally{if($('crisisGeoRun')===button)button.disabled=false;}
+ }
+ $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisGeoRun'))void loadGeoClimate();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisGraphRun'))void loadTransmissionGraph();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisClimateRun'))void loadClimateEvidence();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisReplayRun'))void replayWarningHistory();});
