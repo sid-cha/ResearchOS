@@ -4,8 +4,12 @@ export const SYMBOLS=['NVDA','AAPL','MSFT','TSLA','SPY','AMD','QQQ','META','AMZN
 const CIK={NVDA:'0001045810',AAPL:'0000320193',MSFT:'0000789019',TSLA:'0001318605',AMD:'0000002488',META:'0001326801',AMZN:'0001018724',PLTR:'0001321655'};
 const TOPICS={sanctions:'(sanctions OR "export restrictions")',conflict:'("armed conflict" OR geopolitical conflict)',supply:'("supply chain disruption" OR port closure)'};
 const fromDate=(days)=>new Date(Date.now()-days*86400000).toISOString();
-export function makeSources({fetchImpl=fetch,env=process.env}={}){
- const cache=new Map();let secQueue=Promise.resolve();
+const DIRECTORY_URL='https://www.sec.gov/files/company_tickers_exchange.json';
+const validSymbol=value=>typeof value==='string'&&/^[A-Z][A-Z0-9.-]{0,11}$/.test(value);
+const normalizeCik=value=>{const text=typeof value==='string'?value:Number.isSafeInteger(value)?String(value):'';return /^\d{1,10}$/.test(text)&&Number(text)>0?text.padStart(10,'0'):null;};
+const sourceError=(message,status=400)=>Object.assign(new Error(message),{status});
+export function makeSources({fetchImpl=fetch,env=process.env,instrumentResolver}={}){
+ const cache=new Map(),inflight=new Map();let secQueue=Promise.resolve();
  async function cancelBody(response){try{await response.body?.cancel?.();}catch{/* Preserve the bounded public error if upstream cancellation fails. */}}
  async function readBounded(response,maxBytes){
   if(Number(response.headers?.get?.('content-length'))>maxBytes){await cancelBody(response);throw Object.assign(new Error('Upstream payload exceeds limit'),{status:502});}
@@ -21,22 +25,69 @@ export function makeSources({fetchImpl=fetch,env=process.env}={}){
      const raw=await readBounded(response,maxBytes);try{return JSON.parse(raw)}catch{throw Object.assign(new Error('Upstream did not return JSON'),{status:502})}}
    catch(e){if(e.name==='AbortError')throw Object.assign(new Error('External data provider timed out'),{status:504});throw e}finally{clearTimeout(timeout)}
  }
- async function cached(key,ttl,producer){const found=cache.get(key);if(found?.until>Date.now())return found.value;const value=await producer();cache.set(key,{value,until:Date.now()+ttl});if(cache.size>128)cache.delete(cache.keys().next().value);return value;}
+ async function cached(key,ttl,producer){const found=cache.get(key);if(found?.until>Date.now())return found.value;if(inflight.has(key))return inflight.get(key);
+  const pending=Promise.resolve().then(producer).then(value=>{cache.set(key,{value,until:Date.now()+ttl});if(cache.size>128)cache.delete(cache.keys().next().value);return value;});inflight.set(key,pending);try{return await pending;}finally{inflight.delete(key);}}
  function credentials(){if(!env.APCA_API_KEY_ID||!env.APCA_API_SECRET_KEY)throw Object.assign(new Error('Alpaca credentials missing; add them to .env for news and bars.'),{status:503});return {'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY};}
  async function alpaca(url){return get('https://data.alpaca.markets'+url,{headers:credentials()});}
  async function sec(url){const agent=env.SEC_USER_AGENT;if(!agent||!/.+@.+\..+/.test(agent))throw Object.assign(new Error('Set SEC_USER_AGENT to an app name and contact email in .env.'),{status:503});
    const run=async()=>{await new Promise(r=>setTimeout(r,400));return get(url,{headers:{'User-Agent':agent}})};const next=secQueue.then(run,run);secQueue=next.catch(()=>{});return next;}
- const requireCompany=(symbol)=>{const cik=CIK[symbol];if(!cik)throw Object.assign(new Error('SEC company filings not supported for this ticker (ETFs or unavailable mapping).'),{status:422});return cik;};
- const companyFacts=async symbol=>{const cik=requireCompany(symbol);return cached(`facts:${cik}`,900000,async()=>({symbol,source:'SEC_EDGAR_XBRL',facts:await sec(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`),fetchedAt:new Date().toISOString()}));};
- const barReq=(symbol,days=240,feed='iex')=>{const start=fromDate(days),end=new Date().toISOString();return `/v2/stocks/${symbol}/bars?timeframe=1Day&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&feed=${feed}&limit=1000&sort=asc`;};
+ async function requireInstrument(symbol){
+  if(!validSymbol(symbol))throw sourceError('Unsupported registered research symbol');
+  if(instrumentResolver){let instrument;try{instrument=await instrumentResolver(symbol);}catch(error){throw sourceError(error?.status===404?'Research symbol is not registered':'Registered instrument lookup is unavailable',error?.status===404?400:502);}
+   if(!instrument||instrument.symbol!==symbol||instrument.instrumentId!=='US_EQUITY:'+symbol)throw sourceError('Unsupported registered research symbol');return instrument;}
+  if(!SYMBOLS.includes(symbol))throw sourceError('Unsupported registered research symbol');
+  return {symbol,instrumentId:'US_EQUITY:'+symbol,cik:CIK[symbol]??null,secCompanySupported:Boolean(CIK[symbol])};
+ }
+ const requireCompany=async symbol=>{const instrument=await requireInstrument(symbol),cik=normalizeCik(instrument.cik??CIK[symbol]);if(instrument.secCompanySupported===false||!cik)throw sourceError('SEC company filings not supported for this ticker (ETFs or unavailable mapping).',422);return cik;};
+ const companyFacts=async symbol=>{const cik=await requireCompany(symbol);return cached(`facts:${symbol}:${cik}`,900000,async()=>{
+  const facts=await sec(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`);if(normalizeCik(facts?.cik)!==cik)throw sourceError('SEC company facts issuer does not match the registered identity',422);
+  return {symbol,source:'SEC_EDGAR_XBRL',facts,fetchedAt:new Date().toISOString()};});};
+ const barReq=(symbol,days=240,feed='iex')=>{const start=fromDate(days),end=new Date().toISOString();return `/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=1Day&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&feed=${feed}&limit=1000&sort=asc`;};
+ async function directory(){return cached('sec:issuer-directory',86400000,async()=>{
+  const payload=await sec(DIRECTORY_URL);
+  if(!Array.isArray(payload?.fields)||!Array.isArray(payload.data)||payload.data.length>30000)throw sourceError('Official issuer directory has an unsupported schema',502);
+  const positions=Object.fromEntries(['cik','name','ticker','exchange'].map(field=>[field,payload.fields.indexOf(field)]));
+  if(Object.values(positions).some(position=>position<0))throw sourceError('Official issuer directory has an unsupported schema',502);
+  const fetchedAt=new Date().toISOString(),values=new Map(),conflicts=new Set();let rejected=0,duplicates=0;
+  for(const row of payload.data){
+   if(!Array.isArray(row)){rejected++;continue;}
+   const symbol=row[positions.ticker],name=row[positions.name],cik=normalizeCik(row[positions.cik]),exchange=row[positions.exchange];
+   if(!validSymbol(symbol)||typeof name!=='string'||!name.trim()||name.trim().length>255||!cik||exchange!==null&&exchange!==undefined&&(typeof exchange!=='string'||exchange.length>60)){rejected++;continue;}
+   const instrument={instrumentId:'US_EQUITY:'+symbol,symbol,name:name.trim(),cik,issuerId:'SEC_CIK:'+cik,type:'unknown',currency:'USD',
+    currencyBasis:'US-equity market-data denomination; not a field supplied by the SEC ticker directory.',exchange:typeof exchange==='string'?exchange.trim():null,
+    sector:null,classification:'unavailable',marketTimeZone:'America/New_York',secCompanySupported:true,
+    identitySource:'SEC_COMPANY_TICKERS_EXCHANGE',sourceUrl:DIRECTORY_URL,verifiedAt:fetchedAt};
+   if(values.has(symbol)){duplicates++;const existing=values.get(symbol);if(existing.cik!==cik||existing.name!==instrument.name||existing.exchange!==instrument.exchange)conflicts.add(symbol);}
+   else values.set(symbol,instrument);
+  }
+  for(const selected of conflicts)values.delete(selected);
+  return {instruments:[...values.values()],fetchedAt,coverage:{sourceRecords:payload.data.length,eligible:values.size,rejected,duplicateRecords:duplicates,conflictingSymbols:[...conflicts]}};
+ });}
+ async function searchInstruments(query,{limit=20}={}){
+  if(typeof query!=='string'||!query.trim()||query.trim().length>80||/[\x00-\x1f]/.test(query)||!Number.isInteger(limit)||limit<1||limit>20)throw sourceError('Enter a search query and limit between one and twenty');
+  const term=query.trim().toLowerCase(),data=await directory();
+  const matches=data.instruments.filter(item=>`${item.symbol} ${item.name}`.toLowerCase().includes(term)).sort((left,right)=>(left.symbol.toLowerCase()===term?-1:right.symbol.toLowerCase()===term?1:left.symbol.localeCompare(right.symbol)));
+  return {source:'SEC_COMPANY_TICKERS_EXCHANGE',results:matches.slice(0,limit).map(item=>structuredClone(item)),fetchedAt:data.fetchedAt,
+   coverage:{...structuredClone(data.coverage),matched:matches.length,truncated:matches.length>limit},limitations:['SEC ticker mapping does not establish sector, instrument type, trading eligibility or permanent security identity.']};
+ }
+ async function resolveInstrument(symbol){
+  if(!validSymbol(symbol))throw sourceError('Choose a valid uppercase research symbol');
+  const data=await directory(),instrument=data.instruments.find(item=>item.symbol===symbol);
+  if(!instrument)throw sourceError('No exact official issuer directory match exists for this symbol',404);return structuredClone(instrument);
+ }
  return {
-  async news(symbol,limit=20){const data=await cached(`news:${symbol}:${limit}`,60000,()=>alpaca(`/v1beta1/news?symbols=${symbol}&limit=${limit}&sort=desc`));return {source:'ALPACA_NEWS',symbol,events:normalizeNews(data),fetchedAt:new Date().toISOString()};},
-  async filings(symbol){const cik=requireCompany(symbol);const data=await cached(`filing:${cik}`,900000,()=>sec(`https://data.sec.gov/submissions/CIK${cik}.json`));return {source:'SEC_EDGAR',symbol,company:data.name,filings:extractFilings(data,20)};},
+  searchInstruments,resolveInstrument,
+  async news(symbol,limit=20){await requireInstrument(symbol);if(!Number.isInteger(limit)||limit<1||limit>30)throw sourceError('News limit must be between one and thirty');
+   return cached(`news:${symbol}:${limit}`,60000,async()=>{const data=await alpaca(`/v1beta1/news?${new URLSearchParams({symbols:symbol,limit:String(limit),sort:'desc'})}`);return {source:'ALPACA_NEWS',symbol,events:normalizeNews(data),fetchedAt:new Date().toISOString()};});},
+  async filings(symbol){const cik=await requireCompany(symbol);const found=await cached(`filing:${cik}`,900000,async()=>{
+   const data=await sec(`https://data.sec.gov/submissions/CIK${cik}.json`);if(normalizeCik(data?.cik)!==cik)throw sourceError('SEC filings issuer does not match the registered identity',422);return {data,fetchedAt:new Date().toISOString()};
+  });return {source:'SEC_EDGAR',symbol,company:found.data.name,filings:extractFilings(found.data,20),fetchedAt:found.fetchedAt};},
   async fundamentals(symbol){const data=await companyFacts(symbol);return {symbol,...summarizeCompanyFacts(data.facts),fetchedAt:data.fetchedAt};},
   companyFacts,
-  async bars(symbol,{days=240,feed='iex'}={}){const data=await cached(`bars:${symbol}:${days}:${feed}`,60000,()=>alpaca(barReq(symbol,days,feed)));return {symbol,source:`ALPACA_${feed.toUpperCase()}`,bars:data.bars||[],hasMore:Boolean(data.next_page_token),fetchedAt:new Date().toISOString()};},
+  async bars(symbol,{days=240,feed='iex'}={}){await requireInstrument(symbol);if(!Number.isInteger(days)||days<1||days>1100||!['iex','sip'].includes(feed))throw sourceError('Unsupported bounded bar request');const data=await cached(`bars:${symbol}:${days}:${feed}`,60000,()=>alpaca(barReq(symbol,days,feed)));return {symbol,source:`ALPACA_${feed.toUpperCase()}`,bars:data.bars||[],hasMore:Boolean(data.next_page_token),fetchedAt:new Date().toISOString()};},
   async researchBars(symbol,{days=800,feed='iex',start=null,end=null,adjustment='split'}={}){
-   if(!SYMBOLS.includes(symbol)||!['iex','sip'].includes(feed)||!['raw','split','all'].includes(adjustment)||!Number.isInteger(days)||days<1||days>1100)throw Object.assign(new Error('Unsupported bounded research bar request'),{status:400});
+   if(!['iex','sip'].includes(feed)||!['raw','split','all'].includes(adjustment)||!Number.isInteger(days)||days<1||days>1100)throw Object.assign(new Error('Unsupported bounded research bar request'),{status:400});
+   await requireInstrument(symbol);
    const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T00:00:00Z'))&&new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
    const today=new Date().toISOString().slice(0,10);
    const first=start??new Date(Date.now()-days*86400000).toISOString().slice(0,10),last=end??today;
@@ -46,7 +97,7 @@ export function makeSources({fetchImpl=fetch,env=process.env}={}){
     do{
      const params=new URLSearchParams({timeframe:'1Day',start:first+'T00:00:00Z',end:last+'T23:59:59Z',feed,adjustment,limit:'1000',sort:'asc'});
      if(token)params.set('page_token',token);
-     const data=await alpaca(`/v2/stocks/${symbol}/bars?${params.toString()}`);
+     const data=await alpaca(`/v2/stocks/${encodeURIComponent(symbol)}/bars?${params.toString()}`);
      if(!Array.isArray(data.bars)||data.bars.length>1000)throw Object.assign(new Error('Malformed market bar response'),{status:502});
      bars.push(...data.bars);pages++;
      const next=data.next_page_token;

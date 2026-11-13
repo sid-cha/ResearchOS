@@ -139,3 +139,45 @@ test('malformed provider JSON has a static error and does not poison subsequent 
  await assert.rejects(sources.researchBars('MSFT',RANGE),errorIs(502,'Upstream did not return JSON'));
  const recovered=await sources.researchBars('MSFT',RANGE);assert.equal(calls,2);assert.deepEqual(recovered.bars,[]);assert.equal(recovered.partialHistory,false);
 });
+
+test('official issuer directory search uses one fixed cached SEC index and exact CIK identities',async()=>{
+ let calls=0;const sources=makeSources({env:ENV,fetchImpl:async(url,options)=>{
+  calls++;assert.equal(url,'https://www.sec.gov/files/company_tickers_exchange.json');assert.equal(options.headers['User-Agent'],ENV.SEC_USER_AGENT);assert.equal(options.headers['APCA-API-KEY-ID'],undefined);
+  return response({fields:['name','exchange','cik','ticker'],data:[['Costco Wholesale','Nasdaq',909832,'COST'],['Alphabet','Nasdaq',1652044,'GOOG'],['Private extra metadata','Nasdaq',123,'BROKEN/../'],['Conflict one','NYSE',111,'DUP'],['Conflict two','NYSE',222,'DUP']]});
+ }});
+ const [matches,identity]=await Promise.all([sources.searchInstruments('cost'),sources.resolveInstrument('COST')]);
+ assert.equal(calls,1);assert.equal(matches.results.length,1);assert.equal(identity.cik,'0000909832');assert.equal(identity.issuerId,'SEC_CIK:0000909832');
+ assert.equal(identity.type,'unknown');assert.equal(identity.sector,null);assert.equal(identity.identitySource,'SEC_COMPANY_TICKERS_EXCHANGE');
+ assert.deepEqual(matches.coverage.conflictingSymbols,['DUP']);assert.equal(matches.coverage.rejected,1);
+ await assert.rejects(sources.resolveInstrument('DUP'),{status:404});await assert.rejects(sources.resolveInstrument('COS'),{status:404});assert.equal(calls,1);
+ identity.cik='0000000001';assert.equal((await sources.resolveInstrument('COST')).cik,'0000909832');
+});
+
+test('registered non-pilot symbols use their issuer CIK and all market requests stay fixed-host',async()=>{
+ const seen=[],identity={symbol:'COST',instrumentId:'US_EQUITY:COST',cik:'0000909832',secCompanySupported:true};
+ const sources=makeSources({env:ENV,instrumentResolver:async symbol=>{assert.equal(symbol,'COST');return identity;},fetchImpl:async url=>{
+  seen.push(new URL(url));
+  if(url.includes('companyfacts'))return response({cik:909832,entityName:'Costco',facts:{}});
+  if(url.includes('submissions'))return response({cik:'0000909832',name:'Costco',tickers:['COST'],filings:{recent:{form:['8-K'],accessionNumber:['0000909832-26-000001'],filingDate:['2026-11-01'],primaryDocument:['filing.htm']}}});
+  if(url.includes('/news'))return response({news:[]});return response({bars:[]});
+ }});
+ const facts=await sources.companyFacts('COST'),filings=await sources.filings('COST');await sources.researchBars('COST',RANGE);await sources.news('COST');await sources.bars('COST');
+ assert.equal(facts.symbol,'COST');assert.equal(filings.filings[0].symbols[0],'COST');
+ assert(seen.some(url=>url.pathname==='/api/xbrl/companyfacts/CIK0000909832.json'));
+ assert(seen.some(url=>url.pathname==='/v2/stocks/COST/bars'));assert(seen.every(url=>['https://data.sec.gov','https://data.alpaca.markets'].includes(url.origin)));
+ assert.equal((await sources.filings('COST')).fetchedAt,filings.fetchedAt);
+});
+
+test('registered company source rejects mismatched facts and filings issuer identities',async()=>{
+ for(const method of ['companyFacts','filings']){
+  const sources=makeSources({env:ENV,instrumentResolver:async()=>({symbol:'COST',instrumentId:'US_EQUITY:COST',cik:'0000909832'}),fetchImpl:async()=>response({cik:789019})});
+  await assert.rejects(sources[method]('COST'),error=>error.status===422&&error.message.includes('registered identity'));
+ }
+});
+
+test('invalid directory schema and unregistered injected symbols fail without unsafe upstream access',async()=>{
+ const invalid=makeSources({env:ENV,fetchImpl:async()=>response({fields:['ticker'],data:[['COST']]})});await assert.rejects(invalid.searchInstruments('cost'),{status:502});
+ let calls=0;const unregistered=makeSources({env:ENV,instrumentResolver:async()=>{throw Object.assign(Error('PRIVATE_LOOKUP_PATH'),{status:404});},fetchImpl:async()=>{calls++;throw Error();}});
+ await assert.rejects(unregistered.researchBars('COST',RANGE),error=>error.status===400&&!error.message.includes('PRIVATE'));assert.equal(calls,0);
+ const absent=makeSources({env:{},fetchImpl:async()=>{calls++;throw Error();}});await assert.rejects(absent.searchInstruments('cost'),{status:503});assert.equal(calls,0);
+});
