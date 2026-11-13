@@ -63,7 +63,7 @@ export function normalizeBenchmark(data){
  * Forward returns start from that entry and use next horizonSessions closes;
  * this deliberately does not pretend the end-of-day signal was tradable today.
  */
-export function forwardOutcome({asOf,bars,horizonSessions=20,lossThresholdPct=10}){
+export function forwardOutcome({asOf,bars,horizonSessions=20,lossThresholdPct=10,marketSource='ALPACA_IEX_SPY_SPLIT_ADJUSTED'}){
  if(!isoDay(asOf)||!Array.isArray(bars)||![5,20,63].includes(horizonSessions)||![5,10,20].includes(lossThresholdPct))
   throw err('Invalid independent market outcome request');
  const entryIndex=bars.findIndex(b=>b.date>asOf);
@@ -79,7 +79,7 @@ export function forwardOutcome({asOf,bars,horizonSessions=20,lossThresholdPct=10
   horizonSessions,lossThresholdPct,worstReturnPct:Number(low.toFixed(4)),
   endpointReturnPct:Number((100*(future.at(-1).close/entry.close-1)).toFixed(4)),
   eventOccurred:Boolean(firstBreach),firstBreachDate:firstBreach?.date||null,
-  sessionsUntilBreach:firstBreach?.sessions??null,marketSource:'ALPACA_IEX_SPY_SPLIT_ADJUSTED'};
+  sessionsUntilBreach:firstBreach?.sessions??null,marketSource};
 }
 function validateSnapshot(snapshot,day){
  if(snapshot?.source!=='FRED_ALFRED_VINTAGE'||snapshot.asOf!==day||
@@ -100,7 +100,7 @@ function validateSnapshot(snapshot,day){
  if(seen.size!==expected.size)throw err('Historical replay is missing macro rules',502);
 }
 /** Fixed 2-of-3 composite is RESEARCH ONLY; evidence can be incomplete. */
-export function buildHistoricalStudy({plan,snapshots,benchmarkBars=null,benchmarkStatus='not_requested'}){
+export function buildHistoricalStudy({plan,snapshots,benchmarkBars=null,benchmarkStatus='not_requested',benchmarkSource=null}){
  if(!plan||!Array.isArray(plan.dates)||!Array.isArray(snapshots)||snapshots.length!==plan.dates.length)
   throw err('Replay lacks the requested historical decision snapshots');
  const timeline=snapshots.map((snapshot,index)=>{
@@ -108,7 +108,7 @@ export function buildHistoricalStudy({plan,snapshots,benchmarkBars=null,benchmar
   const rules=snapshot.earlyWarning.rules;
   const usable=rules.filter(r=>r.triggered!==null).length,triggered=rules.filter(r=>r.triggered===true);
   const state=usable<2?'insufficient_data':triggered.length>=2?'candidate_warning':'no_composite_warning';
-  const outcome=Array.isArray(benchmarkBars)?forwardOutcome({asOf,bars:benchmarkBars,horizonSessions:plan.horizonSessions,lossThresholdPct:plan.lossThresholdPct}):
+  const outcome=Array.isArray(benchmarkBars)?forwardOutcome({asOf,bars:benchmarkBars,horizonSessions:plan.horizonSessions,lossThresholdPct:plan.lossThresholdPct,marketSource:benchmarkSource||'ALPACA_IEX_SPY_SPLIT_ADJUSTED'}):
    {status:'unavailable',reason:benchmarkStatus==='unsupported_before_2016'?'Market source unavailable before 2016':'No verified market benchmark bars'};
   return {asOf,signal:state,usableIndicators:usable,triggeredIndicators:triggered.length,
    ruleStates:rules.map(r=>({id:r.id,value:r.value,triggered:r.triggered,observationDate:r.observationDate||null,status:r.status})),
@@ -151,18 +151,20 @@ export function buildHistoricalStudy({plan,snapshots,benchmarkBars=null,benchmar
    precision:powered?ratio(tp,tp+fp):null,recall:powered?ratio(tp,tp+fn):null,
    falseAlarmRate:powered?ratio(fp,fp+tn):null,
    leadSessionsToFirstDrawdown:lead.length?lead:null},
-  sourceProvenance:{macro:'FRED_ALFRED_VINTAGE',market:benchmarkBars?'ALPACA_IEX_SPY_SPLIT_ADJUSTED':null},
+  sourceProvenance:{macro:'FRED_ALFRED_VINTAGE',market:benchmarkBars?benchmarkSource||'ALPACA_IEX_SPY_SPLIT_ADJUSTED':null},
+  benchmarkPriceBasis:benchmarkSource==='EODHD_SPY_DIVIDEND_SPLIT_ADJUSTED_CURRENT_REVISION'?'current-revision dividend-and-split adjusted closing price':benchmarkBars?'split-adjusted single-venue IEX closing price':null,
   calibratedForecast:false,crashProbability:null,trainTestSplitPerformed:false,
   limitations:[
    'This is a fixed-rule retrospective replay and descriptive outcome study, not a trained or calibrated prediction model.',
    'ALFRED calendar-day vintages cannot alone verify intraday release publication clocks.',
    'Event labels use future realized SPY closes strictly after the signal date and are never used as model features.',
    'One sampled macro decision can overlap the next 5/20/63-session outcome window; overlapping windows are excluded from performance statistics.',
-   'SPY IEX bars are single-venue market data. Results may differ from consolidated closing benchmarks or dividend-adjusted total returns.',
+   'SPY market labels may use single-venue Alpaca IEX prices or currently revised EODHD split/dividend-adjusted prices; these price bases are not interchangeable.',
+   'Historically revised adjusted prices are used only to label subsequent outcomes, not to reconstruct contemporaneous tradeable historical price vintages.',
    'Historical index membership, broad market breadth, trading frictions, eligibility and external validation remain outstanding.'
   ]};
 }
-export function createHistoricalBacktest({macro,marketSources=null,now=()=>new Date()}={}){
+export function createHistoricalBacktest({macro,marketSources=null,longHistoryMarket=null,now=()=>new Date()}={}){
  if(typeof macro?.snapshot!=='function'||typeof macro?.catalog!=='function')throw new TypeError('Historical backtest requires ALFRED macro service');
  const cache=new Map(),pending=new Map();
  async function run(input){
@@ -171,7 +173,7 @@ export function createHistoricalBacktest({macro,marketSources=null,now=()=>new D
   // Ensure a deterministic bounded number of historical API queries.
   const snapshots=[];
   for(const asOf of plan.dates)snapshots.push(await macro.snapshot(asOf));
-  let benchmarkBars=null,benchmarkStatus='unsupported_before_2016';
+  let benchmarkBars=null,benchmarkStatus='unsupported_before_2016',benchmarkSource=null;
   if(plan.start>=MARKET_START){
    benchmarkStatus='unavailable_provider';
    if(typeof marketSources?.researchBars==='function'){
@@ -183,17 +185,37 @@ export function createHistoricalBacktest({macro,marketSources=null,now=()=>new D
       const bars=await marketSources.researchBars('SPY',{start:plan.start,end:marketEnd,feed:'iex',adjustment:'split'});
       benchmarkBars=normalizeBenchmark(bars);
       benchmarkStatus=benchmarkBars.length?'available':'unavailable_empty';
+      if(benchmarkBars.length)benchmarkSource='ALPACA_IEX_SPY_SPLIT_ADJUSTED';
       if(!benchmarkBars.length)benchmarkBars=null;
      }catch(error){benchmarkStatus=error?.status===429?'unavailable_rate_limited':'unavailable_provider';}
     }else benchmarkStatus='unavailable_outcome_window';
    }
   }
-  return buildHistoricalStudy({plan,snapshots,benchmarkBars,benchmarkStatus});
+  if(plan.start<MARKET_START){
+   benchmarkStatus='unavailable_long_history_not_configured';
+   if(longHistoryMarket?.catalog?.().enabled===true&&typeof longHistoryMarket?.history==='function'){
+    const today=now().toISOString().slice(0,10);
+    const wantedEnd=plusDays(plan.end,Math.ceil(plan.horizonSessions*1.9)+14);
+    const marketEnd=wantedEnd<plusDays(today,-1)?wantedEnd:plusDays(today,-1);
+    if(marketEnd>=plan.end){
+     try{
+      const history=await longHistoryMarket.history({start:plusDays(plan.start,-10),end:marketEnd});
+      if(history?.source!=='EODHD_SPY_DIVIDEND_SPLIT_ADJUSTED_CURRENT_REVISION'||!Array.isArray(history.bars))throw err('Long-history benchmark provenance mismatch',502);
+      benchmarkBars=history.bars;
+      benchmarkStatus=benchmarkBars.length?'available_long_history_adjusted':'unavailable_empty';
+      if(benchmarkBars.length)benchmarkSource=history.source;
+      else benchmarkBars=null;
+     }catch(error){benchmarkStatus=error?.status===429?'unavailable_long_history_rate_limited':error?.status===503?'unavailable_long_history_entitlement':'unavailable_long_history_provider';}
+    }else benchmarkStatus='unavailable_outcome_window';
+   }
+  }
+  return buildHistoricalStudy({plan,snapshots,benchmarkBars,benchmarkStatus,benchmarkSource});
  }
  return {
   catalog(){return {version:'v016-exploratory',presets:copy(CASES),cadences:[7,14,28],horizons:[5,20,63],
    lossThresholds:[5,10,20],macroConfigured:macro.catalog().credentialsConfigured,
-   marketSource:'Alpaca IEX SPY; available where provider permits, not before 2016',
+   marketSource:'Alpaca IEX for supported dates since 2016; optional licensed EODHD SPY long history for pre-2016 outcomes',
+   longHistory:longHistoryMarket?.catalog?.()||{provider:'EODHD',enabled:false,rawHistoryPubliclyExposed:false},
    experimental:true,calibratedForecast:false};},
   async replay(input){
    const plan=planReplayDates(input,now),key=JSON.stringify({caseId:plan.caseId,start:plan.start,end:plan.end,
