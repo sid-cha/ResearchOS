@@ -29,6 +29,49 @@ The new narrow product experiment lives at `/commodity.html` and is documented i
 
 Full scope and manual checks: [V022_TRANSMISSION_LAB.md](V022_TRANSMISSION_LAB.md). **Do not present conditional graph edges as risk probabilities or investment advice.**
 
+## Next architectural milestone — v0.23 Generalized Event-to-Economy Scenario Engine (P0)
+
+**Decision following user feedback (Nov 13, 2026):** v0.22 supports exactly three hard-coded scenario definitions in \`lib/transmission-graph.mjs\` and an independent fixed \`SCOPES\` map in \`lib/transmission-dossier.mjs\`. These were vertical-slice pilots, **not the intended product scope**. Do not copy/paste three more graph arrays as the product's scalability strategy. Prioritize a **data-driven, typed scenario registry** that can load extensible scenarios without changing API routing or the analysis engine.
+
+### Delivery phases
+
+| Phase | Proposed implementation | Acceptance gate |
+| --- | --- | --- |
+| **A — Scenario registry** | Versioned JSON/schema definitions for scenario ID, event classes, geographies, commodities, industries, entities, node types, directional links, expected mechanisms, source contracts, mandatory evidence types and confidence state. Graph builder loads registry, preserves v0.22 scenarios as fixtures, validates cycles/unknown references/duplicate IDs/source rights, supports tenant-neutral catalog filters | Existing three scenarios remain deterministic, backward-compatible and never become causally verified by registry membership |
+| **B — Evidence and time model** | Reusable observation contracts including authoritative URL, provider, metric, period/frequency/unit, geography, issuer ID, releasedAt, firstSeenAt, fetchedAt, asOfEligibility, correction/revision and normalized content hash; original vintage and current revision as separate types | No revised 2026 values enter a 2020 historical simulation; explicit unavailable/not verified statuses |
+| **C — Scenario composability** | Shared transformation and candidate-edge framework that matches event→hazard→commodity/asset→industry→issuer using temporal and geographic constraints, joins only when real source coordinates and company evidence exist, exposes missing nodes, lag and data age | No edge marked confirmed due solely to two correlated or adjacent context datapoints; coverage and unresolved evidence observable |
+| **D — Scenario catalog UX** | Search/browse/filter scenario templates by event class, region, affected industry, ticker, time horizon and evidence coverage; dynamic graph visualization and source inspector; create new research dossier from selected template | 10+ catalog templates can be shown without API code duplication; only supported cases can run live research; others explicitly say PLANNED / NOT CONNECTED |
+| **E — Confidence and validation** | Hypothesis vs source-observed vs event-linked vs independently validated states; candidate comparison studies against controls and publication-time leakage tests; conservative abstention on issuer impact or predicted market outcome | No implied predictive probability, market return or investment recommendation without independent validation and licensing |
+
+### Candidate event taxonomy for an expandable catalog
+
+These are **hypothesis templates to research, not connected pipelines or verified economic effects**:
+
+| Scenario family | Candidate pathway | Relevant evidence classes / potential source |
+| --- | --- | --- |
+| 1. ENSO/monsoon | Issued seasonal outlook → crop-region precipitation → acreage/yields → fertilizer trade/use → producers | NOAA CPC, IMD/other meteorological agencies, USDA FAS, UN Comtrade, SEC |
+| 2. Extreme drought | Drought classification → reservoir/irrigation constraints → farm and power output → commodity and utility exposure | US Drought Monitor, NOAA, water agencies, EIA, SEC |
+| 3. Snow and hydropower | Basin snow-water equivalent → runoff → hydropower availability → fuel substitution/power rates | NRCS SNOTEL, watershed operators, EIA, SEC |
+| 4. Wildfire | Verified fire perimeter → insured footprint → claims/reinsurance → contractor/material demand | NASA FIRMS, fire-perimeter archive, NOAA, public insurer reports; private insured-location data required |
+| 5. Hurricanes/floods | Issued track warning → port/property exposure → shipping/refining outages → losses and replacement demand | NOAA NHC/NCEI, port/plant status, insurers, SEC |
+| 6. Energy shock | Natural-gas/oil capacity and trade disruption → energy feedstock costs → fertilizer/chemicals/transport margins | EIA API v2, firm filing disclosures, trade data |
+| 7. Geopolitical sanctions | Effective-dated designation or trade restriction → restricted counterparties/routes → supply alternatives → issuer revenue/cost | OFAC Sanctions List Service, Federal Register, trade authorities, SEC |
+| 8. Maritime chokepoint | Verified route/port disruption → freight and delivery lags → commodity input shortage → issuer exposure | Official port advisories, publicly permitted maritime feeds, trade statistics, SEC |
+| 9. Earthquake | USGS observed event → validated site/plant footprint → operating disruption → industry supply constraint | USGS ComCat event revisions, disclosed facilities and verified outage announcements |
+| 10. Mineral supply concentration | Mine/permit/export change → lithium/copper/rare-earth availability → electronics/renewable capital goods costs | USGS mineral series, government permits/trade data, company supply filings |
+| 11. Disease/biological shock | Official public-health alert → absenteeism/transport/sector demand → business disruption | WHO/CDC dated reports and independent industry indicators; major confounding risk |
+| 12. Macro/credit stress | Rates/credit spreads and lending indicators → refinancing/capital availability → cyclicals/banks/REITs | ALFRED vintages, regulatory releases, company maturity schedules |
+
+**Prioritization:** First deliver registry mechanics and historical evidence contracts. Then fully connect 2–3 additional scenario families where the existing data providers are strongest: **energy shock**, **drought/agriculture**, and **sanctions/commodity trade**. Use wildfire or hurricane loss mapping only after credible insured-location/asset-footprint data are available. Avoid unlicensed vessel, insurance and proprietary exposure datasets.
+
+### Product guardrails
+
+- Catalog count ≠ connected/validated scenario count. Show \`TEMPLATE\`, \`DATA_PARTIAL\`, \`RESEARCH_CONTEXT\`, \`SOURCE_VALIDATED\`, \`EDGE_VALIDATED\` separately.
+- Reuse existing \`/api/transmission\` and \`/api/transmission-dossier\` contracts through explicit compatibility adapters; keep v0.22 testing history.
+- Keep human-authored, source-attributed causal hypotheses separate from observations, measured effects and model-generated claims. No arbitrary external URL fetch, no automatic financial trades, no model-generated financial impact without evidence.
+- Run provider entitlement/coverage tests and full regression CI on the unified development branch; keep PR #19 draft until release acceptance.
+- The six-agent Research Desk remains deferred: it will eventually consume this registry and evidence graph, rather than generating unconstrained claims from scratch.
+
 ## Future concept — Research Agent Desk (deferred; design discovery only)
 
 **User-requested concept (Nov 13, 2026):** a one-click mission launches up to **six specialist research agents** that visibly work in parallel in TradeScope, each showing a live phase/status, source citations, observations, open questions, costs and confidence limits, then produce a single consolidated report. Human research tasks should eventually be delegated to explicit tools. **Do not implement this now**; revisit after provider validation, evidenced company exposure and source-licensed datasets.
@@ -84,7 +127,7 @@ Full scope and manual checks: [V022_TRANSMISSION_LAB.md](V022_TRANSMISSION_LAB.m
 | Drought, snowpack and monsoon | **Pending** — representative Colorado temperature/precipitation point is not snowpack, drought or monsoon measurement | NOAA/US Drought Monitor/NRCS and regional monsoon agency archives with original issue dates, watersheds and crop regions |
 | Wildfire and catastrophe | Built event pilot only | Historic perimeter/intensity, insured location and catastrophe loss evidence, time-specific publication and region matching |
 | Commodity and supply chain | Pending | USDA crop reports, USGS potash, trade data, shipping and inventory shock pathways with versioned source evidence |
-| Transmission graph | **Typed research-graph foundation implemented** | Three directed scenario graphs, read-only API and Crisis & Climate stage UI, with conditional lag/sign placeholders; add georeferenced dated evidence, measured causal edges and named issuer verification |
+| Transmission graph | **v0.22 three-scenario pilot built** | v0.23 versioned multi-domain scenario registry, documented provenance contracts, reusable evidence joins and honest scenario availability; next validate georeferenced issuer relationships |
 | Issuer exposure | Pending | SEC facility/subsidiary, supplier, property, revenue and insurance exposure mapping with effective dates and source excerpts |
 | Corporate event attribution | Built pilot | Join validated occurrence sources, issuer exposure and benchmark-adjusted outcome studies, distinguishing association from causation |
 | Global events | Partial pilot | Regulatory, sanctions, macro and political evidence from original dated sources; first-seen and correction logs |
