@@ -146,6 +146,8 @@ export function normalizeEiaSeries(payload,{indicatorId,fetchedAt=nowIso(),today
   if(value===null||!finite(value)){observed.push({period,value:null,status:'MISSING_OR_WITHHELD_SOURCE_VALUE'});continue;}
   observed.push({period,value,unit:def.unit,status:'AVAILABLE',observedPeriodType:'MONTHLY'});
  }
+ if(rows.length>0&&observed.length===0&&rows.some(r=>(r.series||r.series_id||r.seriesId)&&![def.seriesId,def.facet].includes(r.series||r.series_id||r.seriesId)))
+  throw err('EIA v2 returned a different source series',502);
  observed.sort((a,b)=>b.period.localeCompare(a.period));
  const total=Number(response.total);
  const truncated=Number.isFinite(total)&&total>rows.length;
@@ -389,7 +391,7 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
    };
    const [gdelt,eia,comtrade,usda]=await Promise.all([
     run('GDELT_DOC_COMMODITY_EXPANDED',()=>this.gdelt({commodity})),
-    run('EIA_SERIES_V1',()=>this.eia({indicatorId:'henry_hub_spot'})),
+    run('EIA_API_V2',()=>this.eia({indicatorId:'henry_hub_spot'})),
     run('UN_COMTRADE_PREVIEW',()=>this.comtrade({commodity,flow:'M',reporter:'842'})),
     run('USDA_FAS_PSD_API',async()=>{const series=[];
      for(const crop of Object.keys(PSD_COMMODITIES))series.push(await this.usda({crop}));
