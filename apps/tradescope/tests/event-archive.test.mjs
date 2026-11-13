@@ -190,3 +190,18 @@ test('byte capacity fails explicitly and never leaves a half-written archive',as
  const h=await setup(t,{maxBytes:200});await assert.rejects(h.store.ingest({event:quake()}),{status:409});assert.equal((await h.store.list()).total,0);await assert.rejects(readFile(h.filename),{code:'ENOENT'});
  await writeFile(h.filename,'x'.repeat(201));await assert.rejects(createEventArchive({filename:h.filename,now:h.now,maxBytes:200}).list(),{status:500});
 });
+
+
+test('exact revision retrieval rejects fabricated IDs and preserves historical version even after revisions',async t=>{
+ const h=await setup(t),first=await h.store.ingest({event:filing()});
+ h.advance(60000);const next=await h.store.ingest({event:filing({headline:'Updated filing interpretation'})});
+ const historical=await h.store.getRevision(first.eventId,first.revision.id);
+ assert.equal(historical.revision.id,first.revision.id);assert.equal(historical.revision.version,1);
+ assert.equal(historical.source,'SEC_EDGAR');assert.equal(historical.firstObservedAt,iso(BASE));
+ assert.equal(historical.revision.event.headline,filing().headline);
+ assert.equal((await h.store.getRevision(next.eventId,next.revision.id)).revision.version,2);
+ historical.revision.event.headline='CLIENT_MUTATION';
+ assert.equal((await h.store.getRevision(first.eventId,first.revision.id)).revision.event.headline,filing().headline);
+ await assert.rejects(h.store.getRevision(first.eventId,'REV-'+ '0'.repeat(8)+'-0000-0000-0000-000000000000'),{status:404});
+ await assert.rejects(h.store.getRevision(first.eventId,'REV-invalid'),{status:400});
+});
