@@ -224,7 +224,7 @@ test('analogue comparisons explain weighted features and pending horizons; chang
   }
   throw Error('Unexpected '+url);
  }));
- await h.open();await h.tab('analogues');await h.click('researchLoadEarthquakes');await h.click('researchFindAnalogues');
+ await h.open();await h.tab('analogues');await h.change('researchTheme','earthquake');await h.click('researchLoadEarthquakes');await h.click('researchFindAnalogues');
  assert.match(h.element('researchAnalogues').innerHTML,/Magnitude: selected 6 magnitude, historical 6.1 magnitude/);
  assert.match(h.element('researchAnalogues').innerHTML,/weight 50%/);
  assert.match(h.element('researchAnalogues').innerHTML,/NOT A PROBABILITY/);
@@ -268,7 +268,7 @@ test('historical investigations preserve the selected past event and its exact c
   if(url.startsWith('/api/research/event-outcomes')){const at=new URL(url,'http://localhost').searchParams.get('eventTime');return response({symbol:'AAPL',source:'ALPACA_IEX',study:studies[historical.findIndex(event=>event.occurredAt===at)]});}
   throw Error('Unexpected '+url);
  }));
- await h.open();await h.click('researchLoadEarthquakes');await h.click('researchFindAnalogues');
+ await h.open();await h.change('researchTheme','earthquake');await h.click('researchLoadEarthquakes');await h.click('researchFindAnalogues');
  assert.equal(h.element('researchInvestigateOutcome').hidden,true);
  await h.click('researchInvestigateOutcome');
  assert.equal(h.events.filter(event=>event.type==='tradescope:research-investigate').length,0);
