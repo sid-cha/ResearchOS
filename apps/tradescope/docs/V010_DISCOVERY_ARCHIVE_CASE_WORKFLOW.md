@@ -103,6 +103,14 @@ idempotency and provenance, exact revision retrieval, protected handoff and a mo
 browser workflow. Full authenticated SEC integration and full interactive browser
 acceptance **must be checked on this branch** before marking v0.10 complete.
 
+## Verified CI checkpoint (2026-11-12 / 2026-11-13 UTC)
+
+- GitHub Actions **TradeScope Node checks** completed successfully on the draft branch.
+- `npm test`: **323 tests passed; 0 failed** (Node 22, mocked provider and local tests).
+- `npm run build:static`: succeeded; exactly **18 allowlisted public assets**, no private environment files.
+- Verified run: https://github.com/sid-cha/ResearchOS/actions/runs/43348800863
+- This does **not** establish live authenticated SEC/API performance, real-browser cross-device compatibility, PostgreSQL multi-writer safety or public-authentication readiness.
+
 ## Next gates
 
 1. CI, local and real-browser regression checks, including provider rate-limit and
