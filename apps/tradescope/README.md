@@ -151,3 +151,17 @@ curl http://127.0.0.1:8000/api/health
 ## Next production gates
 
 Real company exposure graph (facilities / suppliers / commodities), normalized persisted event times, source licensing, cash-equity adjustment, full historical news, robust holiday/session calendars, data quality/error monitoring, structured alert lifecycle, authorized enterprise integrations, holdout validation of any ML model, and regulatory/commercial compliance review.
+
+## v0.10 regulatory and public-tax pilot (review branch only)
+
+Public SEC filings, cited audit-related disclosures and annual XBRL tax metrics are available from the **local Node API**, not yet as a released multi-user compliance UI:
+
+- `GET /api/regulatory/tax?symbol=AAPL&asOf=2026-11-12`
+- `GET /api/regulatory/filings?symbol=AAPL`
+- `GET /api/regulatory/filing-analysis?symbol=AAPL&accession=...`
+- `GET /api/regulatory/alerts?symbol=AAPL`
+- `GET /api/regulatory/archive?symbol=AAPL`
+
+Local capture via `POST /api/regulatory/capture` is disabled by default; it requires `REGULATORY_LOCAL_CAPTURE_ENABLED=true` in your **local-only** `.env` and enforces loopback/same-origin conditions. This is not account authentication, and it is **not safe to make available publicly**. SEC primary-document access also requires `SEC_USER_AGENT`.
+
+See [v0.10 tax/audit scope](docs/V010_REGULATORY_TAX_FOUNDATION.md) and [authentication/ResearchOS architecture](../../docs/RESEARCHOS_AUTH_AND_REGULATORY_ARCHITECTURE.md). Corporate tax returns remain confidential; the API analyzes only official public financial-statement disclosures. Full v0.10 integration and suite verification are pending.
