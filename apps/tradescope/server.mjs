@@ -34,6 +34,8 @@ import {createFredExplorer,createFredExplorerApi} from './lib/fred-explorer.mjs'
 import {createEvidenceLedger,createEvidenceLedgerApi} from './lib/evidence-ledger.mjs';
 import {createExposureRegistry,createGeoExposureService,createGeoExposureApi} from './lib/geo-exposure.mjs';
 import {createEpaFrsLookup,createFacilityVerificationApi} from './lib/epa-frs.mjs';
+import {createSecRegistrantLookup} from './lib/sec-registrant.mjs';
+import {createExposureCasebook,createExposureProofService,createExposureProofApi} from './lib/exposure-proof.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -72,8 +74,18 @@ const defaultGeoExposureService=createGeoExposureService({
  filename:path.join(ROOT,'.local-data','issuer-asset-claims.json')}):null
 });
 const defaultGeoExposureApi=createGeoExposureApi({service:defaultGeoExposureService,writeEnabled:geoRegistryEnabled});
+const defaultEpaLookup=createEpaFrsLookup();
+const defaultSecRegistrant=createSecRegistrantLookup();
 const defaultFacilityVerificationApi=createFacilityVerificationApi({
- lookup:createEpaFrsLookup(),assets:()=>defaultGeoExposureService.listing()
+ lookup:defaultEpaLookup,assets:()=>defaultGeoExposureService.listing()
+});
+const proofEnabled=process.env.RESEARCH_EXPOSURE_PROOF_ENABLED==='true'&&
+ geoRegistryEnabled&&['127.0.0.1','localhost','::1'].includes(HOST);
+const defaultExposureProofApi=createExposureProofApi({
+ enabled:proofEnabled,service:proofEnabled?createExposureProofService({
+  store:createExposureCasebook({filename:path.join(ROOT,'.local-data','exposure-proof-journal.jsonl')}),
+  assets:()=>defaultGeoExposureService.listing(),frs:defaultEpaLookup,sec:defaultSecRegistrant
+ }):null
 });
 const defaultTransmissionDossierApi=createTransmissionDossierApi({service:createTransmissionDossier({
  graph:createTransmissionGraph(),fundamentals:defaultCommodityWorkbench.fundamentals}),ledger:defaultEvidenceLedger});
@@ -144,7 +156,7 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
@@ -155,6 +167,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await intradayChartApi(req,res,u))return;
     if(await crisisAtlasApi(req,res,u))return;
     if(await climateApi(req,res,u))return;
+    if(await exposureProofApi(req,res,u))return;
     if(await facilityVerificationApi(req,res,u))return;
     if(await geoExposureApi(req,res,u))return;
     if(await evidenceLedgerApi(req,res,u))return;
@@ -191,7 +204,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css','/transmission-lab.html':'transmission-lab.html','/transmission-lab.js':'transmission-lab.js','/transmission-lab.css':'transmission-lab.css','/fred-research.html':'fred-research.html','/fred-research.js':'fred-research.js','/fred-research.css':'fred-research.css','/evidence-ledger.html':'evidence-ledger.html','/evidence-ledger.js':'evidence-ledger.js','/evidence-ledger.css':'evidence-ledger.css','/geo-exposure.html':'geo-exposure.html','/geo-exposure.js':'geo-exposure.js','/geo-exposure.css':'geo-exposure.css'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css','/transmission-lab.html':'transmission-lab.html','/transmission-lab.js':'transmission-lab.js','/transmission-lab.css':'transmission-lab.css','/fred-research.html':'fred-research.html','/fred-research.js':'fred-research.js','/fred-research.css':'fred-research.css','/evidence-ledger.html':'evidence-ledger.html','/evidence-ledger.js':'evidence-ledger.js','/evidence-ledger.css':'evidence-ledger.css','/geo-exposure.html':'geo-exposure.html','/geo-exposure.js':'geo-exposure.js','/geo-exposure.css':'geo-exposure.css','/exposure-review.html':'exposure-review.html','/exposure-review.js':'exposure-review.js','/exposure-review.css':'exposure-review.css'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
