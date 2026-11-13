@@ -165,3 +165,27 @@ Public SEC filings, cited audit-related disclosures and annual XBRL tax metrics 
 Local capture via `POST /api/regulatory/capture` is disabled by default; it requires `REGULATORY_LOCAL_CAPTURE_ENABLED=true` in your **local-only** `.env` and enforces loopback/same-origin conditions. This is not account authentication, and it is **not safe to make available publicly**. SEC primary-document access also requires `SEC_USER_AGENT`.
 
 See [v0.10 tax/audit scope](docs/V010_REGULATORY_TAX_FOUNDATION.md) and [authentication/ResearchOS architecture](../../docs/RESEARCHOS_AUTH_AND_REGULATORY_ARCHITECTURE.md). Corporate tax returns remain confidential; the API analyzes only official public financial-statement disclosures. Full v0.10 integration and suite verification are pending.
+
+
+## v0.10 — Issuer Discovery, Watchlists and Immutable Case Evidence (draft)
+
+Research → **Issuer Discovery** provides SEC issuer-directory search, sourced registration,
+locally saved watchlists, public company financial statements, recent SEC filing analysis,
+and source-cited 8-K disclosure classification. Where local capture is explicitly enabled,
+an analyst can save a normalized SEC event revision with its actual system-observed time,
+inspect exact historical versions, and create an investigation containing that **immutable
+revision** (hash, accession, capture timestamp and supporting excerpts).
+
+This extension preserves the original ten-symbol IEX live monitor, separate ResearchOS
+pilot screener/Atlas, historical replay and pre-existing case records. Registered non-pilot
+issuers currently gain **SEC fundamentals and filing research**, not automatic IEX
+subscriptions or broad-market scanner coverage.
+
+Source-backed local capture requires `REGULATORY_LOCAL_CAPTURE_ENABLED=true` in the
+private local `.env` plus a valid `SEC_USER_AGENT`; the capture and case-handoff
+POST endpoints require loopback and same-origin. They are **not public SaaS authentication**
+and must not be hosted for external users. No login/signup has been implemented yet.
+
+Details, APIs, evidence invariants, caveats and the manual walkthrough:
+[Discovery / archive / investigation workflow](docs/V010_DISCOVERY_ARCHIVE_CASE_WORKFLOW.md).
+
