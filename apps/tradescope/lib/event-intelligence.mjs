@@ -87,7 +87,7 @@ export function normalizeFaaAirportEvents(raw,{fetchedAt=new Date().toISOString(
  const events=[];
  for(const item of raw){
   if(!item||typeof item!=='object'||Array.isArray(item))continue;
-  const airport=boundedString(item.airportId,4)?.toUpperCase();
+  const airport=boundedString(item.airportId,12)?.toUpperCase();
   if(!airport||!/^[A-Z0-9]{3,4}$/.test(airport))continue;
   for(const [field,type] of [['groundStop','GROUND_STOP'],['groundDelay','GROUND_DELAY'],['airportClosure','AIRPORT_CLOSURE']]){
    const d=item[field];if(!d||typeof d!=='object'||Array.isArray(d))continue;
