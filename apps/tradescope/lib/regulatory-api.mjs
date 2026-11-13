@@ -21,7 +21,7 @@ const safeError=error=>{
  return {status,message:status===502?'Regulatory research provider or local store is unavailable':String(error.message||'Request rejected').slice(0,240)};
 };
 
-export function createRegulatoryApi({sources,filingReader,classifyCorporateEvent,corporateStore,eventArchive,captureEnabled=false,now=Date.now}={}){
+export function createRegulatoryApi({sources,filingReader,classifyCorporateEvent,corporateStore,eventArchive,caseStore,captureEnabled=false,now=Date.now}={}){
  if(typeof sources?.companyFacts!=='function'||typeof sources?.filings!=='function'||typeof filingReader?.read!=='function'||typeof classifyCorporateEvent!=='function'||!corporateStore||!eventArchive)throw new TypeError('Regulatory source, filing reader, classifier, alerts and archive are required');
  async function getFiling(symbol,accession){if(!VALID_ACCESSION.test(accession||''))throw fail('Choose a valid SEC filing accession');
   const result=await sources.filings(symbol);const filing=result.filings.find(item=>item.accession===accession);
@@ -56,6 +56,35 @@ export function createRegulatoryApi({sources,filingReader,classifyCorporateEvent
    if(method==='GET'&&endpoint==='archive'){
     const symbol=u.searchParams.get('symbol')||undefined;
     send(res,200,await eventArchive.list({source:'SEC_EDGAR',symbol,limit:Math.min(100,Math.max(1,Number(u.searchParams.get('limit')||30)||30))}));return true;
+   }
+
+   if(method==='GET'&&endpoint==='archive/revisions'){
+    const eventId=u.searchParams.get('eventId'),limit=Number(u.searchParams.get('limit')||50),cursor=u.searchParams.get('cursor')||undefined;
+    send(res,200,await eventArchive.revisions(eventId,{limit,cursor}));return true;
+   }
+   if(method==='GET'&&endpoint==='archive/revision'){
+    const eventId=u.searchParams.get('eventId'),revisionId=u.searchParams.get('revisionId');
+    send(res,200,await eventArchive.getRevision(eventId,revisionId));return true;
+   }
+   if(method==='GET'&&endpoint==='archive/at-cutoff'){
+    const eventId=u.searchParams.get('eventId'),cutoff=u.searchParams.get('cutoff');
+    send(res,200,await eventArchive.atCutoff(eventId,cutoff));return true;
+   }
+   if(method==='POST'&&endpoint==='investigate'){
+    if(!captureEnabled)throw fail('Investigation handoff requires explicitly enabled local capture',403);
+    if(!loopback(req)||!sameOrigin(req))throw fail('Local investigation changes require loopback and same origin',403);
+    if(!caseStore?.createFromArchivedRevision||!caseStore?.attachArchivedRevision)throw fail('Investigation store is not connected',503);
+    const input=await body(req);
+    if(!VALID_SYMBOL.test(input.symbol||'')||typeof input.eventId!=='string'||typeof input.revisionId!=='string')throw fail('Select an archived SEC revision and registered symbol');
+    const archive=await eventArchive.getRevision(input.eventId,input.revisionId);
+    if(archive.source!=='SEC_EDGAR'||!archive.revision?.event?.symbols?.includes(input.symbol))throw fail('Archived SEC revision does not match selected issuer symbol',422);
+    if(input.caseId!==undefined){
+     if(typeof input.caseId!=='string'||!/^CASE-[a-f0-9-]{36}$/.test(input.caseId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<1)throw fail('Existing case handoff requires case ID and expected revision');
+     const record=await caseStore.attachArchivedRevision(input.caseId,{archive,symbol:input.symbol,expectedRevision:input.expectedRevision});
+     send(res,200,{case:record,action:'attached_existing',source:'SEC_EDGAR',knowledgeBasis:'local_archived_revision'});return true;
+    }
+    const record=await caseStore.createFromArchivedRevision({archive,symbol:input.symbol});
+    send(res,201,{case:record,action:'created_or_existing',source:'SEC_EDGAR',knowledgeBasis:'local_archived_revision'});return true;
    }
    if(method==='POST'&&endpoint==='capture'){
     if(!captureEnabled)throw fail('Local regulatory capture is disabled; set REGULATORY_LOCAL_CAPTURE_ENABLED=true only for loopback development',403);
