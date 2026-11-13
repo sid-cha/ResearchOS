@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./intelligence.css">
 <link rel="stylesheet" href="./cases.css">
 <link rel="stylesheet" href="./terminal-theme.css">
+<link rel="stylesheet" href="./monitor-candles.css">
 <link rel="stylesheet" href="./research.css">
 <link rel="stylesheet" href="./research-operations.css">
 <link rel="stylesheet" href="./discovery-workspace.css">
@@ -69,7 +70,7 @@
         <section class="panel mini-flow-panel"><div class="panel-titlebar"><div><span class="panel-index">03</span><h2>FLOW COMPOSITION</h2></div><span class="panel-meta">EVENT MIX</span></div><div class="flow-content" id="eventMix"></div></section>
       </div>
       <div class="column center-column">
-        <section class="panel chart-panel"><div class="panel-titlebar chart-title"><div><span class="panel-index">04</span><h2>PRICE & ACTIVITY</h2><span class="chart-symbol" id="chartSymbol">NVDA</span></div><div class="chart-tabs"><button class="active" type="button" data-range="1M">1M</button><button type="button" data-range="5M">5M</button><button type="button" data-range="15M">15M</button><button type="button" data-range="1H">1H</button></div></div><div class="chart-info"><div><strong id="chartPrice">$190.43</strong><span id="chartChange" class="accent-teal">+1.42%</span><small>SIMULATED MID / USD</small></div><div class="chart-legend"><span><i class="legend-line"></i> LAST PRICE</span><span><i class="legend-bar"></i> EVENT VOLUME</span></div></div><div class="market-chart" id="marketChart"></div></section>
+        <section class="panel chart-panel"><div class="panel-titlebar chart-title"><div><span class="panel-index">04</span><h2>PRICE & ACTIVITY</h2><span class="chart-symbol" id="chartSymbol">NVDA</span></div><div class="chart-tabs"><button class="active" type="button" data-range="1M">1M</button><button type="button" data-range="5M">5M</button><button type="button" data-range="15M">15M</button><button type="button" data-range="1H">1H</button></div></div><div class="chart-info"><div><strong id="chartPrice">$190.43</strong><span id="chartChange" class="accent-teal">+1.42%</span><small>SIMULATED MID / USD</small></div><div class="chart-legend"><span><i class="legend-line"></i> LAST PRICE</span><span><i class="legend-bar"></i> EVENT VOLUME</span></div></div><div class="candle-controls" id="chartHistoryControls" hidden><label for="chartDayWindow">COMPLETED SESSIONS<select id="chartDayWindow"><option value="20">20D</option><option value="60" selected>60D</option><option value="120">120D</option><option value="250">250D</option></select></label><button type="button" id="chartHistoryRefresh">REFRESH DAILY BARS</button><span class="candle-history-scope">IEX 1D · historical / single venue</span></div><div class="market-chart" id="marketChart"></div><p id="chartHistoryMeta" class="candle-meta" hidden aria-live="polite">Completed daily IEX bars are not a streaming trade reconstruction.</p></section>
         <section class="panel events-panel" id="blotterPanel"><div class="panel-titlebar blotter-title"><div><span class="panel-index">05</span><h2>EVENT BLOTTER</h2><span class="count-pill" id="blotterCount">68 EVENTS</span></div><div class="panel-tools"><button type="button" class="tool-button active" id="allEvents">ALL EVENTS</button><button type="button" class="tool-button" id="flaggedOnly">FLAGGED ONLY</button></div></div>
           <div class="filters"><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Search symbol, event ID, venue..." aria-label="Search blotter events"></div><select id="symbolFilter" aria-label="Symbol filter"><option value="ALL">ALL SYMBOLS</option></select><select id="eventFilter" aria-label="Event type filter"><option value="ALL">ALL EVENTS</option><option value="TRADE">TRADES</option><option value="QUOTE">QUOTES</option><option value="ADD">ORDER ADDS</option><option value="CANCEL">CANCELLATIONS</option></select><button type="button" id="clearFilters" class="clear-button">CLEAR</button></div>
           <div class="blotter-scroll"><table aria-label="Synthetic market event blotter"><thead><tr><th>TIME <span>ET</span></th><th>SYMBOL</th><th>TYPE</th><th class="num">PRICE</th><th class="num">SIZE</th><th>VENUE</th><th class="num">SCORE</th><th>RISK</th></tr></thead><tbody id="blotterBody"></tbody></table></div><div class="table-status"><span id="rowCount">0 EVENTS</span><span class="legend"><i class="legend-red"></i> HIGH <i class="legend-yellow"></i> MED <i class="legend-green"></i> NORMAL</span><span class="keyboard-hint">SELECT ROW → INSPECT</span></div>
@@ -258,6 +259,7 @@
   </main>
 </div>
 <script src="./theme-controls.js"></script>
+<script src="./monitor-candles.js"></script>
 <script src="./app.js"></script>
 <script src="./live-adapter.js"></script>
 <script src="./event-workspace.js"></script>
