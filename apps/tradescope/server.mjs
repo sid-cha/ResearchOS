@@ -33,6 +33,7 @@ import {createProviderControl,createProviderControlApi} from './lib/provider-con
 import {createFredExplorer,createFredExplorerApi} from './lib/fred-explorer.mjs';
 import {createEvidenceLedger,createEvidenceLedgerApi} from './lib/evidence-ledger.mjs';
 import {createExposureRegistry,createGeoExposureService,createGeoExposureApi} from './lib/geo-exposure.mjs';
+import {createEpaFrsLookup,createFacilityVerificationApi} from './lib/epa-frs.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -66,10 +67,14 @@ const defaultEvidenceLedger=evidenceLedgerEnabled?createEvidenceLedger({
 const defaultEvidenceLedgerApi=createEvidenceLedgerApi({ledger:defaultEvidenceLedger});
 const geoRegistryEnabled=process.env.RESEARCH_GEO_ASSET_REGISTRY_ENABLED==='true'&&
  ['127.0.0.1','localhost','::1'].includes(HOST);
-const defaultGeoExposureApi=createGeoExposureApi({service:createGeoExposureService({
+const defaultGeoExposureService=createGeoExposureService({
  registry:geoRegistryEnabled?createExposureRegistry({
  filename:path.join(ROOT,'.local-data','issuer-asset-claims.json')}):null
-}),writeEnabled:geoRegistryEnabled});
+});
+const defaultGeoExposureApi=createGeoExposureApi({service:defaultGeoExposureService,writeEnabled:geoRegistryEnabled});
+const defaultFacilityVerificationApi=createFacilityVerificationApi({
+ lookup:createEpaFrsLookup(),assets:()=>defaultGeoExposureService.listing()
+});
 const defaultTransmissionDossierApi=createTransmissionDossierApi({service:createTransmissionDossier({
  graph:createTransmissionGraph(),fundamentals:defaultCommodityWorkbench.fundamentals}),ledger:defaultEvidenceLedger});
 const defaultCommodityApi=createCommodityApi({service:defaultCommodityWorkbench});
@@ -139,7 +144,7 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
@@ -150,6 +155,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await intradayChartApi(req,res,u))return;
     if(await crisisAtlasApi(req,res,u))return;
     if(await climateApi(req,res,u))return;
+    if(await facilityVerificationApi(req,res,u))return;
     if(await geoExposureApi(req,res,u))return;
     if(await evidenceLedgerApi(req,res,u))return;
     if(await transmissionDossierApi(req,res,u))return;
