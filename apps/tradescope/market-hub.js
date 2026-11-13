@@ -39,7 +39,7 @@ const fin=async(symbol)=>{
  try{return await p;}catch(e){cache.delete(key);throw e;}
 };
 const recent=(rows)=>Array.isArray(rows)?rows.filter(x=>validNum(x?.value)&&x.fiscalEnd).at(-1)||null:null;
-const allowed=()=>new Set([...state.catalog?.equities.map(x=>x.symbol)||[],...state.instruments.map(x=>x.symbol)]);
+const allowed=()=>new Set([...(state.catalog?.equities||[]).map(x=>x.symbol),...state.instruments.map(x=>x.symbol)]);
 function plotLines(collection,{height=190,normalized=false}={}){
  const lines=collection.filter(x=>Array.isArray(x.points)&&x.points.length>=2)
   .map(x=>({...x,points:x.points.filter(p=>validNum(p.value)&&typeof p.date==='string').sort((a,b)=>a.date.localeCompare(b.date))}))
@@ -330,7 +330,7 @@ async function themes(){
 }
 async function macro(){
  const group=el('macroGroup').value,years=Number(el('macroYears').value);
- const metrics=state.catalog.macroSeries.filter(x=>x.group===group);
+ const metrics=group==='All'?state.catalog.macroSeries:state.catalog.macroSeries.filter(x=>x.group===group);
  el('macroCards').innerHTML=metrics.map(m=>'<article class="chart-box"><header><h3>'+esc(m.label)+
   '</h3></header><strong id="macroValue-'+m.id+'">—</strong><small id="macroDate-'+m.id+'">Loading official observations…</small>'+
   '<div class="plot" id="macroPlot-'+m.id+'"></div></article>').join('');
