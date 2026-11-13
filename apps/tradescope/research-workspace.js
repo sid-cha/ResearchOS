@@ -17,7 +17,7 @@
     tab:'company',symbol:'AAPL',generation:0,screenGeneration:0,eventGeneration:0,
     catalog:null,catalogPromise:null,company:null,evaluations:[],alerts:null,screens:[],presets:[],
     screenName:'My research screen',screenMatch:'all',conditions:[],selectedSymbols:new Set(),selectedScreen:null,screenResults:null,
-    filings:[],filing:null,selectedAccession:null,earthquakes:[],eventId:'',analogues:null,outcomes:null,outcomeEvent:null,
+    filings:[],filing:null,selectedAccession:null,earthquakes:[],eventId:'',analogues:null,outcomes:null,outcomeEvent:null,theme:'corporate',
     requests:new Map(),actions:new Map()
   };
   const actionButtons = {catalog:'researchCatalogRetry',company:'researchLoad',evaluate:'researchEvaluate',alerts:'researchRefreshAlerts',
@@ -375,6 +375,7 @@
   }
   function eventFacts(event) {
     if(!event)return 'No event selected.';
+    if(state.theme!=='earthquake')return (event.title||event.headline||event.id||'Source event')+' · '+(event.source||'Provider')+' · type '+(event.type||event.form||'unknown')+' · '+(event.timeBasis||'source time')+' '+time(event.comparisonTime||event.occurredAt||event.publishedAt)+'. Coverage is partial; economic impact and company exposure are UNVERIFIED.';
     return (event.title||event.headline||event.id||'Official event')+' · magnitude '+(event.magnitude??event.mag??'unknown')+' · depth '+(event.depthKm??'unknown')+' km · occurred '+time(event.occurredAt||event.time)+' · updated '+time(event.updatedAt)+'. Source updates are not assumed to be original publication times. No company exposure is inferred.';
   }
   function selectedEvent() {return state.earthquakes.find(event=>event.id===state.eventId)||state.analogues?.event||null;}
@@ -391,12 +392,14 @@
   }
   async function loadEarthquakes() {
     state.eventGeneration++;abortScope('event');
-    return action('earthquakes','event','Loading official earthquake records…',async context=>{
-      const data=await read('/api/research/earthquakes',{key:'earthquakes',context});
+    return action('earthquakes','event','Loading source event records…',async context=>{
+      const theme=state.theme,topic=$('researchGeoTopic').value;
+      const endpoint=theme==='earthquake'?'/api/research/earthquakes':'/api/research/theme-events?'+new URLSearchParams({theme,symbol:state.symbol,topic}).toString();
+      const data=await read(endpoint,{key:'earthquakes',context});
       state.earthquakes=array(data.events);state.eventId=state.earthquakes[0]?.id||'';state.analogues=null;state.outcomes=null;
       $('researchEarthquake').innerHTML=state.earthquakes.length?state.earthquakes.map(event=>'<option value="'+esc(event.id)+'">'+esc(event.title||event.headline||event.id)+'</option>').join(''):'<option value="">No records returned</option>';
       $('researchEarthquake').value=state.eventId;$('researchEventFacts').textContent=eventFacts(selectedEvent());renderAnalogues();renderOutcomes();
-      status(state.earthquakes.length+' official earthquake records loaded. Select an event to request historical analogues.','success');
+      status(state.earthquakes.length+' dated source records loaded. Theme history may be incomplete; select an event to explore comparisons.','success');
     });
   }
   function renderAnalogues() {
@@ -411,9 +414,10 @@
     }).join('')+'</div>':'<div class="research-empty">No comparable historical events were returned. Insufficient history is not a zero-impact forecast.</div>')+limitationsHtml(data.limitations);
   }
   async function findAnalogues() {
-    return action('analogues','event','Finding explainable historical earthquake comparisons…',async context=>{
-      const eventId=state.eventId;if(!eventId)throw Error('Load and select an official earthquake first.');
-      const data=await read('/api/research/analogues?eventId='+encodeURIComponent(eventId),{key:'analogues',context});
+    return action('analogues','event','Finding dated source-record comparisons…',async context=>{
+      const eventId=state.eventId;if(!eventId)throw Error('Load and select an official source event first.');
+      const endpoint=state.theme==='earthquake'?'/api/research/analogues?eventId='+encodeURIComponent(eventId):'/api/research/theme-analogues?'+new URLSearchParams({theme:state.theme,symbol:state.symbol,topic:$('researchGeoTopic').value,eventId}).toString();
+      const data=await read(endpoint,{key:'analogues',context});
       state.analogues=data;state.outcomes=null;$('researchEventFacts').textContent=eventFacts(data.event||selectedEvent());renderAnalogues();renderOutcomes();
       status(array(data.matches).length+' historical comparisons loaded. Inspect differences, data coverage and exposure limitations.','success');
     });
@@ -431,7 +435,7 @@
     const match=state.analogues?.matches?.[index],event=match?.event||match;
     if(!event)return;
     return action('outcomes','outcome','Loading supported historical market outcomes…',async context=>{
-      const eventTime=event.occurredAt||event.time;
+      const eventTime=event.occurredAt||event.time||event.comparisonTime||event.publishedAt;
       if(!validTime(eventTime))throw Error('The selected historical event has no usable occurrence time.');
       const data=await read('/api/research/event-outcomes?symbol='+encodeURIComponent(state.symbol)+'&eventTime='+encodeURIComponent(eventTime),{key:'outcomes',context});
       state.outcomeEvent=event;state.outcomes=data;renderOutcomes();status('Historical outcome request completed. Unsupported or unfinished horizons remain unavailable.','success');
@@ -516,6 +520,8 @@
   delegated('researchScreenResults',data=>{if(data.researchInvestigateScreen!==undefined)createInvestigation('screen',Number(data.researchInvestigateScreen));});
   on('researchLoadFilings','click',loadFilings);delegated('researchFilingList',data=>{if(data.researchFiling!==undefined)void loadFiling(Number(data.researchFiling));});
   on('researchLoadEarthquakes','click',loadEarthquakes);on('researchFindAnalogues','click',findAnalogues);
+  on('researchTheme','change',ev=>{state.theme=ev.target.value;$('researchGeoTopic').disabled=state.theme!=='geopolitical';state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load the selected source theme…</option>';$('researchEventFacts').textContent='Select a theme and load its sourced observations. This is not a calibrated forecast.';renderAnalogues();renderOutcomes();});
+  on('researchGeoTopic','change',()=>{state.eventGeneration++;abortScope('event');state.earthquakes=[];state.eventId='';state.analogues=null;state.outcomes=null;state.outcomeEvent=null;$('researchEarthquake').innerHTML='<option value="">Load this geopolitical topic…</option>';renderAnalogues();renderOutcomes();});
   on('researchEarthquake','change',event=>{state.eventGeneration++;abortScope('event');state.eventId=event.target.value;state.analogues=null;state.outcomes=null;$('researchEventFacts').textContent=eventFacts(selectedEvent());renderAnalogues();renderOutcomes();});
   delegated('researchAnalogues',data=>{if(data.researchOutcome!==undefined)void loadOutcomes(Number(data.researchOutcome));});
   on('researchInvestigateOutcome','click',createHistoricalInvestigation);
