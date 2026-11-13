@@ -45,7 +45,7 @@ const issuerProfiles=()=>[{symbol:'MOS',company:'Mosaic',claim:'Potash business'
 const make=(overrides={})=>createTransmissionDossier({graph:graph(),fundamentals,regional,issuerProfiles,now,...overrides});
 test('catalog limits scope and says all graph edges are hypotheses',()=>{
  const d=make().catalog();
- assert.equal(d.scenarios.length,3);
+ assert.equal(d.scenarios.length,12);
  assert.equal(d.historicalAsOfOnly,'enso-fertilizer');
  assert.deepEqual(d.scenarios[0].commodities,['potash','urea','phosphate']);
  assert(d.restrictions.some(x=>x.includes('Current-revision')));
