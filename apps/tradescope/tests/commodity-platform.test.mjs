@@ -164,6 +164,9 @@ test('scheduled document-source errors are retained as explicit failures, never 
  assert.equal(latest.lastResult.newCandidates,null);
  assert(!JSON.stringify(latest).includes('provider token leak'));
  assert.equal((await svc.ledger.runs()).length,1);
+ const metrics=await svc.ledger.metrics();
+ assert.equal(metrics.completedWatchRuns,0);
+ assert.equal(metrics.failedWatchRuns,1);
 });
 test('on-demand SEC disclosure reader extracts true 10-K passages but cannot assert event loss or trading alpha',async t=>{
  const filename=await temp(t);let reads=0;
