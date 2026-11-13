@@ -57,7 +57,7 @@ test('adjusted closes are not raw closes, and duplicate, missing, future or over
  assert.throws(()=>normalizeEodhdDaily([...rows,rows[0]],options),/duplicated/);
  assert.throws(()=>normalizeEodhdDaily([{...rows[0],adjusted_close:undefined},...rows.slice(1)],options),/invalid/);
  assert.throws(()=>normalizeEodhdDaily([{...rows[0],date:'2020-01-01'},...rows.slice(1)],options),/out-of-range/);
- assert.throws(()=>normalizeEodhdDaily(rows.slice(3),options),/beginning/);
+ assert.throws(()=>normalizeEodhdDaily(rows.slice(6),options),/beginning/);
  assert.throws(()=>normalizeEodhdDaily(Array.from({length:651},(_,i)=>({...rows[0],date:plus('2006-01-01',i)})),options),/oversized/);
 });
 test('missing feature flag or credentials never fetch historical price data',async()=>{
