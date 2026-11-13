@@ -17,6 +17,14 @@ The new narrow product experiment lives at `/commodity.html` and is documented i
 
 **Product freeze:** do not add unrelated chart indicators, equity screening features, trading execution, generic chat or mobile functionality until target users show a recurring need. Finish actual source quality, specific commodity/company exposure proof, end-to-end usability, licensing and meaningful design-partner evaluation before expanding.
 
+## v0.24 delivery — local source evidence provenance journal
+
+**Built pilot:** opt-in, local-only append-only JSONL evidence journal with SHA-256 ordered/payload hashes, changed-capture linkage, duplicate capture handling, restart persistence and strict corrupt-file rejection. Normalized FRED source observations and source-attributed economic dossier inputs are archived without provider secrets when explicitly enabled. Read-only Evidence Ledger workspace exposes capture history, source facts and integrity. See [V024_EVIDENCE_PROVENANCE_LEDGER.md](V024_EVIDENCE_PROVENANCE_LEDGER.md).
+
+**Remaining:** original intraday source publication and revision verification, rights/retention review, durable distributed transactional store, independently signed hash anchors, georeferenced business exposures and production authentication. A 2026 ALFRED query with a 2020 as-of cutoff **does not mean** TradeScope observed it in 2020. The research ledger is never a substitute for first-available evidence.
+
+**Next priority:** source-specific release/vintage archival verification and authenticated issuer/facility/commodity exposure joins with temporal and geographic proof; then measured transmission analysis. No synthetic issuer exposure or market-return estimate.
+
 ## v0.23 delivery — generalized scenario registry & FRED source explorer
 
 **Built (pilot):** versioned `scenario-registry.mjs` shared across directed graphs and dossiers, with strict node/edge/source validation; **12** curated scenarios (3 research-context, 2 partial-source, 7 template-only); regional/maturity-aware UI and a second data-source workflow for official FRED/ALFRED searches, metadata, vintage dates, release calendars and historically as-of observations. See [V023_SCENARIO_REGISTRY_AND_FRED.md](V023_SCENARIO_REGISTRY_AND_FRED.md).
