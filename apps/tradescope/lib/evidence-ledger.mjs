@@ -68,17 +68,50 @@ export function captureFredEvidence(data,options={}){
  assertCapture(result);
  return result;
 }
+const officialResearchUrl=x=>{if(!x)return null;try{
+ const u=new URL(x);
+ const hosts=new Set(['fred.stlouisfed.org','www.eia.gov','www.cpc.ncep.noaa.gov',
+  'cpc.ncep.noaa.gov','power.larc.nasa.gov','apps.fas.usda.gov','comtradeplus.un.org',
+  'www.sec.gov','www.usgs.gov','pubs.usgs.gov','www.federalregister.gov',
+  'api.gdeltproject.org','www.gdeltproject.org']);
+ if(u.protocol!=='https:'||!hosts.has(u.hostname)||u.username||u.password||u.search)return null;
+ u.hash='';return u.href;
+ }catch{return null;}};
 export function captureDossierEvidence(data){
  if(!data?.scenario?.id||!idPattern.test(data.scenario.id)||
   !data.coverage||!Array.isArray(data.sourceStatuses)||!Array.isArray(data.edges))throw fail('Malformed dossier summary');
+ const sourcedInputs=(data.nodes||[]).flatMap(node=>{
+  const context=(node.researchInputs||[]).map(x=>({
+   kind:'RESEARCH_CONTEXT_INPUT',nodeId:fixed(node.id),source:fixed(x.source),
+   period:fixed(x.period),label:fixed(x.label),unit:fixed(x.unit),
+   value:typeof x.value==='number'&&Number.isFinite(x.value)?x.value:null,
+   dataClass:fixed(x.dataClass),sourceUrl:officialResearchUrl(x.sourceUrl),
+   providerFetchedAt:iso(x.fetchedAt)?x.fetchedAt:null,originalReleaseClockVerified:false
+  }));
+  if(node.observation)context.push({kind:'SOURCE_ISSUE_DATED_DOCUMENT',
+   nodeId:fixed(node.id),source:fixed(node.observation.source),
+   issueDate:day(node.observation.issueDate)?node.observation.issueDate:null,
+   sourceUrl:officialResearchUrl(node.observation.sourceUrl),
+   originalReleaseClockVerified:false,originalWebsiteRevisionVerified:false});
+  return context;
+ });
+ const supplemental=(data.otherContext||[]).map(x=>({
+  kind:'UNASSIGNED_SOURCE_CONTEXT',source:fixed(x.source),period:fixed(x.period),
+  label:fixed(x.label),value:typeof x.value==='number'&&Number.isFinite(x.value)?x.value:null,
+  unit:fixed(x.unit),dataClass:fixed(x.dataClass),
+  sourceUrl:officialResearchUrl(x.sourceUrl),originalReleaseClockVerified:false
+ }));
+ const allInputs=[...sourcedInputs,...supplemental];
  const facts=[
   {kind:'COUNTS',totalNodes:data.coverage.totalNodes,contextNodes:data.coverage.contextNodes,
    contextEvidenceRows:data.coverage.contextEvidenceRows,totalEdges:data.coverage.totalEdges,
-   validatedEdges:data.coverage.validatedEdges,verifiedIssuerImpacts:data.coverage.verifiedIssuerImpacts},
+   validatedEdges:data.coverage.validatedEdges,verifiedIssuerImpacts:data.coverage.verifiedIssuerImpacts,
+   sourceInputsArchived:Math.min(allInputs.length,80),sourceInputsOmitted:Math.max(0,allInputs.length-80)},
   ...data.sourceStatuses.slice(0,24).map(x=>({kind:'PROVIDER_STATUS',source:fixed(x.source),
    status:fixed(x.status),eligibleInputRows:x.eligibleInputRows})),
   ...data.edges.slice(0,36).map(x=>({kind:'GRAPH_EDGE',edgeId:fixed(x.id),verification:fixed(x.verification),
-   inputCoverage:fixed(x.inputCoverage) }))
+   inputCoverage:fixed(x.inputCoverage) })),
+  ...allInputs.slice(0,80)
  ];
  const result={source:'TRADESCOPE_DOSSIER',kind:'ANALYSIS_SUMMARY',subjectId:data.scenario.id,
   requestedAsOf:data.asOf||null,sourceIssuedAt:null,sourceReleaseDate:null,
