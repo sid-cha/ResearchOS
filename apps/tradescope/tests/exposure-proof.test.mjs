@@ -233,6 +233,10 @@ test('proof-case HTTP read/write contract is same-origin, source-owned and canno
  t.after(async()=>{off.closeAllConnections();await new Promise(ok=>off.close(ok));});
  const d=await (await fetch('http://127.0.0.1:'+off.address().port+'/api/exposure-proof/catalog')).json();
  assert.equal(d.enabled,false);
+ const disabledPost=await fetch('http://127.0.0.1:'+off.address().port+'/api/exposure-proof/cases',{
+  method:'POST',headers:{origin:'http://127.0.0.1:'+off.address().port,'content-type':'application/json'},
+  body:JSON.stringify(form())});
+ assert.equal(disabledPost.status,403);
 });
 test('review UI is responsive, syntax-valid and operates only through local source APIs',async()=>{
  const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
