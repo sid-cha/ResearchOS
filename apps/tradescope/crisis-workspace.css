@@ -58,3 +58,8 @@
 .crisis-graph-edge{border:1px solid var(--border-soft);background:var(--surface-1);padding:10px;min-width:0}
 .crisis-graph-edge strong{font:700 11px/1.5 var(--mono);color:var(--head-text)}
 .crisis-graph-edge small{font:9px/1.5 var(--mono);color:var(--muted);overflow-wrap:anywhere}
+
+.crisis-macro-controls select,.crisis-macro-controls input[type=number]{min-height:32px;max-width:230px;padding:5px 9px;border:1px solid var(--border);background:var(--surface-1);color:var(--head-text)}
+.crisis-geo-meter{display:inline-block;vertical-align:middle;width:75px;height:7px;background:var(--surface-2);border:1px solid var(--border-soft);margin-right:4px}
+.crisis-geo-meter>span{display:block;height:100%;background:var(--accent)}
+#crisisGeoResults code{overflow-wrap:anywhere;font-size:10px}
