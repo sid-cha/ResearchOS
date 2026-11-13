@@ -238,7 +238,7 @@ const response=(res,status,body,plain=false)=>{
   'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(plain?{'Content-Disposition':'attachment; filename="tradescope-economic-transmission.txt"'}:{})});
  res.end(plain?body:JSON.stringify(body));
 };
-export function createTransmissionDossierApi({service}={}){
+export function createTransmissionDossierApi({service,ledger=null}={}){
  if(!service)throw new TypeError('Transmission evidence service required');
  return async(req,res,url)=>{
   if(!url.pathname.startsWith('/api/transmission-dossier/'))return false;
@@ -255,8 +255,9 @@ export function createTransmissionDossierApi({service}={}){
    const result=await service.analyze({id:params.get('id'),mode:params.get('mode'),
     commodity:params.get('commodity')||'potash',regionId:params.get('region'),
     year:y===null?null:Number(y),asOf:params.get('asOf')});
+   if(ledger)await ledger.captureDossier(result); // Local journal stores source-status summary, never untrusted full report.
    response(res,200,op==='report.txt'?result.report:result,op==='report.txt');
-  }catch(e){response(res,[400,404,405,429,502,503,504].includes(e?.status)?e.status:502,
+  }catch(e){response(res,[400,404,405,409,429,502,503,504,507].includes(e?.status)?e.status:502,
    {error:e?.status?e.message:'Source-backed economic dossier unavailable'});}
   return true;
  };
