@@ -154,6 +154,41 @@ test('pilot feedback never invents revenue or verified research-time savings',as
  assert.equal(saved.clientAdoptionEvidence,false);
  await assert.rejects(ledger.feedback({minutesBefore:-4,minutesWith:1,sourceQuality:5}),e=>e.status===400);
 });
+test('on-demand SEC disclosure reader extracts true 10-K passages but cannot assert event loss or trading alpha',async t=>{
+ const filename=await temp(t);let reads=0;
+ const reader={read:async({filing,symbol})=>{
+  reads++;assert.equal(filing.form,'10-K');
+  assert(filing.sourceUrl.startsWith('https://www.sec.gov/Archives/edgar/data/'));
+  return {fetchedAt:'2026-11-13T12:00:00Z',evidence:[{
+   id:'sec-excerpt-1',section:'Item 1',sourceUrl:filing.sourceUrl,
+   text:symbol==='CF'?'CF operates major ammonia and urea production facilities in North America.':
+    'The filing text contains a different line of business without an observable potash keyword.'
+  }]};
+ }};
+ const svc=createCommodityWorkbench({filename,feed:fakeFeed,filingReader:reader});
+ const cf=await svc.verifyIssuer('CF');
+ assert.equal(cf.status,'PRIMARY_SEC_TEXT_MATCH_FOUND');
+ assert.equal(cf.verifiedCommodityBusinessDisclosure,true);
+ assert.equal(cf.verifiedSpecificEventExposure,false);
+ assert.equal(cf.issuerMarketReturnVerified,false);
+ assert.equal(cf.passages[0].section,'Item 1');
+ const mos=await svc.verifyIssuer('MOS');
+ assert.equal(mos.status,'NO_SUPPORTING_PASSAGE_IN_BOUNDED_EXTRACTION');
+ assert.equal(mos.verifiedCommodityBusinessDisclosure,false);
+ assert.equal(reads,2);
+ await assert.rejects(svc.verifyIssuer('GOOG'),e=>e.status===404);
+});
+test('revision-safe watch removal does not erase pilot audit runs',async t=>{
+ const filename=await temp(t),svc=createCommodityWorkbench({filename,feed:fakeFeed});
+ const watch=await svc.ledger.createWatch({commodity:'potash',intervalMinutes:60});
+ await svc.scanWatch(watch.id);
+ await assert.rejects(svc.ledger.deleteWatch(watch.id,{expectedRevision:9}),e=>e.status===409);
+ const removed=await svc.ledger.deleteWatch(watch.id,{expectedRevision:1});
+ assert.equal(removed.deleted,true);
+ assert.equal(removed.preservedHistoricalRuns,1);
+ assert.equal((await svc.ledger.watches()).length,0);
+ assert.equal((await svc.ledger.runs()).length,1);
+});
 test('analyst source reviews are immutable, anchored to captured revisions and do not assert independent validation',async t=>{
  const filename=await temp(t),svc=createCommodityWorkbench({filename,feed:fakeFeed});
  await svc.scan('potash');
@@ -233,6 +268,8 @@ test('end-to-end M1–M4 HTTP workflow persists official docs, serves a text bri
  const reviews=await get('reviews?id='+encodeURIComponent(id));
  assert.equal(reviews.status,200);assert.equal((await reviews.json()).reviews.length,1);
  assert.equal((await post('feedback',{minutesBefore:90,minutesWith:35,sourceQuality:4})).status,201);
+ const removed=await post('watches/'+encodeURIComponent(w.id),{expectedRevision:2},'DELETE');
+ assert.equal(removed.status,200);assert.equal((await removed.json()).deleted,true);
  assert.equal((await (await get('metrics')).json()).selfReportedSamples,1);
  assert.equal((await post('scan',{commodity:'potash'},'POST')).status,200);
  assert.equal((await get('brief?id=bad')).status,404);
