@@ -122,7 +122,8 @@ export function normalizeCompanyFinancials(raw,{symbol,asOf,now=new Date()}={}){
   return {value:v,fiscalEnd:r.fiscalEnd,filedAt:n&&n.filedAt>r.filedAt?n.filedAt:r.filedAt,tag:'DERIVED_SAME_PERIOD',unit:'%',source:'SEC_EDGAR_XBRL',status:v===null?'unavailable':'available'};
  });
  series.revenueGrowth=[...revenue.values()].map(r=>{
-  const target=minus(r.fiscalEnd,365),prior=[...revenue.values()].filter(x=>Math.abs(Date.parse(x.fiscalEnd)-Date.parse(target))<=14).at(0);
+  const previousYear=new Date(r.fiscalEnd+'T00:00:00Z');previousYear.setUTCFullYear(previousYear.getUTCFullYear()-1);
+  const target=previousYear.toISOString().slice(0,10),prior=[...revenue.values()].filter(x=>Math.abs(Date.parse(x.fiscalEnd)-Date.parse(target))<=14).at(0);
   const v=prior&&prior.value>0?Number(((r.value/prior.value-1)*100).toFixed(3)):null;
   return {value:v,fiscalEnd:r.fiscalEnd,filedAt:r.filedAt,tag:'DERIVED_COMPARABLE_ANNUAL',unit:'%',source:'SEC_EDGAR_XBRL',status:v===null?'unavailable':'available'};
  });
