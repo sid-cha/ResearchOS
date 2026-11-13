@@ -6,6 +6,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
+import {createFilingReader} from './filing-intelligence.mjs';
 const SRC='FEDERAL_REGISTER_DOCUMENT_SEARCH';
 const BASE='https://www.federalregister.gov/api/v1/documents.json';
 const TERMS=Object.freeze({potash:'potash',urea:'urea fertilizer',phosphate:'phosphate fertilizer'});
@@ -226,7 +227,7 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
   });}
  };
 }
-export function createCommodityWorkbench({filename,feed=createOfficialCommodityFeed(),clock=nowIso,schedulerMs=60000}={}){
+export function createCommodityWorkbench({filename,feed=createOfficialCommodityFeed(),filingReader=createFilingReader(),clock=nowIso,schedulerMs=60000}={}){
  const ledger=createCommodityLedger({filename,clock});let timer=null,busy=false;
  async function scan(commodity){commoditySearchUrl(commodity);
   const result=await feed(commodity);
@@ -246,6 +247,27 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
     try{await scanWatch(w.id)}catch{/* Manual scan surfaces provider errors; keep last successful run on transient failure. */}
    }
   }finally{busy=false;}
+ }
+ async function verifyIssuer(symbol){
+  const company=COMPANY_DISCLOSURES.find(p=>p.symbol===symbol);
+  if(!company)throw issue('Select a supported issuer',404);
+  const accession={MOS:'0001285785-26-000017',CF:'0001324404-26-000007',IPI:'0001421461-26-000008'}[symbol];
+  const filing={accession,form:company.form,filingDate:company.filingDate,
+   cik:company.cik,sourceUrl:company.sourceUrl,periodEnd:company.periodEnd,
+   headline:company.company+' annual 10-K'};
+  const parsed=await filingReader.read({filing,symbol});
+  const words=symbol==='MOS'?/\b(?:potash|phosphate)\b/i:
+   symbol==='CF'?/\b(?:ammonia|urea)\b/i:/\bpotash\b/i;
+  const passages=(Array.isArray(parsed?.evidence)?parsed.evidence:[])
+   .filter(item=>typeof item.text==='string'&&words.test(item.text)&&item.sourceUrl===company.sourceUrl)
+   .slice(0,3).map(item=>({id:item.id,section:item.section,excerpt:safe(item.text,450),sourceUrl:item.sourceUrl}));
+  return {symbol,company:company.company,sourceUrl:company.sourceUrl,form:company.form,
+   filedAt:company.filingDate,readAt:parsed.fetchedAt||nowIso(),
+   status:passages.length?'PRIMARY_SEC_TEXT_MATCH_FOUND':'NO_SUPPORTING_PASSAGE_IN_BOUNDED_EXTRACTION',
+   passages,verifiedCommodityBusinessDisclosure:passages.length>0,
+   verifiedSpecificEventExposure:false,originalPublicationClockVerified:false,
+   issuerMarketReturnVerified:false,limitations:['An extractive textual match verifies disclosure content, not the company economic sensitivity to a specific event.',
+    'Only bounded SEC document sections are extracted; absence of a match does not prove absence of exposure.']};
  }
  async function brief(id){
   const entry=await ledger.get(id);if(!entry)throw issue('Capture a source document first',404);
@@ -282,7 +304,7 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
    issuers:COMPANY_DISCLOSURES.map(c=>({symbol:c.symbol,name:c.company,commodities:c.commodities})),
    candidateFeedOnly:true,liveProviderValidated:false,multiTenant:false,
    predictionsAvailable:false,productionReady:false};},
-  feed,scan,scanWatch,brief,ledger,
+  feed,scan,scanWatch,brief,verifyIssuer,ledger,
   async start(){if(timer)return;timer=setInterval(()=>{void tick().catch(()=>{});},schedulerMs);timer.unref?.();},
   close(){if(timer){clearInterval(timer);timer=null;}}
  };
@@ -320,6 +342,9 @@ export function createCommodityApi({service}={}){
     if([...qs.keys()].some(x=>x!=='commodity')||qs.getAll('commodity').length>1)throw issue('Unexpected filter');
     const c=qs.get('commodity');if(c!==null)commoditySearchUrl(c);
     reply(res,200,{events:await service.ledger.list(c)});
+   }else if(req.method==='GET'&&op==='verify'){
+    const symbol=qs.get('symbol');if(qs.getAll('symbol').length!==1||[...qs.keys()].some(k=>k!=='symbol'))throw issue('Choose one allowed issuer');
+    reply(res,200,await service.verifyIssuer(symbol));
    }else if(req.method==='GET'&&op==='companies'){
     const c=qs.get('commodity'),asOf=qs.get('asOf')||nowIso().slice(0,10);
     if(qs.getAll('commodity').length!==1||[...qs.keys()].some(k=>!['commodity','asOf'].includes(k)||qs.getAll(k).length!==1))throw issue('Select one commodity');
