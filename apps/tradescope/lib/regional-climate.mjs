@@ -43,7 +43,7 @@ function parseValue(raw,{name,year,month}){
  return Number(raw.toFixed(4));
 }
 export function createPowerMonthlyUrl(region,year){
- if(!region||!REGIONS_BY_ID.has(region.id)||REGIONS_BY_ID.get(region.id)!==region)
+ if(!region||!REGIONS_BY_ID.has(region.id)||REGIONS_BY_ID.get(region.id).lat!==region.lat||REGIONS_BY_ID.get(region.id).lon!==region.lon)
   throw err('Unsupported geographic research point');
  if(!Number.isInteger(year)||year<MIN_YEAR||year>2100)throw err('Invalid historical year');
  const url=new URL(API);
