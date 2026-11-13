@@ -98,40 +98,66 @@ export function gdeltUrl(commodity){
 }
 
 /* ---------- EIA natural gas (step 2) ---------- */
-const EIA_SOURCE='EIA_SERIES_V1';
+const EIA_SOURCE='EIA_API_V2';
 export const EIA_SERIES=Object.freeze([
  Object.freeze({id:'henry_hub_spot',seriesId:'NG.RNGWHHD.M',label:'Henry Hub natural gas spot price',
+  route:'https://api.eia.gov/v2/natural-gas/pri/fut/data/',facet:'RNGWHHD',apiMethod:'NATIVE_V2_FACET',
   unit:'USD per million Btu',frequency:'monthly',sourceUrl:'https://www.eia.gov/dnav/ng/hist/rngwhhdM.htm',
   role:'Energy cost input to nitrogen fertilizer production; not a fertilizer price series.'}),
  Object.freeze({id:'us_dry_gas_production',seriesId:'NG.N9070US2.M',label:'US dry natural gas production',
+  route:'https://api.eia.gov/v2/seriesid/NG.N9070US2.M',apiMethod:'DOCUMENTED_V2_LEGACY_SERIES_ID_BRIDGE',
   unit:'billion cubic feet',frequency:'monthly',sourceUrl:'https://www.eia.gov/dnav/ng/hist/n9070us2m.htm',
   role:'US energy supply context for ammonia and urea economics; not a fertilizer supply measure.'})
 ]);
-const EIA_API='https://api.eia.gov/series/';
 export function eiaKey(env){const key=env?.EIA_API_KEY;
- if(typeof key!=='string'||!/^[a-z0-9]{16,80}$/.test(key))throw err('EIA_API_KEY is not configured on the server',503);
+ if(typeof key!=='string'||!/^[a-z0-9]{16,80}$/i.test(key))throw err('EIA_API_KEY is not configured on the server',503);
  return key;}
+export function eiaV2Url(indicatorId,{env}={}){
+ const def=EIA_SERIES.find(x=>x.id===indicatorId);
+ if(!def)throw err('Choose a supported EIA series');
+ const key=eiaKey(env);
+ const u=new URL(def.route);
+ u.searchParams.set('api_key',key);
+ if(def.facet){
+  u.searchParams.set('frequency','monthly');u.searchParams.set('data[0]','value');
+  u.searchParams.set('facets[series][]',def.facet);
+  u.searchParams.set('sort[0][column]','period');u.searchParams.set('sort[0][direction]','desc');
+  u.searchParams.set('offset','0');u.searchParams.set('length','60');
+ }
+ return u;
+}
 export function normalizeEiaSeries(payload,{indicatorId,fetchedAt=nowIso(),today=fetchedAt.slice(0,10)}={}){
  const def=EIA_SERIES.find(x=>x.id===indicatorId);
  if(!def||!day(today))throw err('Unsupported EIA series or malformed request',502);
- const series=Array.isArray(payload?.series)?payload.series.find(s=>s?.series_id===def.seriesId):null;
- if(!series||!Array.isArray(series.data))throw err('Malformed EIA response for '+def.seriesId,502);
- const observations=[];
- for(const row of series.data){
-  const period=typeof row?.period==='string'?row.period:'';
-  if(!(month(period)||year(period)))continue;
-  if(period>(month(period)?today.slice(0,7):today.slice(0,4)))continue;
-  const value=row?.value==='.'||row?.value===null||row?.value===undefined?null:
-   (typeof row.value==='number'?row.value:(typeof row.value==='string'&&row.value.trim()!==''?Number(row.value):NaN));
-  if(value===null||!finite(value)){observations.push({period,value:null,status:'MISSING_OR_WITHHELD_SOURCE_VALUE'});continue;}
-  observations.push({period,value,unit:def.unit,status:'AVAILABLE',observedPeriodType:month(period)?'MONTHLY':'ANNUAL'});
+ const response=payload?.response;
+ const rows=Array.isArray(response?.data)?response.data:null;
+ if(!rows||rows.length>5000)throw err('Malformed or unbounded EIA API v2 response for '+def.seriesId,502);
+ const observed=[],seen=new Set();let omitted=0;
+ for(const row of rows){
+  if(!row||typeof row!=='object')continue;
+  const id=row.series||row.series_id||row.seriesId;
+  if(id&&id!==def.seriesId&&id!==def.facet){omitted++;continue;}
+  const period=typeof row.period==='string'?row.period:'';
+  if(!month(period)||period>today.slice(0,7)){omitted++;continue;}
+  if(seen.has(period)){omitted++;continue;}seen.add(period);
+  const v=row.value;
+  const value=v==='.'||v===null||v===undefined?null:
+   typeof v==='number'?v:typeof v==='string'&&v.trim()!==''?Number(v):NaN;
+  if(value===null||!finite(value)){observed.push({period,value:null,status:'MISSING_OR_WITHHELD_SOURCE_VALUE'});continue;}
+  observed.push({period,value,unit:def.unit,status:'AVAILABLE',observedPeriodType:'MONTHLY'});
  }
- observations.sort((a,b)=>b.period.localeCompare(a.period));
- return {source:EIA_SOURCE,indicatorId,seriesId:def.seriesId,label:def.label,unit:def.unit,
-  frequency:def.frequency,role:def.role,sourceUrl:def.sourceUrl,fetchedAt,
-  observations:observations.slice(0,24),coverage:{returned:series.data.length,accepted:observations.length},
-  limitations:['Published series periods are release-calendar periods, not original intraday publication clocks.',
-   'Energy observations inform fertilizer cost context; they do not establish fertilizer supply disruptions.']};
+ observed.sort((a,b)=>b.period.localeCompare(a.period));
+ const total=Number(response.total);
+ const truncated=Number.isFinite(total)&&total>rows.length;
+ return {source:EIA_SOURCE,apiVersion:'v2',apiMethod:def.apiMethod,indicatorId,seriesId:def.seriesId,
+  label:def.label,unit:def.unit,frequency:def.frequency,role:def.role,sourceUrl:def.sourceUrl,
+  fetchedAt,observations:observed.slice(0,24),
+  coverage:{returned:rows.length,accepted:observed.length,omitted,truncated},
+  limitations:[
+   'EIA API v2 gives current-release values; original historical publication timestamps and revisions are not reconstructed.',
+   'Natural gas data inform fertilizer cost context and are not measured fertilizer disruptions.',
+   ...(def.apiMethod.includes('BRIDGE')?['This series uses EIA documented v2 SeriesID compatibility routing; migrate to native hierarchy after live metadata validation.']:[])
+  ]};
 }
 
 /* ---------- UN Comtrade fertilizer trade flows (step 2) ---------- */
@@ -321,7 +347,7 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
  return {
   usgs,
   catalog(){return {method:'commodity-fundamentals-v1',
-   sources:['GDELT_DOC_COMMODITY_EXPANDED','EIA_SERIES_V1','UN_COMTRADE_PREVIEW','USDA_FAS_PSD_API','USGS_MINERAL_STATISTICS_CAPTURE'],
+   sources:['GDELT_DOC_COMMODITY_EXPANDED','EIA_API_V2','UN_COMTRADE_PREVIEW','USDA_FAS_PSD_API','USGS_MINERAL_STATISTICS_CAPTURE'],
    commodities:Object.keys(COMMODITIES),eiaSeries:EIA_SERIES.map(x=>({id:x.id,label:x.label,unit:x.unit})),
    fertilizerHsCodes:FERTILIZER_HS,psdCommodities:Object.keys(PSD_COMMODITIES),comtradeReporters:COMTRADE_REPORTERS,
    usgsPage:usgsStatsPage(),predictionsAvailable:false,liveDisruptionVerification:false};},
@@ -334,11 +360,11 @@ export function createCommodityFundamentals({env=process.env,fetchImpl=fetch,clo
     return {...normalized,corroboration:corroborateDocuments(normalized.results,officialDocuments())};
    });},
   async eia({indicatorId='henry_hub_spot'}={}){
-   const key=eiaKey(env);
+   eiaKey(env);
    const def=EIA_SERIES.find(x=>x.id===indicatorId);if(!def)throw err('Choose a supported EIA series');
    return cached('eia:'+indicatorId,async()=>{
-    const url=new URL(EIA_API);url.searchParams.set('api_key',key);url.searchParams.set('series_id',def.seriesId);
-    const payload=await providerFetch(url.href,{fetchImpl,label:'EIA'});
+    const url=eiaV2Url(indicatorId,{env});
+    const payload=await providerFetch(url.href,{fetchImpl,label:'EIA v2'});
     return normalizeEiaSeries(payload,{indicatorId,fetchedAt:clockIso(clock)});});},
   async comtrade({commodity,flow='M',reporter='842',period=null}={}){
    const url=comtradeUrl(commodity,flow,reporter,{period});
