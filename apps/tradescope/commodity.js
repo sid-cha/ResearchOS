@@ -42,7 +42,9 @@ async function companies(){
    '<small>Business activity: '+esc(p.commodities.join(', '))+'</small>'+
    '<div class="evidence-edge">'+esc(p.commodityEdge?.from||p.symbol)+' → '+esc(p.commodityEdge?.to||'COMMODITY') +'<br><small>SEC disclosure-backed business link; specific event impact NOT VERIFIED</small></div>'+
    '<p class="subtle">Filed '+esc(p.filingDate)+' · Specific disruption impact UNVERIFIED</p>'+
-   (url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">SEC original filing</a>':'')+'</article>';
+   (url?'<a target="_blank" rel="noopener noreferrer" href="'+esc(url)+'">SEC original filing</a>':'')+
+   '<div class="item-actions"><button type="button" data-verify="'+esc(p.symbol)+'">Verify SEC filing excerpt</button></div>'+
+   '<div class="verified-excerpt" data-excerpt-for="'+esc(p.symbol)+'">Set SEC_USER_AGENT in .env to enable on-demand verification.</div></article>';
  }).join(''):'<div class="empty">No annual filings available for this period.</div>';
 }
 async function select(){
@@ -98,6 +100,18 @@ async function metrics(){
 get('commoditySelect').addEventListener('change',()=>{void select();});
 get('preview').addEventListener('click',()=>{void fetchDocs(false);});
 get('scan').addEventListener('click',()=>{void fetchDocs(true);});
+get('profiles').addEventListener('click',async e=>{
+ const symbol=e.target.closest('[data-verify]')?.dataset.verify;if(!symbol)return;
+ const output=get('profiles').querySelector('[data-excerpt-for="'+symbol+'"]');
+ if(!output)return;output.textContent='Checking primary SEC filing passage...';
+ try{
+  const d=await api('verify?symbol='+encodeURIComponent(symbol));
+  if(d.passesValidation===true)throw Error('Unexpected verification response');
+  const texts=(d.passages||[]).map(x=>x.section+': '+x.excerpt);
+  output.textContent=d.status+' — '+(texts.join(' | ')||'No supporting passage was found in the bounded extraction.')+
+   ' Event-specific financial exposure remains unverified.';
+ }catch(err){output.textContent='SEC verification unavailable: '+err.message;}
+});
 get('events').addEventListener('click',e=>{
  const id=e.target.closest('[data-open]')?.dataset.open;if(id)void openBrief(id);
 });
