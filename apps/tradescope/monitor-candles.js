@@ -120,7 +120,7 @@
   const ctl=controller,token=++generation;
   shownKey=null;empty('LOADING COMPLETED DAILY IEX BARS FOR '+symbol+'…');
   try{
-   const timeout=setTimeout(()=>ctl.abort(),14000);
+   const timeout=setTimeout(()=>{ctl.deadlineExpired=true;ctl.abort();},14000);
    let response;
    try{response=await fetch('/api/chart/daily?'+new URLSearchParams({symbol,sessions:String(sessions)}),{signal:ctl.signal,cache:'no-store'});}
    finally{clearTimeout(timeout);}
@@ -130,7 +130,7 @@
    if(!validData(data,symbol,sessions))throw Error('Provider chart format is incomplete or inconsistent');
    cache.set(key,{data,savedAt:Date.now()});draw(data);shownKey=key;
   }catch(error){
-   if(token!==generation||ctl.signal.aborted||key!==activeKey)return;
+   if(token!==generation||(ctl.signal.aborted&&!ctl.deadlineExpired)||key!==activeKey)return;
    empty('HISTORICAL CHART UNAVAILABLE. '+(error.message||'Check source configuration.')+' LIVE PRICE REMAINS AN OBSERVED TRADE, NOT A DAILY BAR.');
   }finally{if(controller===ctl)controller=null;}
  }
