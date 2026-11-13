@@ -81,7 +81,7 @@ Panel **06 / Fundamentals & trade evidence** on the commodity page adds bounded 
 | Source | Delivered behavior | Boundary |
 | --- | --- | --- |
 | GDELT DOC (expanded) | Typed media-candidate classification (sanctions, trade policy, production, transport, prices, weather), dedupe, first-seen time, calendar-proximity corroboration against captured Federal Register documents | Media reports and chronology overlap are never event confirmation |
-| EIA series | Henry Hub natural gas spot and US dry gas production observations with explicit missing values | Energy cost context; not fertilizer supply or a live alert |
+| EIA API v2 | Henry Hub natural gas spot and US dry gas production observations with explicit missing values | Energy cost context; not fertilizer supply or a live alert |
 | UN Comtrade | Annual HS 3102–3105 fertilizer import/export totals, keyless preview or registered key | Annual totals; not shipment-level or real-time |
 | USDA FAS PSD | Wheat/corn/soybean supply-demand records | Demand-side proxy for fertilizer use; requires `USDA_FAS_API_KEY` |
 | USGS capture ledger | Analyst-transcribed annual statistics with usgs.gov URL, release date, SHA-256 revision history | Transcription is analyst-asserted; annual data is not a live supply alert |
