@@ -63,7 +63,7 @@ export function createMonitorChartApi({sources,now=Date.now}={}){
    if(!work){
     work=(async()=>{
      const raw=await sources.researchBars(symbol,{days:Math.min(1100,sessions*2+25),feed:'iex',adjustment:'split'});
-     const result=normalizeDailyCandles(raw,{symbol,sessions,now});
+     const result=normalizeDailyCandles(raw,{symbol,sessions,now:now()});
      cache.set(key,{day,until:Number(now())+60000,data:result});
      return result;
     })();
