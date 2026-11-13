@@ -95,13 +95,15 @@ export function companyProfiles(commodity,{asOf=nowIso().slice(0,10)}={}){
  return COMPANY_DISCLOSURES.filter(x=>x.commodities.includes(commodity)&&x.filingDate<=asOf)
   .map(x=>({...copy(x),claimType:'SOURCE_ANCHORED_DISCLOSED_ACTIVITY',
     filingCheckedByPrototype:false,issuerShockImpactVerified:false,
+    commodityEdge:{from:'SEC_CIK:'+x.cik,to:'COMMODITY:'+commodity,relationship:'DISCLOSED_PRODUCT_MARKET_ACTIVITY',
+     evidenceUrl:x.sourceUrl,disclosureFiledAt:x.filingDate,status:'SOURCE_REFERENCED_RELATIONSHIP_UNREVALIDATED'},
     modeledSensitivity:null,verifiedCounterpartyConnection:false,
     limitation:'Annual filing describes the company business, not an exposure to this regulatory document.'}));
 }
-const blank=()=>({version:1,revisions:[],watches:[],runs:[],feedback:[]});
+const blank=()=>({version:1,revisions:[],reviews:[],watches:[],runs:[],feedback:[]});
 function valid(s){
  if(!s||s.version!==1||!Array.isArray(s.revisions)||!Array.isArray(s.watches)||
-   !Array.isArray(s.runs)||!Array.isArray(s.feedback)||s.revisions.length>1200||
+   !Array.isArray(s.runs)||!Array.isArray(s.feedback)||!Array.isArray(s.reviews)||s.reviews.length>240||s.revisions.length>1200||
    s.watches.length>12||s.runs.length>160||s.feedback.length>90)throw issue('Local pilot database requires review',500);
  return s;
 }
@@ -110,7 +112,7 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
  let state=blank(),loaded=false,serial=Promise.resolve();
  const ensure=async()=>{
   if(loaded)return;
-  try{state=valid(JSON.parse(await fs.readFile(filename,'utf8')));}
+  try{const stored=JSON.parse(await fs.readFile(filename,'utf8'));if(stored.version===1&&!stored.reviews)stored.reviews=[];state=valid(stored);}
   catch(e){if(e.code!=='ENOENT')throw e;state=blank();}
   loaded=true;
  };
@@ -151,6 +153,21 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
   list(commodity=null){return read(s=>latest(s).filter(r=>!commodity||r.document.commodity===commodity).slice(0,80));},
   get(id){return read(s=>latest(s).find(r=>r.document.id===id)||null);},
   history(id){return read(s=>s.revisions.filter(r=>r.document.id===id));},
+  reviews(id){return read(s=>s.reviews.filter(x=>x.eventId===id));},
+  review(input){return write(s=>{
+   const row=latest(s).find(x=>x.document.id===input?.eventId);
+   if(!row)throw issue('Capture a source document before reviewing',404);
+   const allowed=['RELEVANT_RESEARCH_CANDIDATE','NOT_RELEVANT','NEEDS_EVIDENCE'];
+   if(!allowed.includes(input.disposition))throw issue('Select a valid analyst disposition');
+   const rationale=safe(input.rationale,1100);
+   if(rationale.length<20)throw issue('Provide at least twenty characters explaining the source review');
+   if(s.reviews.length>=240)throw issue('Review history capacity reached',409);
+   const review={id:'review:'+randomUUID(),eventId:row.document.id,revisionId:row.revisionId,
+    disposition:input.disposition,rationale,sourceUrl:row.document.sourceUrl,
+    reviewedAt:clock(),assertedBy:'LOCAL_ANALYST',independentlyValidated:false,
+    eventImpactVerified:false};
+   s.reviews.push(review);return review;
+  });},
   watches(){return read(s=>s.watches);},
   watch(id){return read(s=>s.watches.find(w=>w.id===id)||null);},
   createWatch(input){return write(s=>{
@@ -226,23 +243,29 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
  async function brief(id){
   const entry=await ledger.get(id);if(!entry)throw issue('Capture a source document first',404);
   const d=entry.document,companies=companyProfiles(d.commodity,{asOf:d.publishedDate});
+  const reviews=await ledger.reviews(id),latestReview=reviews.at(-1)||null;
+  const earlier=(await ledger.list(d.commodity)).filter(x=>x.document.publishedDate<d.publishedDate).slice(0,5);
   const lines=['# TradeScope — Commodity disruption research brief','',
    'Document: '+d.title,'Commodity: '+d.commodity.toUpperCase(),
    'Official source: '+d.sourceUrl,'Official publication calendar date: '+d.publishedDate,
    'First local observed: '+entry.firstObservedAt,'Latest capture: '+entry.capturedAt,
    'Revision: '+entry.revisionId,'Normalized record SHA-256: '+entry.contentHash,'',
    '## Official document summary',d.summary||'No description available in the official search result.',
+   '','## Analyst review (local assertion)',latestReview?latestReview.disposition+': '+latestReview.rationale:'No analyst review recorded.',
    '','## Issuer business activity (NOT specific event impact)'];
   for(const p of companies)lines.push('',p.symbol+' — '+p.company,p.claim,
    'SEC 2025 10-K filed '+p.filingDate+': '+p.sourceUrl,'Exposure to this event: NOT VERIFIED');
   if(!companies.length)lines.push('No eligible issuer disclosure for the publication date.');
+  lines.push('','## Other captured documents on this commodity (NOT market analogues)');
+  if(!earlier.length)lines.push('No earlier locally captured official documents for this commodity.');
+  for(const prior of earlier)lines.push(prior.document.publishedDate+' '+prior.document.title+' — '+prior.document.sourceUrl);
   lines.push('','## Evidence gaps','Keyword match does not establish a disruption or change in commodity supply.',
    'Annual filings describe relevant business operations, not company-specific consequences from the document.',
    'Supply chain, signed exposure, price sensitivity, economic impact and return forecasts are unavailable.',
    'No investment recommendation or quantified risk score is generated.');
   return {document:d,evidence:{revisionId:entry.revisionId,firstObservedAt:entry.firstObservedAt,
     capturedAt:entry.capturedAt,contentHash:entry.contentHash,firstPublicationVerified:false},
-   companies,coverage:{companyDisclosureMatches:companies.length,validatedDisruptionEvents:0,
+   companies,review:latestReview,precedingOfficialDocuments:earlier.map(x=>x.document),coverage:{companyDisclosureMatches:companies.length,validatedDisruptionEvents:0,
     validatedIssuerImpactEdges:0,measuredReturns:0},
    predictiveAccuracyMeasured:false,report:lines.join('\n')};
  }
@@ -305,6 +328,10 @@ export function createCommodityApi({service}={}){
     reply(res,200,{watch:await service.ledger.setWatch(op.slice(8),await body(req))});
    else if(req.method==='POST'&&/^watches\/watch:[a-f0-9-]{36}\/scan$/.test(op))
     reply(res,200,await service.scanWatch(op.slice(8,-5)));
+   else if(req.method==='GET'&&op==='reviews'){
+    const id=qs.get('id');if(qs.getAll('id').length!==1||[...qs.keys()].some(k=>k!=='id'))throw issue('Select one official event');
+    reply(res,200,{reviews:await service.ledger.reviews(id)});
+   }else if(req.method==='POST'&&op==='reviews')reply(res,201,{review:await service.ledger.review(await body(req))});
    else if(req.method==='GET'&&op==='metrics')reply(res,200,await service.ledger.metrics());
    else if(req.method==='POST'&&op==='feedback')reply(res,201,{feedback:await service.ledger.feedback(await body(req))});
    else throw issue('Unknown commodity research route',404);
