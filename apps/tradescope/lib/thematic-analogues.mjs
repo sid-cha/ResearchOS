@@ -84,7 +84,7 @@ export function createThematicResearch({sources,now=Date.now,tsunamis=createTsun
   const instant=Number(now());
   const normalized=(Array.isArray(items)?items:[]).slice(0,100).map(item=>normalize(item,theme)).filter(item=>item&&Date.parse(item.comparisonTime)<=instant)
    .sort((a,b)=>b.comparisonTime.localeCompare(a.comparisonTime)||a.id.localeCompare(b.id));
-  return {theme,symbol,topic,hazardType,events:normalized,source:theme='corporate'?'SEC_EDGAR':theme==='news'?'ALPACA_NEWS':theme==='natural'?'USGS_NASA':theme==='tsunami'?'NOAA_NCEI_HAZEL':'GDELT_MEDIA',
+  return {theme,symbol,topic,hazardType,events:normalized,source:theme==='corporate'?'SEC_EDGAR':theme==='news'?'ALPACA_NEWS':theme==='natural'?'USGS_NASA':theme==='tsunami'?'NOAA_NCEI_HAZEL':'GDELT_MEDIA',
    fetchedAt:data?.fetchedAt||new Date(instant).toISOString(),coverage:{receivedCount:items?.length||0,usableCount:normalized.length,maxEvents:100,historicalCompleteness:'NOT_COMPLETE'},
    limitations:['The returned source list is not a complete historical catalogue; use the archive for true as-observed revision history.',
     theme==='geopolitical'?'GDELT entries are media coverage candidates, not independent confirmation of the reported event.':theme==='tsunami'?'NOAA historical tsunami data is retrospective, may be revised, and time may have day-only precision. This is not a real-time warning feed.':'No source title alone confirms company exposure or economic impact.',
