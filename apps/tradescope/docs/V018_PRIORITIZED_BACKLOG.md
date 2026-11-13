@@ -96,6 +96,31 @@ These are **hypothesis templates to research, not connected pipelines or verifie
 - Run provider entitlement/coverage tests and full regression CI on the unified development branch; keep PR #19 draft until release acceptance.
 - The six-agent Research Desk remains deferred: it will eventually consume this registry and evidence graph, rather than generating unconstrained claims from scratch.
 
+## v0.26 delivery — official EPA FRS facility identity and adversarial evidence contract
+
+**Built pilot:** Official public EPA FRS Registry ID lookup via fixed HTTPS GET endpoint, bounded/restricted JSON normalizer, NAD83 site coordinates and program-system identifiers, explicit snapshot/fetch clock, no credential required. Local v0.25 analyst asset claims can be compared with FRS coordinates and challenged through a read-only evidence review API. A matching site location **never** verifies legal operator/subsidiary/SEC CIK, operational damage or financial impact. Distances and alternate names are research review questions, not automatic identity proof.
+
+**New:** structured deterministic **Evidence Challenger** (not a running LLM): identifies conflicting coordinates (>1 km), naming differences, missing official ID, no legal-operator/issuer crosswalk, unavailable historic first-publication clocks, missing operating impacts and sources dated after a requested historical cutoff. Review result keeps all unverified issuer-impact flags false and returns specific source requests. This is the first reusable challenge contract for the future Red-Team/Anti-Agent concept.
+
+**Next:** verified legal-entity/operator-to-CIK association with original SEC subsidiary/property evidence and official directory records; primary-site program crosswalk, effective ownership dates, independently reviewed original documents. Live EPA schema/release, legal data rights, site source correctness, browser and provider acceptance pending. See [V026_FRS_FACILITY_AND_CRITIC.md](V026_FRS_FACILITY_AND_CRITIC.md).
+
+## User-proposed agent extension — Research Red-Team / Anti-Agent (HIGH PRIORITY after evidence validation)
+
+The user wants 5–6 autonomous research workers **plus an independent adversarial challenger** that attacks their conclusions. Proposed name: **Research Challenger**, **Red-Team Analyst**, or **Devil's Advocate Agent**. This is a **research critic** rather than a cybersecurity attacker, an artificial argument generator, or a market-manipulation bot.
+
+**Desired UI:** each specialist lane shows current phase, official-source retrievals, evidence IDs, research cost/clock and intermediate observations; an independent Challenger lane displays which assertions it is questioning, contradictory primary evidence, negative controls and open doubts. A final Research Arbiter synthesizes only evidence-backed assertions and prominently shows unresolved dissent and abstentions.
+
+**Core protocol:**
+1. Researcher submits a machine-readable \`ResearchClaim\`: claim ID, proposition, exact issuer/asset/geography/event/time window, support and source IDs/URLs/ingestion/release clocks, assumptions, methodology, expected observation, falsifiability and uncertainty.
+2. Challenger gets an **independently scoped source retrieval budget**, not just the researcher narrative, and seeks primary-source counterevidence, contradictory vintage revisions, alternative explanations, wrong-issuer/site joins, missing confounders, adjusted-price errors, cherry-picked event windows and negative-control false positives.
+3. Challenge artifact is separately cited \`CounterClaim\` with typed reason (\`SOURCE_CONFLICT\`, \`TEMPORAL_LEAKAGE\`, \`ENTITY_MISMATCH\`, \`GEO_MISMATCH\`, \`SELECTION_BIAS\`, \`CONFOUNDING\`, \`NO_MECHANISM_PROOF\`, \`UNVERIFIABLE\`), severity, evidence, and a test able to disprove/support the finding.
+4. Researcher may rebut with new primary evidence, not mere rhetoric. Challenger may accept, contest or narrow the claim; both cite snapshots. Arbiter displays status \`SUPPORTED\`, \`CHALLENGED\`, \`RETRACTED\`, \`INCONCLUSIVE\`; **do not assume a majority vote or another model's confidence proves truth**.
+5. Human can inspect complete cited work, run independent checks, request additional research, stop workers, cap API/model costs and approve a final report. No automated trades, modifications to ground-truth evidence or unapproved external effects.
+
+**Guardrails and tests:** enforce tool/scope authorization, retrieval-only permissions, user/tenant source rights, per-worker token/time/cost limits, deterministic reproducibility in fixture tests, prompt-injection isolation from retrieved sources, cross-agent citation integrity, point-in-time leakage controls, explicit model/version metadata and no confidence inflation from agreement. Blind evaluations should seed true/false claims and independently score contradiction retrieval precision, missed errors, false challenges, calibration, research usefulness and costs. Require clear reasons and missing data when no contradiction can be found; don't fabricate one.
+
+**Current implementation status:** v0.26 deterministic site-evidence challenger contract and source-grounded UI **built**. Actual 5–6 research workers, a separate running model-powered challenger, independent browsing, adjudication engine, tool permissions, NVIDIA NIM adapter, streaming parallel agent UI and multi-agent evaluation suite remain **DEFERRED** until primary evidence and provenance are reliable. No need to provide a new NVIDIA key for v0.26.
+
 ## Future concept — Research Agent Desk (deferred; design discovery only)
 
 **User-requested concept (Nov 13, 2026):** a one-click mission launches up to **six specialist research agents** that visibly work in parallel in TradeScope, each showing a live phase/status, source citations, observations, open questions, costs and confidence limits, then produce a single consolidated report. Human research tasks should eventually be delegated to explicit tools. **Do not implement this now**; revisit after provider validation, evidenced company exposure and source-licensed datasets.
