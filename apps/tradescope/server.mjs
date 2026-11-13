@@ -17,6 +17,8 @@ import {createEventArchive} from './lib/event-archive.mjs';
 import {createResearchUniverse} from './lib/research-universe.mjs';
 import {createDiscoveryApi} from './lib/discovery-api.mjs';
 import {createMonitorChartApi} from './lib/monitor-chart-api.mjs';
+import {createIntradayChartApi} from './lib/intraday-chart.mjs';
+import {createCrisisAtlasApi} from './lib/crisis-atlas.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -34,6 +36,8 @@ const sharedSources=makeSources({instrumentResolver:symbol=>sharedUniverse.getIn
 const handleIntelligence = createIntelligenceApi(sharedSources);
 const defaultDiscoveryApi=createDiscoveryApi({universe:sharedUniverse,sources:sharedSources});
 const defaultMonitorChartApi=createMonitorChartApi({sources:sharedSources});
+const defaultIntradayChartApi=createIntradayChartApi({sources:sharedSources});
+const defaultCrisisAtlasApi=createCrisisAtlasApi();
 const caseFile = process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json');
 const defaultCaseStore = createCaseStore(caseFile);
 const researchFile=process.env.RESEARCH_STORE_PATH||path.join(ROOT,'.local-data','research.json');
@@ -71,7 +75,7 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
@@ -79,6 +83,8 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
     if(delivery.handle(req,res,u))return;
     if(await monitorChartApi(req,res,u))return;
+    if(await intradayChartApi(req,res,u))return;
+    if(await crisisAtlasApi(req,res,u))return;
     if(await discoveryApi(req,res,u))return;
     if(await regulatoryApi(req,res,u))return;
     if(await researchApi(req,res,u))return;
@@ -102,7 +108,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
