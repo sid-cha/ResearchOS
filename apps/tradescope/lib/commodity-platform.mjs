@@ -239,7 +239,7 @@ export function createCommodityLedger({filename,clock=nowIso}={}){
   });}
  };
 }
-export function createCommodityWorkbench({filename,feed=createOfficialCommodityFeed(),filingReader=createFilingReader(),clock=nowIso,schedulerMs=60000}={}){
+export function createCommodityWorkbench({filename,feed=createOfficialCommodityFeed(),filingReader=createFilingReader(),clock=nowIso,schedulerMs=60000,fundamentals=null}={}){
  const ledger=createCommodityLedger({filename,clock});let timer=null,busy=false;
  async function scan(commodity){commoditySearchUrl(commodity);
   const result=await feed(commodity);
@@ -287,6 +287,7 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
   const d=entry.document,companies=companyProfiles(d.commodity,{asOf:d.publishedDate});
   const reviews=await ledger.reviews(id),latestReview=reviews.at(-1)||null;
   const earlier=(await ledger.list(d.commodity)).filter(x=>x.document.publishedDate<d.publishedDate).slice(0,5);
+  const usgsCaptures=fundamentals?(await fundamentals.usgs.list(d.commodity)).slice(0,6):[];
   const lines=['# TradeScope — Commodity disruption research brief','',
    'Document: '+d.title,'Commodity: '+d.commodity.toUpperCase(),
    'Official source: '+d.sourceUrl,'Official publication calendar date: '+d.publishedDate,
@@ -298,26 +299,43 @@ export function createCommodityWorkbench({filename,feed=createOfficialCommodityF
   for(const p of companies)lines.push('',p.symbol+' — '+p.company,p.claim,
    'SEC 2025 10-K filed '+p.filingDate+': '+p.sourceUrl,'Exposure to this event: NOT VERIFIED');
   if(!companies.length)lines.push('No eligible issuer disclosure for the publication date.');
-  lines.push('','## Other captured documents on this commodity (NOT market analogues)');
+  lines.push('','## Captured USGS mineral statistics (ANNUAL, TRANSCRIBED — not live supply alerts)');
+  if(!usgsCaptures.length)lines.push('No USGS statistics captured for this commodity yet. Use the fundamentals panel to transcribe official USGS annual statistics.');
+  for(const capture of usgsCaptures){
+   lines.push('',capture.capture.title+' (released '+capture.capture.releaseDate+') '+capture.capture.officialUrl,
+    'Captured: '+capture.capturedAt+' · SHA-256: '+capture.contentHash.slice(0,16)+'…');
+   for(const stat of capture.capture.statistics.filter(x=>x.commodity===d.commodity))
+    lines.push('- '+stat.attribute+' ['+stat.period+'] = '+stat.value+' '+stat.unit+
+     ' (transcribed'+(stat.anchor?' from "'+stat.anchor+'"':'')+')');
+  }
+  lines.push('','Exposure join status: fundamentals rows above are commodity-level context. No issuer-specific',
+   'exposure to this document is verified; named facility, supplier and revenue-sensitivity evidence remains unavailable.',
+   '','## Other captured documents on this commodity (NOT market analogues)');
   if(!earlier.length)lines.push('No earlier locally captured official documents for this commodity.');
   for(const prior of earlier)lines.push(prior.document.publishedDate+' '+prior.document.title+' — '+prior.document.sourceUrl);
   lines.push('','## Evidence gaps','Keyword match does not establish a disruption or change in commodity supply.',
    'Annual filings describe relevant business operations, not company-specific consequences from the document.',
+   'USGS annual statistics describe production/reserves/trade context, not live supply alerts or price causation.',
    'Supply chain, signed exposure, price sensitivity, economic impact and return forecasts are unavailable.',
    'No investment recommendation or quantified risk score is generated.');
   return {document:d,evidence:{revisionId:entry.revisionId,firstObservedAt:entry.firstObservedAt,
     capturedAt:entry.capturedAt,contentHash:entry.contentHash,firstPublicationVerified:false},
-   companies,review:latestReview,precedingOfficialDocuments:earlier.map(x=>x.document),coverage:{companyDisclosureMatches:companies.length,validatedDisruptionEvents:0,
-    validatedIssuerImpactEdges:0,measuredReturns:0},
+   companies,review:latestReview,precedingOfficialDocuments:earlier.map(x=>x.document),
+   fundamentals:usgsCaptures.map(x=>({id:x.capture.id,title:x.capture.title,releaseDate:x.capture.releaseDate,
+    officialUrl:x.capture.officialUrl,capturedAt:x.capturedAt,contentHash:x.contentHash,
+    statistics:x.capture.statistics.filter(s=>s.commodity===d.commodity)})),
+   coverage:{companyDisclosureMatches:companies.length,validatedDisruptionEvents:0,
+    validatedIssuerImpactEdges:0,measuredReturns:0,usgsCapturesReferenced:usgsCaptures.length},
    predictiveAccuracyMeasured:false,report:lines.join('\n')};
  }
  return {
   catalog(){return {method:'commodity-vertical-pilot-v1',milestones:['M1','M2','M3','M4'],
    commodities:Object.keys(TERMS),sources:[SRC,'SEC_EDGAR_10K'],
+   fundamentalsSources:fundamentals?fundamentals.catalog().sources:[],
    issuers:COMPANY_DISCLOSURES.map(c=>({symbol:c.symbol,name:c.company,commodities:c.commodities})),
    candidateFeedOnly:true,liveProviderValidated:false,multiTenant:false,
    predictionsAvailable:false,productionReady:false};},
-  feed,scan,scanWatch,brief,verifyIssuer,ledger,
+  fundamentals,feed,scan,scanWatch,brief,verifyIssuer,ledger,
   async start(){if(timer)return;timer=setInterval(()=>{void tick().catch(()=>{});},schedulerMs);timer.unref?.();},
   close(){if(timer){clearInterval(timer);timer=null;}}
  };

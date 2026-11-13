@@ -26,6 +26,7 @@ import {createCpcEnsoApi} from './lib/climate-enso.mjs';
 import {createTransmissionApi} from './lib/transmission-graph.mjs';
 import {createRegionalClimateApi} from './lib/regional-climate.mjs';
 import {createCommodityWorkbench,createCommodityApi} from './lib/commodity-platform.mjs';
+import {createCommodityFundamentals,createCommodityFundamentalsApi} from './lib/commodity-fundamentals.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -49,7 +50,9 @@ const defaultCpcEnsoApi=createCpcEnsoApi();
 const defaultTransmissionApi=createTransmissionApi();
 const defaultRegionalClimateApi=createRegionalClimateApi();
 const commodityFile=process.env.COMMODITY_PILOT_STORE_PATH||path.join(ROOT,'.local-data','commodity-pilot.json');
-const defaultCommodityWorkbench=createCommodityWorkbench({filename:commodityFile});
+const fundamentalsFile=process.env.COMMODITY_FUNDAMENTALS_STORE_PATH||path.join(ROOT,'.local-data','commodity-fundamentals.json');
+const defaultCommodityWorkbench=createCommodityWorkbench({filename:commodityFile,fundamentals:createCommodityFundamentals({usgsFile:fundamentalsFile,officialDocuments:()=>defaultCommodityWorkbench.ledger.list(null)})});
+const defaultFundamentalsApi=createCommodityFundamentalsApi({service:defaultCommodityWorkbench.fundamentals});
 const defaultCommodityApi=createCommodityApi({service:defaultCommodityWorkbench});
 const sharedMacroVintage=createMacroVintage();
 const defaultMacroVintageApi=createMacroVintageApi({service:sharedMacroVintage});
@@ -92,7 +95,7 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
@@ -105,6 +108,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await climateApi(req,res,u))return;
     if(await transmissionApi(req,res,u))return;
     if(await regionalClimateApi(req,res,u))return;
+    if(await fundamentalsApi(req,res,u))return;
     if(await commodityApi(req,res,u))return;
     if(await macroVintageApi(req,res,u))return;
     if(await backtestApi(req,res,u))return;
