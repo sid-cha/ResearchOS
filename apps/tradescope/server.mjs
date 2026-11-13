@@ -10,6 +10,10 @@ import {createMarketStream} from './lib/alpaca-stream.mjs';
 import {createMarketDelivery} from './lib/market-sse.mjs';
 import {createResearchApi} from './lib/research-api.mjs';
 import {createCaseStore} from './lib/cases.mjs';
+import {createRegulatoryApi} from './lib/regulatory-api.mjs';
+import {createFilingReader} from './lib/filing-intelligence.mjs';
+import {classifyCorporateEvent,createCorporateAlertStore} from './lib/corporate-intelligence.mjs';
+import {createEventArchive} from './lib/event-archive.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || '8000');
@@ -20,11 +24,17 @@ const ORIGIN = 'https://data.alpaca.markets';
 const DEFAULT_SYMBOLS = ['NVDA','AAPL','MSFT','TSLA','SPY','AMD','QQQ','META','AMZN','PLTR'];
 const MIME = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'};
 let cachedSnapshot = {expires:0, value:null};
-const handleIntelligence = createIntelligenceApi(makeSources());
+const sharedSources=makeSources();
+const handleIntelligence = createIntelligenceApi(sharedSources);
 const caseFile = process.env.CASE_STORE_PATH || path.join(ROOT,'.local-data','cases.json');
 const defaultCaseStore = createCaseStore(caseFile);
 const researchFile=process.env.RESEARCH_STORE_PATH||path.join(ROOT,'.local-data','research.json');
 const monitorFile=process.env.MONITOR_STORE_PATH||path.join(ROOT,'.local-data','monitors.json');
+const corporateFile=process.env.CORPORATE_STORE_PATH||path.join(ROOT,'.local-data','corporate-alerts.json');
+const archiveFile=process.env.EVENT_ARCHIVE_PATH||path.join(ROOT,'.local-data','event-revisions.json');
+const defaultRegulatoryApi=createRegulatoryApi({sources:sharedSources,filingReader:createFilingReader(),classifyCorporateEvent,
+ corporateStore:createCorporateAlertStore({filename:corporateFile}),eventArchive:createEventArchive({filename:archiveFile}),
+ captureEnabled:process.env.REGULATORY_LOCAL_CAPTURE_ENABLED==='true'});
 
 function json(res,status,body){
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Origin':'none'});
@@ -52,13 +62,14 @@ function publicTrade(symbol,t){if(!t||numberOrNull(t.p)===null||t.p<=0||typeof t
 function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {symbol,time:q.t,bid:numberOrNull(q.bp),ask:numberOrNull(q.ap),bidSize:quantityOrNull(q.bs),askSize:quantityOrNull(q.as),bidVenue:venueOrNull(q.bx),askVenue:venueOrNull(q.ax)};}
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi} = {}){
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
     if(delivery.handle(req,res,u))return;
+    if(await regulatoryApi(req,res,u))return;
     if(await researchApi(req,res,u))return;
     if(await handleCases(req,res,u))return;
     if(await handleAssistant(req,res,u))return;
