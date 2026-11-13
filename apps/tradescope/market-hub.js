@@ -19,7 +19,7 @@ const stored=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key));
 const persist=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{}};
 const DEFAULT_METRICS=['price','revenue','revenueGrowth','netIncome','netMargin','eps','grossProfit','assets','operatingCashFlow'];
 const state={catalog:null,instruments:[],symbol:'AAPL',view:'overview',activeWatch:null,
- watchlists:[],comparison:['AAPL','MSFT','NVDA','AMZN','META'],
+ watchlists:[],comparison:stored('ts-compare-selection-v1',['AAPL','MSFT','NVDA','AMZN','META']),
  layout:stored('ts-market-layout-v1',DEFAULT_METRICS),savedSize:stored('ts-chart-size-v1','S'),latestChart:null};
 const palette=['#2263e5','#ed7c34','#15918e','#885bc9','#c99526','#ce4b6e','#34868b','#607bb7','#5a9561','#99614c'];
 const cache=new Map();
@@ -130,7 +130,7 @@ async function overview(){
  for(let i=0;i<groups.length;i++){
   const items=groupRows(groups[i],10);
   try{
-   const data=await series(items.map(x=>x.symbol),'3Y');const rows=items.map(x=>marketRow(x,data.values[x.symbol]));
+   const data=await series(items.map(x=>x.symbol),'1Y');const rows=items.map(x=>marketRow(x,data.values[x.symbol]));
    el('marketGroup'+i).innerHTML=rows.join('');
    el('groupAsOf'+i).textContent='IEX · latest completed session';
    all.push(...items.map(x=>({item:x,bar:data.values[x.symbol]})));
@@ -223,9 +223,10 @@ async function compare(){
  if(state.comparison.length<2){el('compareChart').innerHTML='<div class="empty">Select two or more instruments.</div>';return;}
  try{
   const d=await series(state.comparison,el('compareRange').value),raw=state.comparison.map(s=>({symbol:s,bars:d.values[s]?.bars||[]}));
+  state.latestComparison={data:d,commonStart:null};
   const present=raw.filter(x=>x.bars.length>1);
   if(present.length<2)throw Error('At least two eligible market histories are required.');
-  const commonStart=present.map(x=>x.bars[0].date).sort().at(-1);
+  const commonStart=present.map(x=>x.bars[0].date).sort().at(-1);state.latestComparison.commonStart=commonStart;
   const datasets=present.map((x,i)=>{
    const arr=x.bars.filter(b=>b.date>=commonStart);
    if(arr.length<2)return {name:x.symbol,points:[]};
@@ -314,7 +315,7 @@ async function themes(){
  el('themeTable').innerHTML='<div class="empty">Loading historical ETF price returns…</div>';
  if(!items.length)return;
  try{
-  const d=await series(items.map(x=>x.symbol),'3Y');
+  const d=await series(items.map(x=>x.symbol),'3Y');state.latestThemes={group,items,data:d};
   el('themeSource').textContent='Source: Alpaca '+d.feed+' single-venue historical bars · split-adjusted close returns, not dividend total returns. Last completed session only · '+
    (d.hasMore?'Provider data truncated; some long lookbacks unavailable.':'No intraday quote claimed.')+
    ' · ETF categories are editorial proxies.';
@@ -351,6 +352,8 @@ async function init(){
   const instrument=await json('/api/discovery/instruments').catch(()=>({instruments:state.catalog.equities}));
   state.instruments=instrument.instruments||state.catalog.equities;
   state.layout=(Array.isArray(state.layout)?state.layout:DEFAULT_METRICS).filter(x=>x==='price'||state.catalog.financialMetrics.some(y=>y.id===x));
+  state.comparison=(Array.isArray(state.comparison)?state.comparison:[]).filter((x,i,arr)=>/^[A-Z][A-Z0-9.-]{0,11}$/.test(x)&&arr.indexOf(x)===i).slice(0,10);
+  if(!state.comparison.length)state.comparison=['AAPL','MSFT'];
   if(!state.layout.length)state.layout=[...DEFAULT_METRICS];
   if(!['S','M','L'].includes(state.savedSize))state.savedSize='S';
   el('chartSize').value=state.savedSize;
@@ -365,6 +368,50 @@ async function init(){
   renderTickers();changeView('overview');
  }catch(e){setStatus('Market hub initialization failed: '+e.message);}
 }
+
+function downloadCsv(filename,headers,rows){
+ const csv=[headers,...rows].map(row=>row.map(v=>{
+  const raw=v==null?'':String(v);return '"'+raw.replace(/"/g,'""')+'"';
+ }).join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function exportCompare(){
+ const entry=state.latestComparison;if(!entry?.data){setStatus('Load a comparison before exporting.');return;}
+ const {data,commonStart}=entry;
+ const symbols=data.requested||state.comparison,days=[...new Set(symbols.flatMap(s=>(data.values[s]?.bars||[]).filter(b=>!commonStart||b.date>=commonStart).map(b=>b.date)))].sort();
+ const index=new Map(symbols.map(s=>[s,new Map((data.values[s]?.bars||[]).map(b=>[b.date,b.close]))]));
+ downloadCsv('tradescope-compare-'+data.range+'.csv',['Date',...symbols.map(x=>x+' split-adjusted IEX close')],
+  days.map(day=>[day,...symbols.map(s=>index.get(s)?.get(day)??null)]));
+ setStatus('Exported sourced daily prices (not normalized returns). Market-data redistribution rights remain provider-dependent.');
+}
+function exportFinancial(){
+ const d=state.latestFinancial;if(!d){setStatus('Load an SEC financial statement before exporting.');return;}
+ const days=[...new Set(Object.values(d.series).flatMap(arr=>arr.map(x=>x.fiscalEnd)))].sort();
+ const indexed=new Map(d.metrics.map(m=>[m.id,new Map((d.series[m.id]||[]).map(x=>[x.fiscalEnd,x]))]));
+ downloadCsv('tradescope-sec-'+d.symbol+'.csv',['Fiscal end',...d.metrics.map(m=>m.label+' ['+m.unit+']'), 'SEC source'],
+  days.map(day=>[day,...d.metrics.map(m=>indexed.get(m.id)?.get(day)?.value??null),d.sourceUrl]));
+ setStatus('Exported filed SEC annual records, with dates and source URL; missing metrics remain empty.');
+}
+function exportThemes(){
+ const entry=state.latestThemes;if(!entry){setStatus('Load a theme group before exporting.');return;}
+ const {group,items,data}=entry;const columns=['d1','d5','m1','ytd','y1','y3'];
+ downloadCsv('tradescope-etfs-'+group.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'.csv',
+  ['ETF theme','Symbol','IEX last completed date','IEX close USD',...columns.map(x=>x+' price change %'),'Day low','Day high','52-week low','52-week high','Source'],
+  items.map(x=>{const v=data.values[x.symbol];return [x.label,x.symbol,v?.asOf||null,v?.last?.close??null,
+   ...columns.map(k=>v?.returns?.[k]??null),v?.dayRange?.low??null,v?.dayRange?.high??null,
+   v?.range52w?.low??null,v?.range52w?.high??null,data.source]}));
+ setStatus('Exported sourced ETF price research, with missing values blank. Do not redistribute without provider authorization.');
+}
+el('compareSave').addEventListener('click',()=>{
+ persist('ts-compare-selection-v1',state.comparison);
+ setStatus('Comparison symbols saved in this browser for future research sessions.');
+});
+el('compareExport').addEventListener('click',exportCompare);
+el('financialExport').addEventListener('click',exportFinancial);
+el('themeExport').addEventListener('click',exportThemes);
 el('navTabs').addEventListener('click',e=>{const target=e.target.closest('[data-view]');if(target)changeView(target.dataset.view);});
 el('tickerButtons').addEventListener('click',e=>{const x=e.target.closest('[data-ticker]');if(x)selectSymbol(x.dataset.ticker);});
 let searchTimeout=null;
