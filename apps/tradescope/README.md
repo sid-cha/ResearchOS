@@ -1,3 +1,13 @@
+# TradeScope v0.25 — Geographic & Issuer Exposure Research
+
+**New:** [Geo Exposure](geo-exposure.html) · [v0.25 implementation guide](docs/V025_GEO_ISSUER_EXPOSURE.md) · [Current prioritized backlog audit](docs/V025_PRODUCT_BACKLOG_AUDIT.md) · [Draft cumulative PR #19](https://github.com/sid-cha/ResearchOS/pull/19).
+
+TradeScope adds a public-keyless official USGS recent-earthquake connector and a tightly scoped **epicenter proximity research screen**. Existing fertilizer SEC issuer business context is displayed separately from geocoded site claims. Analysts can optionally record local, separately cited SEC filing and official coordinate-evidence assertions, but **none are independently verified merely by saving them**. The Earthquake economic pathway remains a **TEMPLATE_ONLY** hypothesis; no validated shaking, facility damage, issuer earnings impact or return is inferred.
+
+The local facility registry is OFF by default. When you explicitly enable `RESEARCH_GEO_ASSET_REGISTRY_ENABLED=true` on a loopback server, claims are saved only to git-ignored `.local-data`. Live-provider entitlement, commercial source-rights, visual browser validation and verified operator/facility relationships remain separate release gates. No API key is needed to read the official USGS public GeoJSON feed.
+
+---
+
 # TradeScope v0.24 — Source Evidence & Provenance Journal
 
 **New:** [Evidence Ledger](evidence-ledger.html) · [v0.24 provenance guide](docs/V024_EVIDENCE_PROVENANCE_LEDGER.md) · [12-scenario economic engine](transmission-lab.html) · [FRED/ALFRED explorer](fred-research.html).
