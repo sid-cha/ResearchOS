@@ -67,6 +67,8 @@ async function screen(){
    esc(x.assetEvidenceStatus.replace(/_/g,' '))+'</small><small>Shaking, damage, interruption and financial impact: NOT VERIFIED</small>'+
    link(x.issuerFilingUrl,'Issuer reference')+' · '+link(x.geoEvidenceUrl,'Site reference')+'</div>').join(''):
    '<div class="empty">No registered local asset claim is within the selected radius. This does not establish there are no businesses exposed.</div>';
+  el('matches').insertAdjacentHTML('beforeend','<div class="match"><strong>Research pathway</strong><small>Earthquake → facilities → industry is a TEMPLATE ONLY; no connected issuer-risk model.</small>'+
+  '<a href="/transmission-lab.html?scenario=earthquake-facility">Inspect earthquake hypothesis graph</a></div>');
   status(r.matches.length+' proximity candidates. Epicenter distance is not shaking intensity or financial loss. No verified site outcomes.');
  }catch(e){status('Proximity screen unavailable: '+e.message);}
  finally{el('screen').disabled=false;}
