@@ -93,7 +93,7 @@ function normalizeBars(response,symbols,{asOf,range}){
 function annualFactRows(payload,id,tags,unit,asOf,instant){
  const map=new Map();
  for(let rank=0;rank<tags.length;rank++){
-  const tag=tags[rank],items=payload?.facts?.['us-gaap']?.[tag]?.units?.[unit]||[];
+  const tag=tags[rank],secUnit=unit==='USD/share'?'USD/shares':unit,items=payload?.facts?.['us-gaap']?.[tag]?.units?.[secUnit]||[];
   if(!Array.isArray(items))continue;
   for(const x of items){
    if(!x||!validDay(x.end)||!validDay(x.filed)||x.filed>asOf||x.end>asOf||!finite(x.val)||!['10-K','10-K/A'].includes(x.form))continue;
