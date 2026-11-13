@@ -8,6 +8,10 @@
  const meta=document.getElementById('chartHistoryMeta');
  const readWindow=document.getElementById('chartDayWindow');
  const refresh=document.getElementById('chartHistoryRefresh');
+ const intervalControl=document.getElementById('chartInterval');
+ const dayWindowWrap=document.getElementById('chartDayWindowWrap');
+ const scope=document.getElementById('chartSourceScope');
+ const timeframe=()=>['1Min','5Min','15Min','1Hour'].includes(intervalControl?.value)?intervalControl.value:'1Day';
  if(!box||!meta||!readWindow||!refresh)return;
  let context=null,activeKey=null,generation=0,controller=null,shownKey=null;
  const cache=new Map();
@@ -16,13 +20,14 @@
  const volume=n=>Number(n).toLocaleString('en-US',{notation:'compact',maximumFractionDigits:1});
  const escapeText=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  function validData(value,symbol,sessions){
-  if(value?.schemaVersion!==1||value.symbol!==symbol||value.mode!=='HISTORICAL_COMPLETED_DAILY_BARS'
+  const intraday=timeframe()!=='1Day';
+  if(value?.schemaVersion!==1||value.symbol!==symbol||value.mode!==(intraday?'HISTORICAL_COMPLETED_INTRADAY_BARS':'HISTORICAL_COMPLETED_DAILY_BARS')
    ||value.source!=='ALPACA_IEX'||value.feed!=='iex'||value.coverage!=='single-venue'
-   ||value.interval!=='1Day'||value.includesLivePrice!==false||value.windowSessions!==sessions
-   ||!Array.isArray(value.bars)||value.bars.length>sessions)return false;
+   ||value.interval!==timeframe()||value.includesLivePrice!==false||(!intraday&&value.windowSessions!==sessions)
+   ||!Array.isArray(value.bars)||value.bars.length>(intraday?400:sessions))return false;
   let prior='';
   for(const bar of value.bars){
-   if(!datePattern.test(bar.time)||bar.time<=prior)return false;
+   if(!(intraday?typeof bar.time==='string'&&Number.isFinite(Date.parse(bar.time)):datePattern.test(bar.time))||bar.time<=prior)return false;
    if(![bar.open,bar.high,bar.low,bar.close,bar.volume].every(Number.isFinite)
      ||Math.min(bar.open,bar.high,bar.low,bar.close)<=0||bar.low>Math.min(bar.open,bar.close)
      ||bar.high<Math.max(bar.open,bar.close)||bar.high<bar.low||bar.volume<0)return false;
@@ -33,9 +38,10 @@
  function sourceLabel(s){
   if(!s){meta.textContent='No completed IEX daily bars loaded.';return;}
   const last=s.asOf||'unavailable',quality=s.quality||{};
-  meta.textContent='HISTORICAL / COMPLETED 1D IEX BARS · '+s.bars.length+' SESSIONS · THROUGH '+last+
+  const intraday=s.interval!=='1Day';
+  meta.textContent='HISTORICAL / COMPLETED '+s.interval+' IEX BARS · '+s.bars.length+(intraday?' BARS':' SESSIONS')+' · THROUGH '+last+
    ' · SPLIT ADJUSTED · SINGLE VENUE'+(quality.partialHistory||quality.incompleteWindow?' · PARTIAL COVERAGE':'')+
-   '. Observed LIVE price above is independent of the daily close. No price prediction.';
+   '. Observed LIVE price above is independent of the historical bar close. No price prediction.';
  }
  function movingAverage(bars,period){
   return bars.map((b,i)=>{
@@ -86,9 +92,11 @@
   const last=bars.at(-1),sma20=movingAverage(bars,20).at(-1),sma50=movingAverage(bars,50).at(-1);
   const last20=bars.slice(-21,-1),avg20=last20.length===20?last20.reduce((sum,b)=>sum+b.volume,0)/20:null;
   const relativeVolume=avg20>0?(last.volume/avg20):null;
+  const intraday=result.interval!=='1Day';
   const ticks=[0,.25,.5,.75,1].map(f=>{
    const index=Math.min(bars.length-1,Math.floor(f*(bars.length-1)));
-   return '<text class="candle-label" x="'+x(index).toFixed(2)+'" y="271" text-anchor="middle">'+bars[index].time.slice(5)+'</text>';
+   const label=intraday?new Date(bars[index].time).toLocaleString('en-US',{timeZone:'America/New_York',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):bars[index].time.slice(5);
+   return '<text class="candle-label" x="'+x(index).toFixed(2)+'" y="271" text-anchor="middle">'+escapeText(label)+'</text>';
   }).join('');
   box.innerHTML='<svg class="candle-svg" viewBox="0 0 '+width+' '+height+'" role="img" aria-label="'+escapeText(result.symbol)+
    ' historical daily IEX candlestick chart with completed sessions, volume, SMA20 and SMA50">'+
@@ -96,11 +104,11 @@
    candles+avg(20,'candle-sma20')+avg(50,'candle-sma50')+ticks+
    '<text class="candle-label" x="12" y="240">VOLUME</text></svg>'+
    '<div class="candle-metrics">'+
-   '<span>LAST COMPLETED CLOSE <strong>'+money(last.close)+'</strong></span>'+
+   '<span>LAST COMPLETED '+(intraday?'BAR':'SESSION')+' CLOSE <strong>'+money(last.close)+'</strong></span>'+
    '<span>SMA20 <strong>'+(sma20===null?'UNAVAILABLE':money(sma20))+'</strong></span>'+
    '<span>SMA50 <strong>'+(sma50===null?'UNAVAILABLE':money(sma50))+'</strong></span>'+
-   '<span>DAILY VOLUME <strong>'+volume(last.volume)+'</strong></span>'+
-   '<span>REL. VOLUME 20 <strong>'+(relativeVolume===null?'UNAVAILABLE':relativeVolume.toFixed(2)+'×')+'</strong></span>'+
+   '<span>'+escapeText(intraday?'BAR VOLUME':'DAILY VOLUME')+' <strong>'+volume(last.volume)+'</strong></span>'+
+   '<span>REL. BAR VOLUME / PRIOR 20 <strong>'+(relativeVolume===null?'UNAVAILABLE':relativeVolume.toFixed(2)+'×')+'</strong></span>'+
    '</div>';
   sourceLabel(result);
  }
@@ -110,7 +118,9 @@
  }
  async function load({force=false}={}){
   if(!context||context.mode==='DEMO')return;
-  const symbol=context.symbol,sessions=Number(readWindow.value)||60,key=symbol+':'+sessions;
+  const symbol=context.symbol,sessions=Number(readWindow.value)||60,interval=timeframe(),key=symbol+':'+interval+':'+sessions;
+  if(dayWindowWrap)dayWindowWrap.hidden=interval!=='1Day';
+  if(scope)scope.textContent='IEX '+interval+' · historical / single venue';
   activeKey=key;
   if(!force&&cache.has(key)&&Date.now()-cache.get(key).savedAt<60000){
    if(shownKey!==key){draw(cache.get(key).data);shownKey=key;}
@@ -118,11 +128,12 @@
   }
   controller?.abort();controller=new AbortController();
   const ctl=controller,token=++generation;
-  shownKey=null;empty('LOADING COMPLETED DAILY IEX BARS FOR '+symbol+'…');
+  shownKey=null;empty('LOADING COMPLETED '+interval+' IEX BARS FOR '+symbol+'…');
   try{
    const timeout=setTimeout(()=>{ctl.deadlineExpired=true;ctl.abort();},14000);
    let response;
-   try{response=await fetch('/api/chart/daily?'+new URLSearchParams({symbol,sessions:String(sessions)}),{signal:ctl.signal,cache:'no-store'});}
+   const endpoint=interval==='1Day'?'/api/chart/daily?'+new URLSearchParams({symbol,sessions:String(sessions)}):'/api/chart/intraday?'+new URLSearchParams({symbol,interval});
+   try{response=await fetch(endpoint,{signal:ctl.signal,cache:'no-store'});}
    finally{clearTimeout(timeout);}
    const data=await response.json().catch(()=>({}));
    if(token!==generation||key!==activeKey||ctl.signal.aborted)return;
@@ -139,12 +150,13 @@
   if(!next||next.mode==='DEMO'){
    controller?.abort();generation++;shownKey=null;activeKey=null;return;
   }
-  const key=next.symbol+':'+readWindow.value;
+  const key=next.symbol+':'+timeframe()+':'+readWindow.value;
   if(key===shownKey)return;
   if(key===activeKey&&controller)return;
   void load();
  }
  readWindow.addEventListener('change',()=>{shownKey=null;void load();});
+ intervalControl?.addEventListener('change',()=>{shownKey=null;void load();});
  refresh.addEventListener('click',()=>{if(context&&context.mode!=='DEMO')void load({force:true});});
  window.addEventListener('pagehide',()=>{controller?.abort();generation++;});
  window.TradeScopeCandles=Object.freeze({render});
