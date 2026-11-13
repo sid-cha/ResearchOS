@@ -17,7 +17,7 @@ const contracts=[
  {release:'v0.12',path:'lib/research-monitor.mjs',symbols:['createResearchMonitor']},
  {release:'v0.13',path:'lib/monitor-chart-api.mjs',symbols:['normalizeDailyCandles','createMonitorChartApi','/api/chart/daily']},
  {release:'v0.14',path:'lib/intraday-chart.mjs',symbols:['normalizeIntradayBars','createIntradayChartApi','/api/chart/intraday']},
- {release:'v0.14',path:'lib/crisis-atlas.mjs',symbols:['createCrisisAtlas','createCrisisAtlasApi','/api/crisis/catalog','/api/crisis/case']},
+ {release:'v0.14',path:'lib/crisis-atlas.mjs',symbols:['createCrisisAtlas','createCrisisAtlasApi','/api/crisis/']},
  {release:'v0.15',path:'lib/macro-vintage.mjs',symbols:['createMacroVintage','createMacroVintageApi','/api/macro/snapshot','realtime_start','realtime_end']},
  {release:'v0.16',path:'lib/historical-backtest.mjs',symbols:['createHistoricalBacktest','createHistoricalBacktestApi','/api/backtest/replay','forwardOutcome']},
  {release:'v0.17',path:'lib/long-history-market.mjs',symbols:['createLongHistoryMarket','normalizeEodhdDaily','EODHD_INTERNAL_RESEARCH_ENABLED','EODHD_API_TOKEN']}
