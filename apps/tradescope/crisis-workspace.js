@@ -50,6 +50,13 @@
     '<p id="crisisReplayStatus" role="status">Historical source credentials are required. The 2008 preset requires separately entitled, server-side long-history SPY data for market outcome labels.</p>'+
     '<div id="crisisReplayResults"></div></section>');
   }
+  if(item.kind!=='retrospective_crisis'){
+   node.insertAdjacentHTML('beforeend','<section class="crisis-section" id="crisisClimateSection">'+
+    '<h4>NOAA CPC historical ENSO evidence</h4><p>View the latest eligible original-dated ENSO discussion visible in the official archive on your selected historical calendar date. Archive page revision and intraday first-publication time have not been independently authenticated.</p>'+
+    '<div class="crisis-macro-controls"><label for="crisisClimateAsOf">HISTORICAL AS-OF DATE</label><input id="crisisClimateAsOf" type="date" min="2001-01-01" value="2020-02-15">'+
+    '<button type="button" id="crisisClimateRun">LOAD NOAA DISCUSSION</button></div>'+
+    '<p id="crisisClimateStatus" role="status">Select a date to inspect sourced ENSO discussion evidence; no crop or equity impact is inferred.</p><div id="crisisClimateResults"></div></section>');
+  }
   selected=item.id||null;
  }
  async function open(id){
@@ -141,6 +148,29 @@
   }catch(error){if(token===requestId&&selected===caseId)message.textContent=error.message;}
   finally{if($('crisisReplayRun')===button)button.disabled=false;}
  }
+
+ async function loadClimateEvidence(){
+  const button=$('crisisClimateRun'),message=$('crisisClimateStatus'),output=$('crisisClimateResults'),date=$('crisisClimateAsOf')?.value;
+  if(!button||!message||!output)return;
+  const token=requestId,caseId=selected;button.disabled=true;message.textContent='Retrieving historical NOAA CPC discussion…';
+  output.replaceChildren();
+  try{
+   const data=await read('/api/climate/enso?asOf='+encodeURIComponent(date));
+   if(token!==requestId||selected!==caseId||!$('crisisClimateResults'))return;
+   if(data.asOf!==date||data.calibratedForecast!==false||!Array.isArray(data.attemptedMonths))throw Error('Unexpected NOAA historical evidence response');
+   const item=data.discussion;
+   output.innerHTML=item?
+    '<article class="crisis-signal"><strong>'+safe(item.source)+' · issued '+safe(item.issueDate)+'</strong>'+
+    '<p>'+safe(item.synopsis)+'</p><p><b>Evidence status:</b> '+safe(data.evidenceStatus)+
+    '</p><p>Original intraday release and HTML revision verified: NO. No verified issuer exposure, crop yield, or market forecast.</p>'+
+    '<div class="crisis-citations"><a href="'+safe(allowedUrl(item.sourceUrl)||'#')+'" target="_blank" rel="noopener noreferrer">Official NOAA CPC source</a></div></article>':
+    '<p class="crisis-warning">No eligible official historical discussion was retrieved. No forecast was fabricated.</p>';
+   message.textContent=item?'Found source-dated NOAA discussion for '+item.issueDate+'. Publication clock and historical page version are not independently verified.':
+    'No eligible source discussion found for '+date+'.';
+  }catch(error){if(requestId===token&&selected===caseId)message.textContent=error.message;}
+  finally{if($('crisisClimateRun')===button)button.disabled=false;}
+ }
+ $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisClimateRun'))void loadClimateEvidence();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisReplayRun'))void replayWarningHistory();});
  $('crisisDetail')?.addEventListener('click',event=>{if(event.target.closest?.('#crisisMacroRun'))void loadMacro();});
  $('crisisLoad')?.addEventListener('click',()=>void load());
