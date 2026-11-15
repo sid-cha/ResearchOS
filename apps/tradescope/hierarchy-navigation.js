@@ -55,7 +55,9 @@ const TREE=[
    {id:'agent-desk',label:'Research Agent Desk',href:'/agent-desk.html'},
    {id:'anti-agent',label:'Independent Anti-Agent',href:'/agent-desk.html#anti-agent'}]},
   {id:'agent-review',label:'Research Review',tools:[
-   {id:'agent-runs',label:'Saved Research Runs',href:'/agent-desk.html#saved-runs'}]}]},
+   {id:'agent-runs',label:'Saved Research Runs',href:'/agent-desk.html#saved-runs'},
+   {id:'agent-validation',label:'Evidence Validation',href:'/agent-validation.html'},
+   {id:'prospective-review',label:'Prospective Review',href:'/agent-validation.html#prospective-protocol'}]}]},
  {id:'operations',label:'Research Operations',sections:[
   {id:'sources',label:'Sources & Provenance',tools:[
    {id:'source-control',label:'Source Control',href:'/source-control.html'},

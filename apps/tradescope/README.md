@@ -1,3 +1,9 @@
+# TradeScope v0.35 — Evidence Validation and Prospective Review
+
+**New:** [Evidence Validation workspace](agent-validation.html) adds deterministic claim-reference scores (metadata traceability, not truth/probability), two-reviewer adversarial comparison assessments, immutable preregistration of outcome criteria and future horizons, dated manually attested outcome labels, a private hash-linked audit journal, and descriptive candidate/control counts. Reviewer aliases are unauthenticated; agreements are explicitly NOT independently verified labels. No verified precision, recall or false-positive rate is claimed. See [v0.35 documentation](docs/V035_EVIDENCE_VALIDATION.md). PR #19 remains draft.
+
+---
+
 # TradeScope v0.34 — Research Agent Desk and independent Anti-Agent
 
 **New local research workspace:** [Agent Desk](agent-desk.html) executes six evidence-first stages against captured global events: Evidence Scout, Timeline Auditor, Transmission Analyst, independently scoped Anti-Agent, Source Verifier and Research Arbiter. Every run stores the evidence cutoff, original provider links, deterministic rule-based disagreements and a SHA-256 checksum. Optional Ollama or LM Studio model proposals are loopback-only, tool-free, bounded and explicitly unverified; deterministic operation works without a model. No trading, certified predictions, source-independent verification, user-supplied URLs or provider retention rights are implied. See [v0.34 engineering guide](docs/V034_RESEARCH_AGENT_DESK.md). PR #19 remains draft.
