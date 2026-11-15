@@ -106,6 +106,10 @@ async function findTickers(input){
 function changeView(key){
  if(!['overview','dashboard','compare','financials','watchlists','screener','themes','macro'].includes(key))return;
  state.view=key;
+ // Level 3 deep links are bookmarkable; do not change route in test harnesses or another app.
+ if(typeof window!=='undefined'&&window.location?.pathname==='/market-hub.html'&&window.history?.replaceState&&window.location.hash!=='#'+key){
+  window.history.replaceState(null,'','#'+key);
+ }
  document.querySelectorAll('#navTabs [data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===key));
  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+key));
  const load={overview, dashboard,compare,financials,watchlists, themes,macro};
@@ -365,7 +369,8 @@ async function init(){
   el('providerStatus').textContent='IEX '+(state.catalog.credentials.marketDataConfigured?'configured':'not configured')+
    ' · FRED '+(state.catalog.credentials.fredConfigured?'configured':'not configured');
   el('sourceMode').textContent='SEC · IEX · FRED';
-  renderTickers();changeView('overview');
+  const requested=typeof window!=='undefined'?window.location?.hash?.slice(1):null;
+  renderTickers();changeView(['overview','dashboard','compare','financials','watchlists','screener','themes','macro'].includes(requested)?requested:'overview');
  }catch(e){setStatus('Market hub initialization failed: '+e.message);}
 }
 
@@ -457,5 +462,9 @@ el('screenRun').addEventListener('click',()=>void screen());el('screenResult').a
 el('themeGroup').addEventListener('change',()=>void themes());el('themeRefresh').addEventListener('click',()=>void themes());
 el('macroGroup').addEventListener('change',()=>void macro());el('macroYears').addEventListener('change',()=>void macro());
 el('macroRefresh').addEventListener('click',()=>void macro());
+if(typeof window!=='undefined'&&window.addEventListener)window.addEventListener('hashchange',()=>{
+ const target=window.location?.hash?.slice(1);
+ if(['overview','dashboard','compare','financials','watchlists','screener','themes','macro'].includes(target))changeView(target);
+});
 void init();
 })();

@@ -1,3 +1,13 @@
+# TradeScope — Three-level Navigation and Sprint 1 PRD alignment
+
+**New shared navigation:** Levels 1 (product areas), 2 (modules) and 3 (tools) are visible on every TradeScope local browser page. The shared navigation source is `hierarchy-navigation.js` / `hierarchy-navigation.css` (included in the public static/server allowlists). All original research panels, market-tab controls, URLs and evidence boundaries remain operational. Deep links such as `/#research/filings`, `/market-hub.html#financials` and `/event-portal.html#case-study` are supported; browser back/forward updates the hierarchy. Source coverage and simulated/live modes remain explicitly distinct.
+
+**Sprint 1 source review:** `TradeScope_ResearchOS_Roadmap_with_CPZAI_Benchmark_2026-11-12.docx` labels the earlier v0.4 *Company Intelligence* work 'Sprint 1'; its next *v0.7 Streaming Market Data & Integrity* proposal is TS-MDI-701–706. Existing live IEX backend/SSE, canonical source fields, health panel and local replay are bounded pilots. This change makes TS-MDI-703 feed status discoverable at **Markets → Surveillance → Feed Integrity**, and connects TS-MDI-705's existing UI delivery work to the common navigation. It does **not** claim new authorized market data entitlements, persisted capture/replay or Docker deployment.
+
+[Read implementation and tests](docs/V029_THREE_LEVEL_NAV_AND_SPRINT1.md). PR #19 remains draft.
+
+---
+
 # TradeScope v0.28 — Unified Global Event Intelligence
 
 **New:** [Global Event Intelligence](event-portal.html) · [v0.28 implementation and acceptance](docs/V028_GLOBAL_EVENT_INTELLIGENCE.md) · [FAA original source](https://nasstatus.faa.gov/).
