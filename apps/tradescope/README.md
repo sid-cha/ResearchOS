@@ -1,3 +1,9 @@
+# TradeScope v0.33 — Precursor Radar
+
+**New:** [Precursor Radar](event-portal.html#precursor-radar) uses local first-observed events and v0.33 polling coverage checkpoints to identify **descriptive activity spikes** only when a complete baseline exists. It never imputes missing/failed source checks, builds historical as-of analyses from future snapshots, or estimates probability, false-positive rate or financial outcomes without ground-truth labels. See [v0.33 specifications](docs/V033_PRECURSOR_RADAR.md). PR #19 remains draft.
+
+---
+
 # TradeScope v0.32 — Global Event Collection Engine
 
 **New:** [Captured Global Feed](event-portal.html#global-feed) joins three bounded official-source collectors, revision-aware local event storage, provider health, manual or opt-in scheduled ingestion, and captured-knowledge as-of queries. Source events remain evidence-only: no verified issuer exposure, inferred financial losses, or retrospective first-seen claims. Collection is off until explicitly enabled on loopback. See [v0.32 implementation guide](docs/V032_GLOBAL_EVENT_COLLECTION.md) for endpoints, retention bounds and testing status.

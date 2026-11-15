@@ -40,6 +40,7 @@ const TREE=[
    {id:'terminal-events',label:'Event Stream',href:'/#intel'},
    {id:'global-event-universe',label:'Event Universe',href:'/event-portal.html'},
    {id:'global-feed',label:'Captured Global Feed',href:'/event-portal.html#global-feed'},
+   {id:'precursor-radar',label:'Precursor Radar',href:'/event-portal.html#precursor-radar'},
    {id:'aviation',label:'FAA Case & Precursors',href:'/event-portal.html#case-study'}]},
   {id:'transmission',label:'Economic Transmission',tools:[
    {id:'transmission-lab',label:'Transmission Lab',href:'/transmission-lab.html'},

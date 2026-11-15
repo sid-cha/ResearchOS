@@ -156,6 +156,82 @@ async function initGlobalFeed(){
 }
 void initGlobalFeed();
 
+
+// v0.33 read-only Precursor Radar; never a live market alert or direct provider call.
+let precursorSeq=0;
+const precursorApi=async query=>{
+ const response=await fetch('/api/precursors/'+query,{cache:'no-store'});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||'Precursor analysis unavailable');
+ return data;
+};
+async function runPrecursor(){
+ const seq=++precursorSeq,button=$('runPrecursor');
+ const cutoff=$('precursorAsOf').value.trim();
+ const source=$('precursorSource').value;
+ if(cutoff&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(cutoff)||!Number.isFinite(Date.parse(cutoff)))){
+  $('precursorStatus').textContent='Enter a complete UTC timestamp such as 2026-11-14T12:00:00Z.';return;
+ }
+ button.disabled=true;
+ $('precursorStatus').textContent='Inspecting locally archived observations and 6-hour polling coverage…';
+ try{
+  const params=new URLSearchParams();
+  if(source)params.set('source',source);
+  if(cutoff)params.set('asOf',cutoff);
+  const data=await precursorApi('analysis'+(params.size?'?'+params.toString():''));
+  if(seq!==precursorSeq)return;
+  const eligible=data.evaluations.filter(x=>x.eligible).length,leads=data.evaluations.filter(x=>x.status==='INVESTIGATE_OBSERVED_ACTIVITY').length;
+  $('precursorState').textContent=eligible+' / '+data.evaluations.length+' COVERED · '+leads+' INVESTIGATION LEADS';
+  $('precursorStatus').textContent='Rule '+data.ruleVersion+' · as-of '+data.asOf+
+   ' · source activity only; no prediction, company loss or validated false-positive rate.';
+  $('precursorResults').innerHTML=data.evaluations.map(e=>{
+   const hasLead=e.status==='INVESTIGATE_OBSERVED_ACTIVITY';
+   const state=hasLead?'OBSERVED ACTIVITY INCREASE':e.eligible?'NO RULE THRESHOLD':'ABSTAIN / COVERAGE';
+   const className=hasLead?'precursor-lead':e.eligible?'precursor-clear':'precursor-abstain';
+   const ratio=e.comparison?e.comparison.activityRatio+'×':'Not evaluated';
+   const baseline=e.comparison?e.comparison.baselineMean:'Not available';
+   const fails=e.coverage.missingWindows;
+   const controls=e.controls.evaluated>0?
+    e.controls.thresholdWindows+' / '+e.controls.evaluated+' prior covered windows also crossed the rule threshold':
+    'No independent historical comparison windows qualify yet';
+   const evidence=e.evidenceIds.length?
+    e.evidenceIds.slice(0,8).map(id=>'<code>'+esc(id)+'</code>').join(' '):
+    'No eligible evidence references';
+   const geo=e.geoObservation?.spatialCandidateCount>=3?
+    '<p class="precursor-spatial">Same-source spatial concentration: '+esc(e.geoObservation.spatialCandidateCount)+
+    ' events within '+esc(e.geoObservation.spatialRadiusKm)+' km of one observation. Not a verified escalation.</p>':'';
+   return '<article class="precursor-card '+className+'">'+
+    '<div class="item-top"><span>'+esc(e.source)+' / '+esc(e.family)+'</span><strong>'+esc(state)+'</strong></div>'+
+    '<div class="precursor-metrics">'+
+     '<div><small>TIMELY NEW SOURCE OBSERVATIONS</small><b>'+esc(e.counts.current)+'</b></div>'+
+     '<div><small>PRIOR 4-WINDOW MEAN</small><b>'+esc(baseline)+'</b></div>'+
+     '<div><small>OBSERVED ACTIVITY RATIO</small><b>'+esc(ratio)+'</b></div></div>'+
+    '<p><strong>Window:</strong> '+esc(e.evaluationWindow.startAt)+' to '+esc(e.evaluationWindow.endAt)+'</p>'+
+    '<p>'+esc(e.interpretation)+'</p>'+
+    '<p>Archive readiness: '+esc(e.coverage.coveredBuckets)+' / '+esc(e.coverage.measuredBuckets)+
+     ' covered 6-hour windows. New observations with ineligible source times: '+esc(e.counts.timestampIneligible)+
+     '. Changed source records: '+esc(e.counts.providerUpdates)+'.</p>'+
+    (fails.length?'<p class="precursor-coverage">Missing coverage: '+fails.map(x=>esc(x.startAt)).join(' · ')+'</p>':'')+
+    geo+'<div class="precursor-evidence"><small>Evidence IDs:</small> '+evidence+'</div>'+
+    '<div class="precursor-controls-note"><strong>Historical controls:</strong> '+esc(controls)+
+    '. No ground-truth negative outcomes exist; false-positive rate, precision and recall are unknown.</div>'+
+    '<button type="button" class="event-detail-button" data-precursor-source="'+esc(e.source)+'">Inspect source observations</button>'+
+    '</article>';
+  }).join('');
+ }catch(e){
+  if(seq===precursorSeq){$('precursorState').textContent='ANALYSIS UNAVAILABLE';$('precursorStatus').textContent='Could not analyze local evidence: '+e.message;}
+ }finally{if(seq===precursorSeq)button.disabled=false;}
+}
+$('runPrecursor').addEventListener('click',runPrecursor);
+$('precursorResults').addEventListener('click',event=>{
+ const source=event.target.closest('[data-precursor-source]')?.dataset.precursorSource;
+ if(!source)return;
+ $('globalSource').value=source;
+ void globalList();
+ $('global-feed').scrollIntoView({block:'start',behavior:'smooth'});
+});
+void runPrecursor();
+
 $('loadCase').addEventListener('click',runCase);
 $('asOf').addEventListener('change',runCase);
 $('refreshFaa').addEventListener('click',refreshFaa);

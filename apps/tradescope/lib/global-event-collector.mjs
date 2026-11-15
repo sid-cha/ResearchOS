@@ -120,12 +120,32 @@ export function createGlobalEventAdapters({fetchImpl=globalThis.fetch,faaLive=cr
   FAA_NAS_STATUS:async()=>normalizeFaaCollection(await faaLive())
  });
 }
-const blank=()=>({schemaVersion:1,events:[],providers:Object.fromEntries(GLOBAL_EVENT_SOURCES.map(s=>
+const BUCKET_MS=6*60*60*1000, MAX_POLL_WINDOWS=4000;
+const bucket=at=>new Date(Math.floor(Date.parse(at)/BUCKET_MS)*BUCKET_MS).toISOString();
+const blank=()=>({schemaVersion:1,events:[],pollWindows:[],providers:Object.fromEntries(GLOBAL_EVENT_SOURCES.map(s=>
  [s.id,{status:'never_checked',lastCheckedAt:null,lastSuccessAt:null,lastFailureAt:null,
   lastCount:null,error:null}]))});
 function checkDocument(doc,maxEvents,maxRevisions){
  if(!doc||doc.schemaVersion!==1||!Array.isArray(doc.events)||doc.events.length>maxEvents||!doc.providers)
   throw error('Global event store has an invalid schema',500);
+ // Legacy v0.32 stores have no historical polling denominators. Do not invent them.
+ if(doc.pollWindows===undefined)doc.pollWindows=[];
+ if(!Array.isArray(doc.pollWindows)||doc.pollWindows.length>MAX_POLL_WINDOWS)
+  throw error('Invalid polling coverage history',500);
+ const coverageKeys=new Set();
+ for(const w of doc.pollWindows){
+  const key=w?.source+':'+w?.windowStart;
+  if(!w||!GLOBAL_EVENT_SOURCES.some(s=>s.id===w.source)||!iso(w.windowStart)||
+   w.windowStart!==bucket(w.windowStart)||!Number.isSafeInteger(w.successes)||
+   !Number.isSafeInteger(w.failures)||w.successes<0||w.failures<0||
+   w.successes+w.failures<1||!(w.firstSuccessAt===null||iso(w.firstSuccessAt))||
+   !(w.lastSuccessAt===null||iso(w.lastSuccessAt))||
+   (w.successes===0)!==(w.firstSuccessAt===null&&w.lastSuccessAt===null)||
+   (w.successes>0&&(w.firstSuccessAt>w.lastSuccessAt||
+    bucket(w.firstSuccessAt)!==w.windowStart||bucket(w.lastSuccessAt)!==w.windowStart))||
+   coverageKeys.has(key))throw error('Invalid polling coverage checkpoint',500);
+  coverageKeys.add(key);
+ }
  const seen=new Set();let count=0;
  for(const entry of doc.events){
   if(!entry||typeof entry.id!=='string'||seen.has(entry.id)||!iso(entry.firstObservedAt)||
@@ -189,24 +209,40 @@ export function createGlobalEventCollector({filename,enabled=false,autoPoll=fals
    intervalMs,sourceCount:GLOBAL_EVENT_SOURCES.length,
    sources:GLOBAL_EVENT_SOURCES.map(s=>({...s,...d.providers[s.id]})),
    eventCount:d.events.length,revisionCount:d.events.reduce((n,e)=>n+e.revisions.length,0),
+    pollWindowCount:d.pollWindows.length,
    bounds:{maxEvents,maxRevisions,maxBytes},
    limitations:['CapturedAt is local first observation, never retrospective original publication proof.',
     'Only three bounded source feeds; missing items do not establish resolution or absence.',
     'Source events do not prove issuer exposure, market movement or causality.']};
  };
+ function markPoll(doc,source,at,success){
+  const start=bucket(at);
+  let w=doc.pollWindows.find(x=>x.source===source&&x.windowStart===start);
+  if(!w){
+   if(doc.pollWindows.length>=MAX_POLL_WINDOWS)
+    throw error('Polling history capacity reached; migrate before continuing',409);
+   w={source,windowStart:start,successes:0,failures:0,firstSuccessAt:null,lastSuccessAt:null};
+   doc.pollWindows.push(w);
+  }
+  if(success){w.successes++;w.firstSuccessAt??=at;w.lastSuccessAt=at;}
+  else w.failures++;
+ }
  async function poll(){
   if(!enabledHere)throw error('Global event collection is disabled',403);
   if(closed)throw error('Global event collector is closed',503);
   return serial(async()=>{
-   const completedAt=stamp(),next=structuredClone(state),runs=[];
+   const startedAt=stamp(),next=structuredClone(state),runs=[];
+   let lastCaptureAt=startedAt;
    for(const source of GLOBAL_EVENT_SOURCES){
     // Per-provider staging prevents capacity or malformed-payload failures
     // from committing a partial batch while reporting that source as failed.
     const staged=structuredClone(next);
     const p=staged.providers[source.id];
-    p.lastCheckedAt=completedAt;
     try{
      const incoming=await adapters[source.id]();
+     // Network response must complete before local knowledge can be timestamped.
+     const completedAt=stamp();lastCaptureAt=completedAt;
+     p.lastCheckedAt=completedAt;
      if(!Array.isArray(incoming)||incoming.length>150)throw error('Unexpected normalized provider batch',502);
      let added=0,revised=0,unchanged=0;
      const batchSeen=new Set();
@@ -230,20 +266,23 @@ export function createGlobalEventCollector({filename,enabled=false,autoPoll=fals
       record.revisions.push({version:record.revisions.length+1,capturedAt:completedAt,contentHash:hash,event});
      }
      p.status='ok';p.lastSuccessAt=completedAt;p.lastCount=batchSeen.size;p.error=null;
+     markPoll(staged,source.id,completedAt,true);
      // Commit this provider's all-or-nothing staged snapshot.
-     next.events=staged.events;next.providers[source.id]=p;
+     next.events=staged.events;next.providers[source.id]=p;next.pollWindows=staged.pollWindows;
      runs.push({source:source.id,status:'ok',received:batchSeen.size,added,revised,unchanged});
     }catch(e){
-     const failed=next.providers[source.id];failed.lastCheckedAt=completedAt;
-     failed.status='failed';failed.lastFailureAt=completedAt;failed.error=e?.status===409?
+     const failedAt=stamp();lastCaptureAt=failedAt;
+     const failed=next.providers[source.id];failed.lastCheckedAt=failedAt;
+     failed.status='failed';failed.lastFailureAt=failedAt;failed.error=e?.status===409?
       'Local archive capacity reached; no new source evidence was committed':'Feed unavailable or payload rejected';
+     markPoll(next,source.id,failedAt,false);
      runs.push({source:source.id,status:'failed',error:failed.error});
     }
    }
    checkDocument(next,maxEvents,maxRevisions);
    await save(next);
    state=next;
-   return {capturedAt:completedAt,results:runs,eventCount:state.events.length};
+   return {capturedAt:lastCaptureAt,results:runs,eventCount:state.events.length};
   });
  }
  async function list({source=null,family=null,asOf=null,limit=100}={}){
@@ -267,6 +306,22 @@ export function createGlobalEventCollector({filename,enabled=false,autoPoll=fals
   return {schemaVersion:1,asOf,source,family,total:items.length,events:items.slice(0,limit),
    isPartial:items.length>limit,knowledgeBoundary:'Only events first captured by this local collector are eligible.'};
  }
+ async function precursorEvidence({asOf=null}={}){
+  if(asOf!==null&&!iso(asOf))throw error('Invalid precursor as-of time');
+  await queue;const doc=await load(),cutoff=asOf?iso(asOf):stamp();
+  const events=doc.events.flatMap(entry=>{
+   if(entry.firstObservedAt>cutoff)return [];
+   const revisions=entry.revisions.filter(r=>r.capturedAt<=cutoff),latest=revisions.at(-1);
+   if(!latest)return [];
+   return [{id:entry.id,source:entry.source,firstObservedAt:entry.firstObservedAt,
+    eventTime:latest.event.eventTime,providerUpdatedAt:latest.event.providerUpdatedAt,
+    type:latest.event.type,location:latest.event.location,revisionCount:revisions.length,
+    latestRevisionAt:latest.capturedAt}];
+  });
+  const pollWindows=doc.pollWindows.filter(w=>Date.parse(w.windowStart)+BUCKET_MS<=Date.parse(cutoff));
+  return {schemaVersion:1,asOf:cutoff,events,pollWindows:structuredClone(pollWindows),
+   note:'Only fully completed polling buckets and locally available event revisions are eligible. Earlier v0.32 history was not backfilled.'};
+ }
  async function detail(id){
   if(typeof id!=='string'||id.length>160||!GLOBAL_EVENT_SOURCES.some(x=>id.startsWith(x.id+':')))throw error('Invalid event ID');
   await queue;const doc=await load(),entry=doc.events.find(e=>e.id===id);
@@ -285,7 +340,7 @@ export function createGlobalEventCollector({filename,enabled=false,autoPoll=fals
   closed=true;
   if(timer!==null)clearIntervalFn(timer);timer=null;await queue;
  }
- return {status,poll,list,detail,start,close};
+ return {status,poll,list,detail,precursorEvidence,start,close};
 }
 function respond(res,status,body){
  res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',

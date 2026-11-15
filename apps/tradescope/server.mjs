@@ -38,6 +38,7 @@ import {createEpaFrsLookup,createFacilityVerificationApi} from './lib/epa-frs.mj
 import {createSecRegistrantLookup} from './lib/sec-registrant.mjs';
 import {createEventIntelligenceApi} from './lib/event-intelligence.mjs';
 import {createGlobalEventCollector,createGlobalEventApi} from './lib/global-event-collector.mjs';
+import {createPrecursorEngine,createPrecursorApi} from './lib/precursor-intelligence.mjs';
 import {createExposureCasebook,createExposureProofService,createExposureProofApi} from './lib/exposure-proof.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -167,7 +168,7 @@ const defaultGlobalEvents=createGlobalEventCollector({
  intervalMs:Math.max(60000,Math.min(3600000,(Number(process.env.GLOBAL_EVENT_POLL_SECONDS)||300)*1000))
 });
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi,captureService=null,globalEvents=defaultGlobalEvents} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi,captureService=null,globalEvents=defaultGlobalEvents,precursorApi=null} = {}){
  const capture=captureService||createMarketCapture({stream:marketStream,
   dir:process.env.MARKET_CAPTURE_PATH||path.join(ROOT,'.local-data','market-captures'),
   enabled:process.env.MARKET_CAPTURE_ENABLED==='true'&&['127.0.0.1','localhost','::1'].includes(HOST),
@@ -177,6 +178,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream,keepAlive:()=>capture.isRecording()});
  const captureApi=createMarketCaptureApi({service:capture,host:HOST});
  const globalEventApi=createGlobalEventApi({collector:globalEvents,host:HOST});
+ const handlePrecursors=precursorApi||createPrecursorApi({engine:createPrecursorEngine({collector:globalEvents})});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
   try{
@@ -188,6 +190,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await crisisAtlasApi(req,res,u))return;
     if(await climateApi(req,res,u))return;
     if(await globalEventApi(req,res,u))return;
+    if(await handlePrecursors(req,res,u))return;
     if(await eventIntelligenceApi(req,res,u))return;
     if(await exposureProofApi(req,res,u))return;
     if(await facilityVerificationApi(req,res,u))return;

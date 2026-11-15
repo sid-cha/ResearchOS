@@ -27,3 +27,29 @@
 .revision-item small{font:10px/1.5 ui-monospace,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere}
 @media(max-width:1050px){.global-source-status{grid-template-columns:1fr 1fr}.collector-grid{grid-template-columns:1fr}.collector-detail{position:static}}
 @media(max-width:650px){.global-source-status{grid-template-columns:1fr}.collector-controls #globalAsOf{min-width:0}.collector-grid{gap:8px}}
+
+/* v0.33 Precursor Radar — observational research, never a trade recommendation. */
+.precursor-section{scroll-margin-top:12px}
+.precursor-controls{flex-wrap:wrap;align-items:flex-end}
+.precursor-controls label{min-width:205px;flex:1 1 240px}
+.precursor-controls input{width:100%;background:var(--soft);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:10px}
+.precursor-controls button{align-self:end;min-height:37px}
+.precursor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,385px),1fr));gap:12px;margin:18px 0}
+.precursor-card{border:1px solid var(--border);border-radius:8px;padding:16px;background:var(--panel);min-width:0}
+.precursor-card.precursor-lead{border-color:#85694e}
+.precursor-card.precursor-abstain{border-color:#466070}
+.precursor-card .item-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.precursor-card .item-top span{font:700 11px ui-monospace,Consolas,monospace;color:var(--aqua)}
+.precursor-card .item-top strong{font:700 11px ui-monospace,Consolas,monospace;color:var(--muted)}
+.precursor-card.precursor-lead .item-top strong{color:var(--accent)}
+.precursor-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:13px}
+.precursor-metrics div{background:#192b39;border:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:6px;border-radius:6px}
+.precursor-metrics small{font:10px/1.4 ui-monospace,Consolas,monospace;color:var(--muted)}
+.precursor-metrics b{font:700 18px ui-monospace,Consolas,monospace;color:var(--text)}
+.precursor-card p{font-size:12px;line-height:1.6;color:var(--muted);margin:8px 0}
+.precursor-card .precursor-coverage{color:var(--accent)}
+.precursor-card .precursor-spatial{color:#b7dcd1}
+.precursor-evidence,.precursor-controls-note{padding:10px 0;border-top:1px solid var(--border);font-size:11px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.precursor-evidence code{font:10px ui-monospace,Consolas,monospace;color:var(--aqua);background:#172a36;padding:3px 5px;border-radius:4px;display:inline-block;margin:2px}
+.precursor-method{border:1px dashed var(--border);border-radius:8px;padding:15px;margin-bottom:28px;color:var(--muted);font-size:12px;line-height:1.65}
+@media(max-width:620px){.precursor-metrics{grid-template-columns:1fr 1fr}.precursor-controls label{min-width:0}}
