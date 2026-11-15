@@ -1,3 +1,9 @@
+# TradeScope v0.36 — Official HTTP Source Archive and Prospective Dataset Exports
+
+**New:** [Evidence Validation → Official Source Archive & Dataset Export](agent-validation.html#official-source-evidence) retrieves an explicitly reviewed official-source HTTP document from one of eight fixed HTTPS hosts, hashes bounded response bytes after retrieval, stores a local metadata/excerpt snapshot, and produces deterministic point-in-time JSON/CSV exports of frozen protocols, reviewer agreement and source digests. This is **document retrieval verification, not independent adjudication of a claim or outcome**. No verified prediction metrics or reviewer identities are exported. Feature remains single-user, loopback-only, draft. See [v0.36 limitations](docs/V036_OUTCOME_SOURCE_ARCHIVE.md).
+
+---
+
 # TradeScope v0.35 — Evidence Validation and Prospective Review
 
 **New:** [Evidence Validation workspace](agent-validation.html) adds deterministic claim-reference scores (metadata traceability, not truth/probability), two-reviewer adversarial comparison assessments, immutable preregistration of outcome criteria and future horizons, dated manually attested outcome labels, a private hash-linked audit journal, and descriptive candidate/control counts. Reviewer aliases are unauthenticated; agreements are explicitly NOT independently verified labels. No verified precision, recall or false-positive rate is claimed. See [v0.35 documentation](docs/V035_EVIDENCE_VALIDATION.md). PR #19 remains draft.

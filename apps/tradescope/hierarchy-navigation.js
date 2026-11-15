@@ -57,7 +57,9 @@ const TREE=[
   {id:'agent-review',label:'Research Review',tools:[
    {id:'agent-runs',label:'Saved Research Runs',href:'/agent-desk.html#saved-runs'},
    {id:'agent-validation',label:'Evidence Validation',href:'/agent-validation.html'},
-   {id:'prospective-review',label:'Prospective Review',href:'/agent-validation.html#prospective-protocol'}]}]},
+   {id:'prospective-review',label:'Prospective Review',href:'/agent-validation.html#prospective-protocol'},
+   {id:'outcome-evidence',label:'Official Evidence Archive',href:'/agent-validation.html#official-source-evidence'},
+   {id:'dataset-export',label:'Dataset Export',href:'/agent-validation.html#dataset-export'}]}]},
  {id:'operations',label:'Research Operations',sections:[
   {id:'sources',label:'Sources & Provenance',tools:[
    {id:'source-control',label:'Source Control',href:'/source-control.html'},

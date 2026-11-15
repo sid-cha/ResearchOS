@@ -66,6 +66,8 @@ function renderAudit(data){
  for(const c of data.claims)box.append(claimCard(c));
  if(!data.claims.length)add(box,'p','This research run has no individually scored claims.');
  showPairs();outcomeStatus();
+ void loadOfficialSnapshots();
+ $('captureOfficialSource').disabled=!writeEnabled||!data.outcome;
  $('submitPairReview').disabled=!writeEnabled||!data.pairs.length;
  $('registerOutcome').disabled=!writeEnabled||Boolean(data.outcome);
  $('submitOutcomeReview').disabled=!writeEnabled||!data.outcome||
@@ -137,6 +139,81 @@ async function mutation(op,payload){
   }
  }
 }
+
+/* v0.36 source-capture and point-in-time export. No provider fetch until explicit user click. */
+async function evidenceRequest(route,{method='GET',payload=null}={}){
+ const response=await fetch('/api/outcome-evidence/'+route,{
+  method,cache:'no-store',
+  headers:payload?{'Content-Type':'application/json','X-ResearchOS-Outcome-Capture':'1'}:{},
+  body:payload?JSON.stringify(payload):undefined});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(data.error||'Source evidence request unavailable');
+ return data;
+}
+async function loadOfficialSnapshots(){
+ const box=$('capturedSourceList');box.replaceChildren();
+ if(!chosenRun){add(box,'p','Choose a saved research run first.');return;}
+ try{
+  const data=await evidenceRequest('snapshots?runId='+encodeURIComponent(chosenRun));
+  if(!data.snapshots.length){
+   add(box,'p','No original HTTP content snapshots retained for this run.');
+   return;
+  }
+  for(const snap of data.snapshots){
+   const card=add(box,'div',undefined,'validation-claim');
+   add(card,'strong',snap.sourceUrl);
+   add(card,'small','Captured '+snap.capturedAt+' · '+snap.responseBytes+' bytes · '+snap.mediaType);
+   add(card,'small','SHA-256 '+snap.bodySha256);
+   add(card,'p',snap.excerpt);
+   add(card,'small','Content observed only. Claim semantics and original publication time unverified.');
+  }
+ }catch(e){add(box,'p','Could not read source snapshots: '+e.message);}
+}
+$('captureSourceForm').addEventListener('submit',event=>{
+ event.preventDefault();
+ if(!audit?.outcome){put('captureSourceStatus','No preregistered outcome exists.');return;}
+ const sourceUrl=$('captureSourceUrl').value.trim();
+ $('captureOfficialSource').disabled=true;
+ put('captureSourceStatus','Retrieving an explicitly reviewed, allowlisted official-source document…');
+ void evidenceRequest('capture',{method:'POST',payload:{
+  runId:chosenRun,registrationId:audit.outcome.registrationId,sourceUrl
+ }}).then(async result=>{
+  put('captureSourceStatus',(result.deduplicated?'Already captured':'Source captured')+
+   ' · '+result.capturedAt+' · SHA-256 '+result.bodySha256+
+   '. This confirms fetched HTTP bytes, NOT the review outcome.');
+  await loadOfficialSnapshots();
+ }).catch(error=>put('captureSourceStatus','Official source capture rejected: '+error.message))
+ .finally(()=>{$('captureOfficialSource').disabled=!writeEnabled||!audit?.outcome;});
+});
+async function exportDataset(format){
+ const cutoff=$('datasetAsOf').value.trim();
+ if(cutoff&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(cutoff)||
+  !Number.isFinite(Date.parse(cutoff)))){
+  put('datasetStatus','Enter a full UTC ISO timestamp such as 2026-11-15T18:00:00Z.');return;
+ }
+ const query=new URLSearchParams({format});if(cutoff)query.set('asOf',cutoff);
+ for(const id of ['downloadDatasetJson','downloadDatasetCsv'])$(id).disabled=true;
+ put('datasetStatus','Generating point-in-time export from the private local archive…');
+ try{
+  const response=await fetch('/api/outcome-evidence/dataset?'+query.toString(),{cache:'no-store'});
+  if(!response.ok){const e=await response.json().catch(()=>({}));
+   throw Error(e.error||'Dataset export unavailable');}
+  const body=await response.text();
+  const blob=new Blob([body],{type:format==='csv'?'text/csv;charset=utf-8':'application/json;charset=utf-8'});
+  const href=URL.createObjectURL(blob),link=document.createElement('a');
+  link.href=href;link.download='ResearchOS_v036_prospective_'+(cutoff||'latest').replace(/[^a-zA-Z0-9_-]/g,'_')+'.'+format;
+  document.body.append(link);link.click();link.remove();URL.revokeObjectURL(href);
+  if(format==='json'){
+   const result=JSON.parse(body);
+   put('datasetStatus','Exported '+result.rows.length+' preregistered rows as-of '+
+    result.asOf+' · manifest '+result.manifestSha256+
+    '. No reviewer identities or verified prediction metrics.');
+  }else put('datasetStatus','Exported CSV with a point-in-time manifest digest. All reported outcomes remain unverified.');
+ }catch(e){put('datasetStatus','Dataset export failed: '+e.message);}
+ finally{for(const id of ['downloadDatasetJson','downloadDatasetCsv'])$(id).disabled=false;}
+}
+$('downloadDatasetJson').addEventListener('click',()=>void exportDataset('json'));
+$('downloadDatasetCsv').addEventListener('click',()=>void exportDataset('csv'));
 $('validationRun').addEventListener('change',()=>{
  $('loadAudit').disabled=!$('validationRun').value;
  chosenRun=null;audit=null;
@@ -170,7 +247,7 @@ $('outcomeReviewForm').addEventListener('submit',event=>{
   rationale:$('outcomeRationale').value.trim(),
   evidenceUrl:$('outcomeEvidenceUrl').value.trim(),
   evidencePublishedAt:$('outcomePublished').value.trim()
- }).then(result=>{if(result)$('outcomeRationale').value='';});
+ }).then(result=>{if(result){$('outcomeRationale').value='';$('captureSourceUrl').value=$('outcomeEvidenceUrl').value.trim();}});
 });
 $('refreshValidationReport').addEventListener('click',()=>void loadReport().catch(e=>warning(e.message)));
 void (async()=>{

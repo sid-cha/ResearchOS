@@ -308,8 +308,48 @@ export function createResearchValidation({desk,filename,now=()=>new Date().toISO
     'Reviewers use unauthenticated aliases. Agreements are NOT independently verified outcomes.',
     'No certified negative sample, market counterfactual, sampling denominator or calibrated model.']};
  }
+ // Internal, permissionless READ-ONLY projections for local v0.36 source capture.
+ // Do not expose reviewer aliases, rationales, or individual blinded decisions to the browser.
+ async function evidenceLinks(runId){
+  const run=await getRun(runId);
+  await queue;await load();
+  const reg=registration(run);
+  if(!reg)return {runId,registrationId:null,links:[]};
+  const labels=withRun(run).filter(e=>e.kind==='LABEL_OUTCOME'&&e.payload.registrationId===reg.id);
+  return {runId,registrationId:reg.id,windowEndsAt:reg.payload.windowEndsAt,
+   links:[...new Set(labels.map(e=>e.payload.evidenceUrl))].map(url=>({
+    url,publishedAt:labels.find(e=>e.payload.evidenceUrl===url).payload.evidencePublishedAt}))};
+ }
+ // Dataset rows are projected as-of local capture; future labels and reviewer notes cannot leak backward.
+ async function datasetRows({asOf=null}={}){
+  const cutoff=asOf||timestamp();
+  if(!instant(cutoff)||Date.parse(cutoff)>Date.parse(timestamp()))
+   throw failure('Dataset cutoff must be a nonfuture UTC instant');
+  await queue;await load();
+  const regs=doc.entries.filter(e=>e.kind==='REGISTER'&&Date.parse(e.at)<=Date.parse(cutoff));
+  const rows=[];
+  for(const reg of regs){
+   const run=await getRun(reg.runId);
+   if(run.integrity!==reg.runIntegrity||Date.parse(run.createdAt)>Date.parse(cutoff))
+    throw failure('Prospective run integrity/cutoff mismatch',500);
+   const labels=doc.entries.filter(e=>e.kind==='LABEL_OUTCOME'&&
+    e.payload.registrationId===reg.id&&e.runId===run.id&&
+    Date.parse(e.at)<=Date.parse(cutoff));
+   const status=summaryStatus(labels,'decision');
+   const agreed= status==='TWO_ALIASES_AGREE_UNVERIFIED'?labels[0].payload.decision:null;
+   rows.push({runId:run.id,runIntegrity:run.integrity,runCreatedAt:run.createdAt,
+    runKnowledgeAsOf:run.asOf,eventId:run.debate.focusEventId,
+    registrationId:reg.id,registeredAt:reg.at,horizonEndsAt:reg.payload.windowEndsAt,
+    criterion:reg.payload.operationalCriterion,question:reg.payload.question,
+    operatorDeclaredCohort:reg.payload.signalTag,
+    reviewStatus:status,reviewCount:labels.length,reviewCompletedAt:labels.length===2?labels[1].at:null,
+    agreedHumanAttestation:agreed,groundTruthVerified:false,
+    reviewerIdentityVerified:false,sourceDocumentSemanticsVerified:false});
+  }
+  return {asOf:cutoff,rows:rows.sort((a,b)=>a.registeredAt.localeCompare(b.registeredAt)||a.registrationId.localeCompare(b.registrationId))};
+ }
  async function close(){await queue;}
- return {catalog,runAudit,register,reviewPair,labelOutcome,report,close};
+ return {catalog,runAudit,register,reviewPair,labelOutcome,report,evidenceLinks,datasetRows,close};
 }
 const response=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data));};

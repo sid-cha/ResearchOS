@@ -7,7 +7,7 @@
 </head><body>
 <header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
 <nav aria-label="Workspaces"><a href="/agent-desk.html">Research Agent Desk</a></nav>
-<span class="desk-version">v0.35 · AUDIT PILOT</span></header>
+<span class="desk-version">v0.36 · SOURCE CAPTURE & EXPORT PILOT</span></header>
 <main class="desk-main">
 <section class="desk-hero">
 <p class="eyebrow">RESEARCH AGENTS / EVIDENCE AUDIT / PROSPECTIVE OUTCOMES</p>
@@ -99,12 +99,41 @@
   </form>
  </div>
 </section>
+<section id="official-source-evidence" class="desk-panel">
+ <div class="panel-heading"><h2>06 / Capture reviewed official-source evidence</h2><span>BOUNDED / READ-ONLY FETCH</span></div>
+ <div class="panel-body">
+  <p>After an outcome horizon has ended and a reviewer has submitted an evidence URL, capture its actual HTTP response from an approved official host. The content digest and capture clock can be audited, but this does not prove the underlying outcome.</p>
+  <p>Allowed hosts: SEC, USGS earthquakes, NASA EONET, FAA NAS Status/FAA.gov, NWS and EPA. PDF and arbitrary external URLs are intentionally not supported.</p>
+  <form id="captureSourceForm">
+   <label for="captureSourceUrl">OFFICIAL URL ALREADY SUBMITTED WITH AN OUTCOME ATTESTATION
+    <input id="captureSourceUrl" maxlength="650" type="url" required placeholder="https://www.sec.gov/Archives/edgar/data/..."></label>
+   <button id="captureOfficialSource" type="submit" disabled>Capture &amp; hash official document</button>
+  </form>
+  <p class="validation-hint" id="captureSourceStatus" role="status" aria-live="polite">Choose a run with a registered outcome and a submitted source link.</p>
+  <div id="capturedSourceList" class="validation-claims"><p>No source snapshots loaded.</p></div>
+ </div>
+</section>
+<section id="dataset-export" class="desk-panel">
+ <div class="panel-heading"><h2>07 / Reproducible dataset export</h2><span>JSON / CSV · DESCRIPTIVE ONLY</span></div>
+ <div class="panel-body">
+  <p>Export frozen outcome definitions, locally available reviewer-agreement status, capture hashes and a deterministic manifest. Reviewer aliases, private rationales and unverified performance metrics are omitted.</p>
+  <div class="desk-form-grid">
+   <label for="datasetAsOf">AS-OF UTC (OPTIONAL)
+    <input id="datasetAsOf" placeholder="Latest local evidence" maxlength="32" autocomplete="off"></label>
+   <div class="desk-actions" style="align-items:end;margin-bottom:14px">
+    <button id="downloadDatasetJson" type="button" class="secondary">Download JSON</button>
+    <button id="downloadDatasetCsv" type="button" class="secondary">Download CSV</button>
+   </div>
+  </div>
+  <p id="datasetStatus" class="validation-status" role="status" aria-live="polite">No dataset exported. Historical as-of exports never include later outcome reviews or source snapshots.</p>
+ </div>
+</section>
 <section id="prospective-report" class="desk-panel">
- <div class="panel-heading"><h2>06 / Prospective evaluation ledger</h2><span>DESCRIPTIVE / NOT VALIDATED</span></div>
+ <div class="panel-heading"><h2>08 / Prospective evaluation ledger</h2><span>DESCRIPTIVE / NOT VALIDATED</span></div>
  <div class="panel-body"><div id="validationReport">No outcome cohort report loaded.</div>
   <div class="desk-actions"><button id="refreshValidationReport" class="secondary">Refresh report</button></div>
  </div>
 </section>
-<footer>ResearchOS v0.35 · Private, manually attested research validation · No financial predictions, autonomous trading or certified accuracy.</footer>
+<footer>ResearchOS v0.36 · Private, manually attested research validation · No financial predictions, autonomous trading or certified accuracy.</footer>
 </main>
 <script src="/agent-validation.js"></script><script src="/hierarchy-navigation.js"></script></body></html>

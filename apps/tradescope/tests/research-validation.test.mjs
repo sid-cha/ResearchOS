@@ -214,3 +214,30 @@ test('validation UI is packaged as explicit public assets, with no private journ
  assert(!html.includes('APCA_API_SECRET_KEY'));
  assert.equal(OUTCOME_PROTOCOL,'PROSPECTIVE-DUAL-REVIEW-0.35.1');
 });
+
+test('v0.36 dataset projection preserves the preregistration cutoff and hides pre-second-review verdicts',async t=>{
+ const h=await setup(t),registered=await h.service.register(registration(h.run));
+ const before=await h.service.datasetRows({asOf:T1});
+ assert.equal(before.rows.length,1);
+ assert.equal(before.rows[0].reviewStatus,'NOT_REVIEWED');
+ assert.equal(before.rows[0].agreedHumanAttestation,null);
+ assert.equal((await h.service.evidenceLinks(h.run.id)).links.length,0);
+ h.setNow(T2);
+ await h.service.labelOutcome(label(h.run,registered.registrationId,'Reviewer_A','OBSERVED'));
+ const first=await h.service.datasetRows({asOf:T2});
+ assert.equal(first.rows[0].reviewCount,1);
+ assert.equal(first.rows[0].agreedHumanAttestation,null);
+ const listed=await h.service.evidenceLinks(h.run.id);
+ assert.equal(listed.registrationId,registered.registrationId);
+ assert.equal(listed.links.length,1);
+ assert.equal(listed.links[0].url,'https://www.sec.gov/Archives/edgar/data/123/filing.html');
+ await h.service.labelOutcome(label(h.run,registered.registrationId,'Reviewer_B','OBSERVED'));
+ const final=await h.service.datasetRows({asOf:T2});
+ assert.equal(final.rows[0].reviewCount,2);
+ assert.equal(final.rows[0].agreedHumanAttestation,'OBSERVED');
+ assert.equal(final.rows[0].groundTruthVerified,false);
+ assert.equal((await h.service.datasetRows({asOf:T1})).rows[0].reviewCount,0);
+ assert(!JSON.stringify(final).includes('Reviewer_A'));
+ assert(!JSON.stringify(final).includes('The dated primary notice'));
+ await assert.rejects(h.service.datasetRows({asOf:'2026-11-20T00:00:00.000Z'}),{status:400});
+});
