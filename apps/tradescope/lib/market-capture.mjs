@@ -109,7 +109,7 @@ export function createMarketCapture({stream,dir,enabled=false,rightsAcknowledged
     s.ending=true;detach(s);if(current===s)current=null;onIdle();
    }
   });
-  if(entry.kind==='observation'&&++s.enqueued>=maxRows)void seal(s,'record_limit').catch(()=>{});
+  if(entry.kind==='observation'&&++s.enqueued>=maxRows)lastStop=seal(s,'record_limit');
  }
  async function start(){
   if(!enabledHere)throw problem('Enable capture and acknowledge provider retention rights locally',403);
@@ -183,7 +183,7 @@ export function createMarketCapture({stream,dir,enabled=false,rightsAcknowledged
   return {id,source:'ALPACA_IEX_CAPTURE',ruleVersion:'v0.30-replay-1',status:s.status,
    verified:s.verified,terminalHash:s.terminalHash,total:s.count,offset,limit,
    nextOffset:offset+limit<s.count?offset+limit:null,interruptions:s.interruptions,
-   coverage:'single-venue',continuity:'unknown',observations:scored.slice(offset,offset+limit),
+   coverage:'single-venue',continuity:'unknown',gaps:'unknown',observations:scored.slice(offset,offset+limit),
    note:'Deterministic VOL-01 replay from captured IEX messages; not a consolidated market tape.'};
  }
  async function close(){if(current)await stop('server_shutdown');}

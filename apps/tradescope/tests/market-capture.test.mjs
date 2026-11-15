@@ -78,7 +78,7 @@ test('bounded capture count automatically seals the journal and disallows new wr
  const {stream,capture}=await make(t,{maxRows:2,maxSessions:1});
  const id=(await capture.start()).active.id;
  stream.emit('observation',observation(5));stream.emit('observation',observation(6));
- await new Promise(setImmediate);
+ await capture.stop(); // Await the queued automatic record-limit seal.
  const data=await capture.readSession(id);
  assert.equal(data.status,'COMPLETE');assert.equal(data.count,2);
  await assert.rejects(capture.start(),{status:409});
