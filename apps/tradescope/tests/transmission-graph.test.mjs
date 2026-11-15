@@ -14,7 +14,8 @@ const climate={asOf:async()=>archived()};
 test('three typed transmission networks are directed, source-linked, bounded and have no fabricated company exposure',async()=>{
  const service=createTransmissionGraph({climate,now});
  const catalog=service.catalog();
- assert.deepEqual(catalog.graphs.map(g=>g.id),['enso-fertilizer','wildfire-insurance','snow-hydropower']);
+ assert.deepEqual(catalog.graphs.slice(0,3).map(g=>g.id),['enso-fertilizer','wildfire-insurance','snow-hydropower']);
+ assert.equal(catalog.graphs.length,12);
  assert.equal(catalog.predictionModel,false);
  for(const item of catalog.graphs){
   const graph=await service.graph({id:item.id});
@@ -85,7 +86,7 @@ test('transmission API remains read-only, validates query fields and returns no 
  const base='http://127.0.0.1:'+server.address().port;
  const catalog=await fetch(base+'/api/transmission/catalog');
  assert.equal(catalog.status,200);
- assert.equal((await catalog.json()).graphs.length,3);
+ assert.equal((await catalog.json()).graphs.length,12);
  const result=await fetch(base+'/api/transmission/graph?id=enso-fertilizer&asOf=2020-02-15');
  assert.equal(result.status,200);
  const graph=await result.json();

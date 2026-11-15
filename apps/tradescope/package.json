@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.9.0",
-  "description": "TradeScope scheduled research monitoring, pilot Market Atlas and optional Java snapshot storage",
+  "version": "0.28.0",
+  "description": "TradeScope cross-domain Event Intelligence and FAA pre-event evidence research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
