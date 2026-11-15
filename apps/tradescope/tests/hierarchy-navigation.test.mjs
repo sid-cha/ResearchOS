@@ -109,6 +109,7 @@ test('market view supports deep-link initialization, hash changes and history sy
  const code=await read('market-hub.js');
  assert.doesNotThrow(()=>new vm.Script(code));
  assert.match(code,/window\.history\.replaceState/);
+ assert.match(js,/if\(isRoot\(\)&&rootPath\(target\.pathname\)===rootPath\(window\.location\.pathname\)\)/);
  assert.match(code,/addEventListener\('hashchange'/);
  assert.match(code,/changeView\(\['overview'/);
 });

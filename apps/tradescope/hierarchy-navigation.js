@@ -103,7 +103,9 @@ function render(){
   makeNav('LEVEL 2 · MODULE',group.sections,section.id,item=>{selectedSection=item.id;render();}),
   makeNav('LEVEL 3 · TOOLS',section.tools,null,(item,event)=>{
    const target=new URL(item.href,window.location.origin);
-   if(rootPath(target.pathname)===rootPath(window.location.pathname)){
+   // Let native hash navigation activate existing standalone view-tab controllers and anchor scrolling.
+   // The terminal uses controlled in-page workspaces, so it handles its own hash route explicitly.
+   if(isRoot()&&rootPath(target.pathname)===rootPath(window.location.pathname)){
     event.preventDefault();
     if(window.location.pathname+window.location.hash!==target.pathname+target.hash){
      window.history.pushState(null,'',target.pathname+target.hash);
