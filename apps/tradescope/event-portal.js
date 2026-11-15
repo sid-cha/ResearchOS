@@ -65,6 +65,97 @@ async function refreshFaa(){
  }catch(e){if(version===faaSeq){$('faaStatus').textContent='FAA status unavailable: '+e.message+'. No fallback live data is assumed.';}}
  finally{if(version===faaSeq)button.disabled=false;}
 }
+
+// v0.32 source-observed global event collection (not the curated retrospective case).
+const eventApi=async(route,options={})=>{
+ const r=await fetch('/api/global-events/'+route,{cache:'no-store',...options});
+ const data=await r.json().catch(()=>({}));
+ if(!r.ok)throw Error(data.error||'Event archive unavailable');
+ return data;
+};
+let globalSeq=0,detailsSeq=0,collectionActive=false;
+const feedMessage=msg=>{$('globalFeedMessage').textContent=msg;};
+async function globalStatus(){
+ const data=await eventApi('status');
+ collectionActive=data.enabled===true;
+ $('globalFeedState').textContent=(collectionActive?'ENABLED':'DISABLED')+' · '+data.eventCount+' SAVED EVENTS';
+ $('globalPoll').disabled=!collectionActive;
+ $('globalProviders').innerHTML=data.sources.map(x=>
+  '<div class="global-provider"><strong>'+esc(x.name)+'</strong><span class="'+(x.status==='failed'?'global-failure':'')+'">'+
+  esc(x.status.replaceAll('_',' '))+'</span><small>Last checked: '+esc(x.lastCheckedAt||'not yet')+
+  ' · Latest success: '+esc(x.lastSuccessAt||'not yet')+'</small>'+
+  '<small>'+esc(x.coverage)+'</small>'+(x.error?'<small>'+esc(x.error)+'</small>':'')+'</div>').join('');
+ return data;
+}
+async function globalList(){
+ const seq=++globalSeq;
+ const source=$('globalSource').value,family=$('globalFamily').value,asOf=$('globalAsOf').value.trim();
+ if(asOf&&(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(asOf)||!Number.isFinite(Date.parse(asOf)))){
+  feedMessage('Knowledge as-of must be a full UTC ISO instant, for example 2026-11-13T20:53:00Z.');
+  return;
+ }
+ $('globalListRefresh').disabled=true;
+ try{
+  const query=new URLSearchParams({limit:'100'});
+  if(source)query.set('source',source);if(family)query.set('family',family);if(asOf)query.set('asOf',asOf);
+  const data=await eventApi('events?'+query.toString());if(seq!==globalSeq)return;
+  feedMessage(data.total+' event(s) match your captured-source filter'+(data.isPartial?' · displaying first 100':'')+
+   '. Local first-seen evidence begins only when this collector first ran.');
+  $('globalEventList').innerHTML=data.events.length?data.events.map(e=>
+   '<article class="collected-event"><div class="item-top"><span>'+esc(e.source)+' · '+esc(e.type)+'</span><span>REV '+esc(e.revision)+'</span></div>'+
+   '<h3>'+esc(e.title)+'</h3><p>'+esc(e.description)+'</p>'+
+   '<div class="collected-times"><span>Source event: '+esc(e.eventTime||'unavailable')+'</span>'+
+   '<span>First locally observed: '+esc(e.firstObservedAt)+'</span>'+
+   '<span>Latest captured revision: '+esc(e.lastRevisionCapturedAt)+'</span></div>'+
+   '<div class="item-foot">'+link(e.sourceUrl,'Official source')+
+   ' <button type="button" class="event-detail-button" data-global-id="'+esc(e.id)+'">Revision evidence</button></div>'+
+   '</article>').join(''):'<div class="empty">No locally captured source events match. A bounded feed can be empty or unavailable without proving no disruptions.</div>';
+ }catch(e){if(seq===globalSeq)feedMessage('Could not read source archive: '+e.message);}
+ finally{if(seq===globalSeq)$('globalListRefresh').disabled=false;}
+}
+async function globalDetail(id){
+ const seq=++detailsSeq;
+ $('globalEventDetail').textContent='Verifying revision history…';
+ try{
+  const data=await eventApi('detail?id='+encodeURIComponent(id));if(seq!==detailsSeq)return;
+  $('globalEventDetail').innerHTML='<strong>Verified local revision history</strong>'+
+  '<p>'+esc(data.id)+' · first observed '+esc(data.firstObservedAt)+'</p>'+
+  data.revisions.map(r=>'<article class="revision-item"><strong>Revision '+esc(r.version)+'</strong>'+
+   '<small>Local capture: '+esc(r.capturedAt)+'</small>'+
+   '<small>Source updated: '+esc(r.event.providerUpdatedAt||'unavailable')+'</small>'+
+   '<small>SHA-256: '+esc(r.contentHash.slice(0,20))+'…</small></article>').join('')+
+  '<p>'+esc(data.warning)+'</p>';
+ }catch(e){if(seq===detailsSeq)$('globalEventDetail').textContent='Revision history unavailable: '+e.message;}
+}
+async function globalPoll(){
+ if(!collectionActive){feedMessage('Collection is disabled; review the private server configuration first.');return;}
+ $('globalPoll').disabled=true;feedMessage('Collecting fixed official feeds. Failed sources will not be misreported as healthy.');
+ try{
+  const data=await eventApi('refresh',{method:'POST',
+   headers:{'Content-Type':'application/json','X-ResearchOS-Event-Refresh':'1'},body:'{}'});
+  feedMessage('Local collection completed at '+data.capturedAt+' · '+data.results.map(x=>
+   x.source+': '+(x.status==='ok'?x.added+' new, '+x.revised+' changed':x.error)).join(' · '));
+  await globalStatus();
+  await globalList();
+ }catch(e){feedMessage('Collection failed: '+e.message+'. Existing evidence was not replaced.');}
+ finally{$('globalPoll').disabled=!collectionActive;}
+}
+$('globalPoll').addEventListener('click',globalPoll);
+$('globalListRefresh').addEventListener('click',globalList);
+$('globalSource').addEventListener('change',globalList);
+$('globalFamily').addEventListener('change',globalList);
+$('globalEventList').addEventListener('click',e=>{
+ const id=e.target.closest('[data-global-id]')?.dataset.globalId;if(id)void globalDetail(id);
+});
+async function initGlobalFeed(){
+ try{
+  const info=await globalStatus();
+  if(!info.enabled)feedMessage('Collection disabled by default. Set GLOBAL_EVENT_COLLECTION_ENABLED=true in your ignored local .env and restart Node. No external request has been made by this page.');
+  await globalList();
+ }catch(e){feedMessage('Local event collection service unavailable: '+e.message);}
+}
+void initGlobalFeed();
+
 $('loadCase').addEventListener('click',runCase);
 $('asOf').addEventListener('change',runCase);
 $('refreshFaa').addEventListener('click',refreshFaa);

@@ -1,8 +1,8 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.31.0",
-  "description": "TradeScope cross-domain Event Intelligence and FAA pre-event evidence research",
+  "version": "0.32.0",
+  "description": "ResearchOS global event intake, revision-aware provenance and market capture research",
   "type": "module",
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",

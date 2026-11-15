@@ -37,6 +37,7 @@ import {createExposureRegistry,createGeoExposureService,createGeoExposureApi} fr
 import {createEpaFrsLookup,createFacilityVerificationApi} from './lib/epa-frs.mjs';
 import {createSecRegistrantLookup} from './lib/sec-registrant.mjs';
 import {createEventIntelligenceApi} from './lib/event-intelligence.mjs';
+import {createGlobalEventCollector,createGlobalEventApi} from './lib/global-event-collector.mjs';
 import {createExposureCasebook,createExposureProofService,createExposureProofApi} from './lib/exposure-proof.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -159,8 +160,14 @@ function publicQuote(symbol,q){if(!q||typeof q.t!=='string')return null;return {
 function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_SYMBOLS){const a=snapshots?.[sym];if(!a)continue;result[sym]={trade:publicTrade(sym,a.latestTrade),quote:publicQuote(sym,a.latestQuote),minuteBar:a.minuteBar?{time:a.minuteBar.t,open:a.minuteBar.o,high:a.minuteBar.h,low:a.minuteBar.l,close:a.minuteBar.c,volume:a.minuteBar.v}:null,previousClose:Number(a.prevDailyBar?.c)||null};}return result;}
 
 const defaultEventIntelligenceApi=createEventIntelligenceApi();
+const defaultGlobalEvents=createGlobalEventCollector({
+ filename:process.env.GLOBAL_EVENT_STORE_PATH||path.join(ROOT,'.local-data','global-events.json'),
+ enabled:process.env.GLOBAL_EVENT_COLLECTION_ENABLED==='true'&&['127.0.0.1','localhost','::1'].includes(HOST),
+ autoPoll:process.env.GLOBAL_EVENT_AUTO_POLL_ENABLED==='true',
+ intervalMs:Math.max(60000,Math.min(3600000,(Number(process.env.GLOBAL_EVENT_POLL_SECONDS)||300)*1000))
+});
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi,captureService=null} = {}){
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi,captureService=null,globalEvents=defaultGlobalEvents} = {}){
  const capture=captureService||createMarketCapture({stream:marketStream,
   dir:process.env.MARKET_CAPTURE_PATH||path.join(ROOT,'.local-data','market-captures'),
   enabled:process.env.MARKET_CAPTURE_ENABLED==='true'&&['127.0.0.1','localhost','::1'].includes(HOST),
@@ -169,6 +176,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
  });
  const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream,keepAlive:()=>capture.isRecording()});
  const captureApi=createMarketCaptureApi({service:capture,host:HOST});
+ const globalEventApi=createGlobalEventApi({collector:globalEvents,host:HOST});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
   try{
@@ -179,6 +187,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await intradayChartApi(req,res,u))return;
     if(await crisisAtlasApi(req,res,u))return;
     if(await climateApi(req,res,u))return;
+    if(await globalEventApi(req,res,u))return;
     if(await eventIntelligenceApi(req,res,u))return;
     if(await exposureProofApi(req,res,u))return;
     if(await facilityVerificationApi(req,res,u))return;
@@ -226,16 +235,18 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
  // Close delivery before HTTP shutdown because SSE connections are long-lived.
  server.closeMarketData=()=>delivery.close();
  server.closeCapture=()=>capture.close();
+ server.closeGlobalEvents=()=>globalEvents.close?.();
  server.closeResearch=()=>{researchApi.close?.();commodityWorkbench.close?.();};
- server.once('listening',async()=>{try{await researchApi.start?.();}catch{console.error('Local research monitoring could not start; check the monitor store.');}
+ server.once('listening',async()=>{try{globalEvents.start?.();}catch{console.error('Global event collector could not start.');}
+  try{await researchApi.start?.();}catch{console.error('Local research monitoring could not start; check the monitor store.');}
   try{await commodityWorkbench.start?.();}catch{console.error('Local commodity pilot scheduler could not start; check its store.');}});
- server.once('close',()=>{delivery.close();void capture.close();server.closeResearch();});
+ server.once('close',()=>{delivery.close();void capture.close();void globalEvents.close?.();server.closeResearch();});
  return server;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const server=createServer();
   server.listen(PORT,HOST,()=>{console.log(`TradeScope local: http://${HOST}:${PORT}`);console.log(`Alpaca credentials: ${KEY&&SECRET?'configured':'missing (demo is still available)'}`);});
-  const shutdown=async()=>{server.closeResearch();await server.closeCapture();server.closeMarketData();server.close();};
+  const shutdown=async()=>{server.closeResearch();await server.closeGlobalEvents();await server.closeCapture();server.closeMarketData();server.close();};
   process.once('SIGINT',shutdown);process.once('SIGTERM',shutdown);
 }
 export {isoDateValid,sanitizeSnapshots,publicTrade,publicQuote};

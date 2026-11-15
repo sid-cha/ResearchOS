@@ -9,7 +9,7 @@
 <header class="topbar">
  <a class="brand" href="/"><span class="brandmark">R<span>.</span></span><span><strong>RESEARCH<span>OS</span></strong><small>EVENT INTELLIGENCE</small></span></a>
  <nav aria-label="Product navigation"><a href="/market-hub.html">Markets</a><a href="/transmission-lab.html">Transmission Lab</a><a href="/exposure-review.html">Exposure Proof</a><a href="/evidence-ledger.html">Evidence Ledger</a><a href="/source-control.html">Data Sources</a></nav>
- <span class="build-tag">v0.28 · RESEARCH PILOT</span>
+ <span class="build-tag">v0.32 · LOCAL EVENT COLLECTION PILOT</span>
 </header>
 <main>
  <section class="hero">
@@ -20,13 +20,32 @@
   <div class="hero-stats" aria-label="Catalog scope"><div><strong id="familyCount">8</strong><span>EVENT FAMILIES</span></div><div><strong id="scenarioCount">—</strong><span>RESEARCH PATHWAYS</span></div><div><strong id="verifiedCount">0</strong><span>VALIDATED OUTCOMES IN THIS PILOT</span></div></div>
  </section>
  <div class="warning"><strong>Evidence boundary</strong> Vulnerability documents are research leads, not a prediction of any specific disaster. FAA live status is airport-level, not a complete historical archive of nationwide orders. No automated trading or verified company loss forecast.</div>
+ <section id="global-feed" class="library-section collector-section">
+  <div class="section-title"><div><p class="eyebrow">01 / CAPTURED SOURCE EVENTS</p>
+   <h2>Global event collection</h2><p>USGS earthquakes, NASA natural hazards and FAA airport advisories, each with its own source clock, local first-observed timestamp and revisions.</p></div>
+   <span id="globalFeedState" class="quiet-pill">Checking local collector…</span></div>
+  <div class="warning"><strong>Source integrity:</strong> Local first observed is the time this ResearchOS instance first captured the normalized event, not the original first public alert. An event absent from a bounded provider response is not automatically resolved. These events do not establish issuer exposure, market losses or predictions.</div>
+  <div class="case-controls collector-controls">
+   <label for="globalSource">PROVIDER<select id="globalSource"><option value="">All captured providers</option><option value="USGS">USGS earthquakes</option><option value="NASA_EONET">NASA EONET hazards</option><option value="FAA_NAS_STATUS">FAA airport events</option></select></label>
+   <label for="globalFamily">FAMILY<select id="globalFamily"><option value="">All families</option><option value="climate">Climate &amp; disasters</option><option value="aviation">Aviation &amp; transport</option></select></label>
+   <label for="globalAsOf">KNOWLEDGE AS-OF (UTC)<input id="globalAsOf" maxlength="35" autocomplete="off" placeholder="2026-11-13T20:53:00Z" aria-description="Optional full ISO timestamp for point-in-time local knowledge"></label>
+   <button type="button" class="action outline" id="globalListRefresh">View stored events</button>
+   <button type="button" class="action" id="globalPoll">Collect permitted sources now</button>
+  </div>
+  <div id="globalProviders" class="global-source-status" aria-live="polite"></div>
+  <p id="globalFeedMessage" class="live-status" role="status" aria-live="polite">Event collection is off by default. Enable locally before requesting any external data.</p>
+  <div class="collector-grid">
+   <div id="globalEventList" class="collector-list"><div class="empty">No saved source events loaded.</div></div>
+   <aside id="globalEventDetail" class="collector-detail"><strong>Evidence &amp; revisions</strong><p>Inspect a saved event to review its locally observed revisions.</p></aside>
+  </div>
+ </section>
  <section id="event-library" class="library-section">
-  <div class="section-title"><div><p class="eyebrow">01 / EVENT UNIVERSE</p><h2>Browse themes and event pathways</h2><p>The event model is universal. Data contracts, failure mechanisms and economic consequences vary by scenario.</p></div><span id="catalogStatus" class="quiet-pill">Loading registry…</span></div>
+  <div class="section-title"><div><p class="eyebrow">02 / EVENT UNIVERSE</p><h2>Browse themes and event pathways</h2><p>The event model is universal. Data contracts, failure mechanisms and economic consequences vary by scenario.</p></div><span id="catalogStatus" class="quiet-pill">Loading registry…</span></div>
   <div class="filterbar"><label for="familyFilter">EVENT FAMILY<select id="familyFilter"><option value="all">All event families</option></select></label><label for="scenarioSearch">SEARCH EVENTS<input id="scenarioSearch" placeholder="Airspace, drought, energy, sanctions…" maxlength="80" autocomplete="off"></label><span id="matches">—</span></div>
   <div id="scenarioList" class="scenario-grid" aria-live="polite"><p>Loading the integrated research registry…</p></div>
  </section>
  <section id="case-study" class="case-section">
-  <div class="section-title"><div><p class="eyebrow">02 / HISTORICAL RESEARCH & LIVE MONITORING</p><h2>FAA ground stop · November 13, 2026</h2><p>Research one event without confusing warnings that existed beforehand with facts learned afterward.</p></div><span class="quiet-pill">CASE: FAA-2026-11-13</span></div>
+  <div class="section-title"><div><p class="eyebrow">03 / HISTORICAL RESEARCH & LIVE MONITORING</p><h2>FAA ground stop · November 13, 2026</h2><p>Research one event without confusing warnings that existed beforehand with facts learned afterward.</p></div><span class="quiet-pill">CASE: FAA-2026-11-13</span></div>
   <div class="case-controls">
    <label for="asOf">KNOWLEDGE CHECKPOINT
     <select id="asOf">
@@ -61,7 +80,7 @@
    <div id="faaResults" class="faa-grid"></div>
   </section>
  </section>
- <footer><span>ResearchOS v0.28 · Local engineering pilot</span><span>All original sources remain independently linked · No prediction probability or financial impact certified</span></footer>
+ <footer><span>ResearchOS v0.32 · Local engineering pilot</span><span>All original sources remain independently linked · No prediction probability or financial impact certified</span></footer>
 </main>
 <script src="/event-portal.js" defer></script>
 <script src="/hierarchy-navigation.js"></script>

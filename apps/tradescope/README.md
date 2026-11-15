@@ -1,3 +1,9 @@
+# TradeScope v0.32 — Global Event Collection Engine
+
+**New:** [Captured Global Feed](event-portal.html#global-feed) joins three bounded official-source collectors, revision-aware local event storage, provider health, manual or opt-in scheduled ingestion, and captured-knowledge as-of queries. Source events remain evidence-only: no verified issuer exposure, inferred financial losses, or retrospective first-seen claims. Collection is off until explicitly enabled on loopback. See [v0.32 implementation guide](docs/V032_GLOBAL_EVENT_COLLECTION.md) for endpoints, retention bounds and testing status.
+
+---
+
 # TradeScope v0.30 / v0.31 — Capture, Replay and Docker Pilot
 
 **Built:** manual opt-in private normalized Alpaca IEX recording, bounded per-session SHA-256 integrity verification, reconnect interruption markers, paginated deterministic VOL-01 research replay, dedicated [Capture & Replay](market-capture.html) page, three-level navigation destination, and a separate nonroot Docker Compose Node workstation. Capture remains off until local enablement AND provider retention-rights acknowledgement; Docker mode forces capture off because its internal bridge bind is not loopback. No market-data license, complete tape, detection-parity proof or production readiness is asserted. See [v0.30–v0.31 guide](docs/V030_V031_CAPTURE_DOCKER.md). PR #19 remains draft.
