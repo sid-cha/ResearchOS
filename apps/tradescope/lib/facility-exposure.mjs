@@ -116,7 +116,7 @@ function verifyDocument(doc,maxEntries){
   if(!e||e.seq!==i||typeof e.id!=='string'||!/^crosswalk-[0-9a-f-]{36}$/i.test(e.id)||
    ids.has(e.id)||!iso(e.capturedAt)||e.previousHash!==previous||
    !['FACILITY','COMPANY','RELATIONSHIP'].includes(e.type)||!e.value||typeof e.value!=='object'||
-   e.hash!==hash({id:e.id,seq:e.seq,capturedAt:e.capturedAt,previousHash:e.previousHash,type:e.type,value:e.value})||
+   e.hash!==hash({id:e.id,seq:e.seq,capturedAt:e.capturedAt,type:e.type,value:e.value,previousHash:e.previousHash})||
    (i>0&&e.capturedAt<doc.entries[i-1].capturedAt))
    throw fail('Facility crosswalk journal integrity cannot be verified',500);
   ids.add(e.id);previous=e.hash;
