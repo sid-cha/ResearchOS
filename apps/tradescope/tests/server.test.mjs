@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {isoDateValid,sanitizeSnapshots,publicTrade,publicQuote,createServer} from '../server.mjs';
+test('only real calendar dates are accepted',()=>{assert.equal(isoDateValid('2026-02-29'),false);assert.equal(isoDateValid('2026-11-11'),true);assert.equal(isoDateValid('2026-11-11T12:00:00Z'),false);});
+test('records map to explicit provider source fields',()=>{const a=sanitizeSnapshots({AAPL:{latestTrade:{i:22,t:'2026-11-11T15:00:00Z',p:255.1,s:25,x:'V'},latestQuote:{t:'2026-11-11T15:00:01Z',bp:255,ap:255.2,bs:1,as:2},prevDailyBar:{c:252}}});assert.equal(a.AAPL.trade.sourceId,'22');assert.equal(a.AAPL.quote.ask,255.2);assert.equal(a.AAPL.previousClose,252);});
+test('invalid trade is not fabricated',()=>{assert.equal(publicTrade('AAPL',{}),null);assert.equal(publicQuote('AAPL',{}),null);});
+test('snapshot omissions remain unknown rather than fabricated venue, size or source identity',()=>{
+ const trade=publicTrade('AAPL',{p:255,t:'2026-11-12T15:00:00Z'});
+ assert.equal(trade.quantity,null);assert.equal(trade.venue,null);assert.equal(trade.sourceId,null);assert.equal(trade.conditions,null);
+ const quote=publicQuote('AAPL',{t:'2026-11-12T15:00:00Z'});
+ assert.equal(quote.bid,null);assert.equal(quote.ask,null);assert.equal(quote.bidSize,null);assert.equal(quote.bidVenue,null);
+ assert.equal(publicTrade('AAPL',{p:NaN,t:'2026-11-12T15:00:00Z'}),null);
+});
+test('static server does not expose .env',async()=>{const s=createServer();await new Promise(r=>s.listen(0,'127.0.0.1',r));try{const port=s.address().port;const r=await fetch(`http://127.0.0.1:${port}/.env`);assert.equal(r.status,404);const h=await fetch(`http://127.0.0.1:${port}/api/health`);assert.equal(h.status,200);}finally{await new Promise(r=>s.close(r));}});

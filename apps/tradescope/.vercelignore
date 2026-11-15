@@ -1,0 +1,13 @@
+# Prevent uploading local credentials with the Vercel CLI.
+# Place this at the Vercel project root (apps/tradescope).
+.env
+.env.*
+**/.env
+**/.env.*
+**/.envrc
+node_modules/
+tests/
+dist/
+*.zip
+
+.local-data/

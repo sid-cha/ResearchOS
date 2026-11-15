@@ -1,0 +1,234 @@
+/** Local-first, single-user investigation persistence. No external service or credentials.
+ * For multi-user production, migrate this model behind a PostgreSQL repository and auth.
+ */
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {randomUUID} from 'node:crypto';
+import {validEventTimestamp} from './market-events.mjs';
+
+const STATUSES = new Set(['OPEN','IN_REVIEW','NEEDS_EVIDENCE','CLOSED']);
+const PRIORITIES = new Set(['LOW','MEDIUM','HIGH']);
+const CONCLUSIONS = new Set(['UNDETERMINED','TEMPORAL_ASSOCIATION','SUPPORTED_HYPOTHESIS','INCONCLUSIVE','NO_RELATIONSHIP']);
+const MAX_CASES = 1000;
+const copy = value => structuredClone(value);
+const err = (message,status=400) => Object.assign(new Error(message),{status});
+const string = (val,max=500) => typeof val==='string' ? val.trim().slice(0,max) : '';
+const validUrl = value => {if(!value)return null;try {const u=new URL(value);return ['https:','http:'].includes(u.protocol) && u.username==='' && u.password==='' ? u.toString() : null;}catch{return null;}};
+const validTime = value => typeof value==='string' && Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
+const audit = (action,details='',timestamp=new Date().toISOString()) => ({id:randomUUID(),action,at:timestamp,details:string(details,700)});
+const allowSymbol = s => /^(?:[A-Z][A-Z0-9.-]{0,11})$/.test(s);
+const nonempty = (v,max,label) => {const result=string(v,max);if(!result)throw err(`${label} is required`);return result;};
+const pickRevision = (input,current) => {if(input?.expectedRevision !== current.revision)throw err(`Case was updated elsewhere; refresh and retry (revision ${current.revision})`,409);};
+
+// A selected observation's lineage is saved only when an analyst creates a case.
+// This is neither a tick archive nor permission to retain raw licensed feeds.
+function normalizeMarketData(input) {
+ if(!input || typeof input!=='object' || Array.isArray(input) || input.schemaVersion!==1)return null;
+ const token=(value,max=40)=>typeof value==='string' && value.length<=max && /^[A-Za-z0-9@#*?._:+/-]+$/.test(value)?value:null;
+ const symbol=typeof input.symbol==='string' && allowSymbol(input.symbol)?input.symbol:null;
+ const provider=token(input.provider),feed=token(input.feed),coverage=token(input.coverage),instrumentId=token(input.instrumentId,80);
+ if(!symbol || !provider || !feed || !coverage || !instrumentId || !['trade','quote','bar'].includes(input.eventType) || !['LIVE','HISTORY','SYNTHETIC'].includes(input.mode))return null;
+ const time=value=>validEventTimestamp(value)?value:null;
+ return {schemaVersion:1,provider,feed,coverage,mode:input.mode,instrumentId,symbol,eventType:input.eventType,
+  sourceEventId:token(input.sourceEventId,128),exchange:token(input.exchange,32),
+  exchangeEventTime:time(input.exchangeEventTime),receivedAt:time(input.receivedAt),ingestedAt:time(input.ingestedAt)};
+}
+
+function normalizeResearchEvidence(input) {
+ if(!input||typeof input!=='object'||Array.isArray(input)||
+  !(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(input.metricId))return null;
+ const scalar=value=>typeof value==='boolean'||typeof value==='number'&&Number.isFinite(value);
+ const text=(value,max)=>typeof value==='string'?value.slice(0,max):null;
+ const metric=value=>typeof value==='string'&&(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(value)?value:null;
+ return {
+  metricId:input.metricId,operator:text(input.operator,30),value:scalar(input.value)?input.value:null,
+  threshold:scalar(input.threshold)?input.threshold:null,otherMetricId:metric(input.otherMetricId),
+  previousValue:scalar(input.previousValue)?input.previousValue:null,previousThreshold:scalar(input.previousThreshold)?input.previousThreshold:null,
+  passed:typeof input.passed==='boolean'?input.passed:null,status:text(input.status,40),reason:text(input.reason,180),message:text(input.message,500),
+  source:text(input.source,100),asOf:text(input.asOf,45),availableAt:text(input.availableAt,45),unit:text(input.unit,40),
+  periodStart:text(input.periodStart,45),periodEnd:text(input.periodEnd,45),
+  freshnessAsOf:text(input.freshnessAsOf,45),freshnessBasis:text(input.freshnessBasis,30),priceAsOf:text(input.priceAsOf,45),
+  methodVersion:text(input.methodVersion,100),sampleCount:Number.isFinite(input.sampleCount)?input.sampleCount:null,
+  requiredCount:Number.isFinite(input.requiredCount)?input.requiredCount:null,
+  comparisonSource:text(input.comparisonSource,100),comparisonAsOf:text(input.comparisonAsOf,45),
+  comparisonFreshnessAsOf:text(input.comparisonFreshnessAsOf,45),comparisonPriceAsOf:text(input.comparisonPriceAsOf,45),
+  comparisonPeriodStart:text(input.comparisonPeriodStart,45),comparisonPeriodEnd:text(input.comparisonPeriodEnd,45),
+ };
+}
+
+// Save only numeric market measurements, dated filing facts and bounded study outcomes.
+// Never store raw provider responses, opaque tokens or arbitrary untrusted client objects.
+function normalizeContext(input) {
+ if(!input || typeof input!=='object' || Array.isArray(input))return null;
+ const numerical=(obj,keys)=>Object.fromEntries(keys.flatMap(k=>typeof obj?.[k]==='number'&&Number.isFinite(obj[k])?[[k,obj[k]]]:[]));
+ const technical=numerical(input.technical,['close','sma20','sma50','rsi14','macd','macdSignal','atr14','volumeRatio20','barsCount']);
+ let fundamentals=null;
+ const fields=['revenue','netIncome','grossProfit','operatingIncome','epsDiluted'];
+ const summary={};for(const field of fields){const x=input.fundamentals?.quarterly?.[field];if(x&&typeof x==='object')summary[field]={...numerical(x,['value','yoyPct','priorYearValue']),periodEnd:validTime(x.periodEnd?`${x.periodEnd}T00:00:00Z`:null)?.slice(0,10)||null,filingDate:validTime(x.filingDate?`${x.filingDate}T00:00:00Z`:null)?.slice(0,10)||null};}
+ if(Object.keys(summary).length)fundamentals={quarterly:summary,source:string(input.fundamentals?.source,80)};
+ const rawStudy=input.study?.study;
+ let study=null;
+ if(rawStudy && typeof rawStudy==='object')study={study:{status:string(rawStudy.status,40),referenceSession:string(rawStudy.referenceSession,20),horizons:Array.isArray(rawStudy.horizons)?rawStudy.horizons.slice(0,5).map(h=>({sessions:Number.isInteger(h.sessions)?h.sessions:null,status:string(h.status,40),...numerical(h,['relativeReturnPct','stockReturnPct','benchmarkReturnPct'])})):[]}};
+ let research=null;
+ if(input.research&&typeof input.research==='object'&&!Array.isArray(input.research)){
+  const r=input.research;
+  const observations=Array.isArray(r.observations)?r.observations.slice(0,100).flatMap(value=>{
+   if(!value||typeof value!=='object'||!(/^(?:price|technical|financial|valuation)\.[A-Za-z0-9.]{1,90}$/).test(value.id))return [];
+   return [{id:value.id,value:typeof value.value==='boolean'||typeof value.value==='number'&&Number.isFinite(value.value)?value.value:null,
+    status:string(value.status,40),reason:string(value.reason,500),unit:string(value.unit,40),source:string(value.source,100),
+    asOf:string(value.asOf,45),availableAt:validTime(value.availableAt),periodStart:string(value.periodStart,45),periodEnd:string(value.periodEnd,45),
+    methodVersion:string(value.methodVersion,100),sampleCount:Number.isFinite(value.sampleCount)?value.sampleCount:null,
+    requiredCount:Number.isFinite(value.requiredCount)?value.requiredCount:null}];
+  }):[];
+  const evidence=Array.isArray(r.evidence)?r.evidence.slice(0,20).map(normalizeResearchEvidence).filter(Boolean):[];
+  research={schemaVersion:1,ruleId:string(r.ruleId,100),ruleVersion:string(r.ruleVersion,100),
+   screenId:string(r.screenId,100),description:string(r.description,1200),observations,evidence};
+ }
+ return {capturedAt:new Date().toISOString(),technical:Object.keys(technical).length?technical:null,technicalSource:string(input.technicalSource,100),financialSource:string(input.financialSource,100),fundamentals,study,research};
+}
+
+
+export function createCaseStore(filename) {
+ let cache=null;let initializing=null;let serial=Promise.resolve();
+ async function load(){
+  if(cache)return cache;
+  if(!initializing)initializing=(async()=>{
+   try {const body=await fs.readFile(filename,'utf8');const parsed=JSON.parse(body);
+    if(!parsed || parsed.schema!==1 || !Array.isArray(parsed.cases))throw err('Case store has an invalid schema',500);
+    cache=parsed;
+   }catch(e){if(e.code==='ENOENT')cache={schema:1,cases:[]};else throw e;}
+   return cache;
+  })().catch(e=>{initializing=null;throw e});
+  return initializing;
+ }
+ async function save(candidate){
+  await fs.mkdir(path.dirname(filename),{recursive:true});
+  const temp=`${filename}.${randomUUID()}.tmp`;
+  try{await fs.writeFile(temp,JSON.stringify(candidate,null,2)+'\n',{encoding:'utf8',mode:0o600});await fs.rename(temp,filename);}
+  finally{await fs.rm(temp,{force:true}).catch(()=>{});}
+ }
+ const write=fn=>{const p=serial.then(async()=>{await load();const candidate=copy(cache);const result=fn(candidate);await save(candidate);cache=candidate;return copy(result);});serial=p.catch(()=>{});return p;};
+ const read=async fn=>{await serial;await load();return copy(fn(cache));};
+ const find=(d,id)=>{const c=d.cases.find(x=>x.id===id);if(!c)throw err('Investigation not found',404);return c;};
+ function normalizeEvent(input){
+  if(!input || typeof input!=='object' || Array.isArray(input))throw err('An event record is required');
+  const id=nonempty(input.id,160,'Event ID');
+  const source=nonempty(input.source,120,'Source');
+  const synthetic=/^hypo:/i.test(id) || /SYNTHETIC|DEMO/i.test(source) || input.synthetic===true;
+  const symbols=Array.isArray(input.symbols)?[...new Set(input.symbols.map(x=>string(x,20).toUpperCase()).filter(allowSymbol))].slice(0,20):[];
+  const lineage=normalizeMarketData(input.marketData);
+  const marketData=lineage && symbols.includes(lineage.symbol) && (synthetic?lineage.mode==='SYNTHETIC':lineage.mode!=='SYNTHETIC')?lineage:null;
+  const publishedAt=validTime(input.publishedAt),occurredAt=marketData?marketData.exchangeEventTime:validTime(input.occurredAt);
+  return {id,headline:nonempty(input.headline,350,'Event headline'),category:string(input.category,40)||'OTHER',type:string(input.type,70)||'UNCLASSIFIED',source,sourceUrl:validUrl(input.sourceUrl),publishedAt,occurredAt,providerFirstSeenAt:validTime(input.providerFirstSeenAt),ingestedAt:marketData?marketData.ingestedAt:validTime(input.ingestedAt),evidenceLevel:string(input.evidenceLevel,70)||'unclassified',symbols,summary:string(input.summary,1200),synthetic,...(marketData?{marketData}:{})};
+
+ }
+ // Only a trusted server-held archive response can be passed here. The public case
+ // creation/evidence routes never accept an archived-revision payload.
+ function archivedEvidence(archive,symbol,now){
+  const revision=archive?.revision,ev=revision?.event;
+  if(!archive||archive.eventId!==ev?.id||archive.source!=='SEC_EDGAR'||ev.source!=='SEC_EDGAR'||
+     !/^REV-[a-f0-9-]{36}$/.test(revision?.id||'')||
+     !/^[a-f0-9]{64}$/.test(revision?.contentHash||'')||
+     !Number.isSafeInteger(revision?.version)||revision.version<1||
+     !validEventTimestamp(revision?.capturedAt)||!validEventTimestamp(archive?.firstObservedAt)||
+     !Array.isArray(ev.symbols)||!ev.symbols.includes(symbol))throw err('An exact SEC archive revision for this issuer is required',422);
+  const url=validUrl(ev.sourceUrl);
+  if(!url||!url.startsWith('https://www.sec.gov/Archives/edgar/data/'))throw err('Archived evidence requires an official SEC filing URL',422);
+  const citations=(Array.isArray(ev.evidence)?ev.evidence:[]).slice(0,16).map(e=>({
+   id:string(e.id,160),section:string(e.section,160),text:string(e.text,1600),sourceUrl:validUrl(e.sourceUrl)
+  })).filter(e=>e.id&&e.text&&e.sourceUrl===url);
+  const classifications=(Array.isArray(ev.classifications)?ev.classifications:[]).slice(0,20).map(e=>({
+   code:string(e.code,100),label:string(e.label,160),evidenceIds:Array.isArray(e.evidenceIds)?e.evidenceIds.filter(v=>typeof v==='string').slice(0,16):[]
+  }));
+  return {id:randomUUID(),kind:'ARCHIVED_REVISION',
+   label:'SEC '+string(ev.form,20)+' · archived revision '+revision.version,
+   url,source:'SEC_EDGAR',claimedAt:validTime(ev.publishedAt),addedAt:now,
+   archive:{eventId:archive.eventId,revisionId:revision.id,version:revision.version,
+    contentHash:revision.contentHash,firstObservedAt:archive.firstObservedAt,
+    capturedAt:revision.capturedAt,source:'SEC_EDGAR',sourceUrl:url,
+    filingDate:string(ev.filingDate,10),accession:string(ev.accession,30),
+    publishedAt:validTime(ev.publishedAt),contentRevision:string(ev.contentRevision,128),
+    classificationVersion:string(ev.classificationVersion,100),
+    classifications,citations,knowledgeStatus:string(revision.knowledgeStatus,50),
+    captureKind:string(revision.captureKind,50)}};
+ }
+ return {
+  async createFromArchivedRevision({archive,symbol}={}){
+   return write(d=>{
+    if(d.cases.length>=MAX_CASES)throw err('Local case storage is full',409);
+    if(!allowSymbol(symbol))throw err('A registered uppercase issuer symbol is required');
+    const now=new Date().toISOString(),evidence=archivedEvidence(archive,symbol,now);
+    const existing=d.cases.find(c=>c.symbol===symbol&&c.evidence.some(v=>v.archive?.revisionId===evidence.archive.revisionId));
+    if(existing)return existing;
+    const original=archive.revision.event;
+    const event=normalizeEvent({id:archive.eventId,headline:original.headline,
+     category:'CORPORATE',type:original.type||'FILING',source:'SEC_EDGAR',
+     sourceUrl:original.sourceUrl,publishedAt:original.publishedAt,
+     occurredAt:original.occurredAt,symbols:original.symbols,
+     summary:original.summary||'Official filing captured from SEC EDGAR; review cited evidence.',
+     evidenceLevel:'official_filing'});
+    const item={id:'CASE-'+randomUUID(),title:event.headline,symbol,context:null,
+     priority:'MEDIUM',status:'OPEN',relationship:'PROVIDER_TAGGED',assignee:'Unassigned',
+     conclusion:'UNDETERMINED',summary:'',event,createdAt:now,updatedAt:now,revision:1,
+     evidence:[evidence],notes:[],audit:[
+      audit('CASE_CREATED','From archived official SEC filing '+archive.eventId,now),
+      audit('ARCHIVED_REVISION_ATTACHED','Immutable '+evidence.archive.revisionId+' captured '+evidence.archive.capturedAt,now)]};
+    d.cases.unshift(item);return item;
+   });
+  },
+  async attachArchivedRevision(id,{archive,symbol,expectedRevision}={}){
+   return write(d=>{
+    const c=find(d,id);
+    if(c.symbol!==symbol)throw err('Archived SEC filing does not match the investigation security',422);
+    const now=new Date().toISOString(),evidence=archivedEvidence(archive,symbol,now);
+    if(c.evidence.some(v=>v.archive?.revisionId===evidence.archive.revisionId))return c;
+    pickRevision({expectedRevision},c);
+    if(c.evidence.length>=200)throw err('Evidence limit reached',409);
+    c.evidence.push(evidence);c.updatedAt=now;c.revision++;
+    c.audit.push(audit('ARCHIVED_REVISION_ATTACHED','Immutable '+evidence.archive.revisionId+' captured '+evidence.archive.capturedAt,now));
+    return c;
+   });
+  },
+  async list({status='ALL',search=''}={}){return read(d=>d.cases.filter(c=>(status==='ALL'||c.status===status)&&`${c.title} ${c.symbol} ${c.event.source} ${c.id}`.toLowerCase().includes(search.toLowerCase())).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,event,assignee})=>({id,title,symbol,status,priority,relationship,updatedAt,createdAt,revision,assignee,source:event.source,synthetic:event.synthetic,eventHeadline:event.headline})));},
+  async get(id){return read(d=>find(d,id));},
+  async create(input){return write(d=>{
+   if(d.cases.length>=MAX_CASES)throw err('Local case storage is full',409);
+   const symbol=nonempty(input?.symbol,12,'Symbol').toUpperCase();if(!allowSymbol(symbol))throw err('Invalid symbol');
+   const event=normalizeEvent(input?.event);const now=new Date().toISOString();
+   const id=`CASE-${randomUUID()}`;
+   const relationship=event.synthetic?'SYNTHETIC_ONLY':event.evidenceLevel==='derived_metric_condition'?'DERIVED_RESEARCH':event.symbols.includes(symbol)?'PROVIDER_TAGGED':'UNVERIFIED';
+   const context=normalizeContext(input?.context);
+   const item={id,title:string(input?.title,220)||event.headline,symbol,context,priority:'MEDIUM',status:'OPEN',relationship,assignee:'Unassigned',conclusion:'UNDETERMINED',summary:'',event,createdAt:now,updatedAt:now,revision:1,evidence:[],notes:[],audit:[audit('CASE_CREATED',`From ${event.source} event ${event.id}; relationship ${relationship}`,now)]};
+   if(event.sourceUrl)item.evidence.push({id:randomUUID(),kind:'SOURCE',label:`Original ${event.source} record`,url:event.sourceUrl,source:event.source,claimedAt:event.publishedAt||event.occurredAt,addedAt:now});
+   d.cases.unshift(item);return item;
+  });},
+  async update(id,input){return write(d=>{
+   const c=find(d,id);pickRevision(input,c);
+   const before={status:c.status,priority:c.priority,assignee:c.assignee,conclusion:c.conclusion,summary:c.summary};
+   let changes=[];
+   if(Object.hasOwn(input,'status')){if(!STATUSES.has(input.status))throw err('Unsupported case status');if(c.status!==input.status){c.status=input.status;changes.push(`status: ${input.status}`);}}
+   if(Object.hasOwn(input,'priority')){if(!PRIORITIES.has(input.priority))throw err('Unsupported priority');if(c.priority!==input.priority){c.priority=input.priority;changes.push(`priority: ${input.priority}`);}}
+   if(Object.hasOwn(input,'conclusion')){if(!CONCLUSIONS.has(input.conclusion))throw err('Unsupported conclusion');if(c.conclusion!==input.conclusion){c.conclusion=input.conclusion;changes.push(`conclusion: ${input.conclusion}`);}}
+   if(Object.hasOwn(input,'assignee')){const name=nonempty(input.assignee,100,'Assignee');if(c.assignee!==name){c.assignee=name;changes.push(`assignee updated`);}}
+   if(Object.hasOwn(input,'summary')){const note=string(input.summary,4000);if(c.summary!==note){c.summary=note;changes.push('analyst assessment updated');}}
+   if(!changes.length)return c;
+   const now=new Date().toISOString();c.updatedAt=now;c.revision++;c.audit.push(audit('CASE_UPDATED',changes.join('; '),now));return c;
+  });},
+  async addNote(id,input){return write(d=>{
+   const c=find(d,id);pickRevision(input,c);
+   if(c.notes.length>=250)throw err('Note limit reached',409);
+   const body=nonempty(input.body,5000,'Note');const now=new Date().toISOString();const note={id:randomUUID(),body,author:string(input.author,80)||'Local analyst',createdAt:now};
+   c.notes.push(note);c.updatedAt=now;c.revision++;c.audit.push(audit('NOTE_ADDED',`Note ${note.id}`,now));return c;
+  });},
+  async addEvidence(id,input){return write(d=>{
+   const c=find(d,id);pickRevision(input,c);
+   if(c.evidence.length>=200)throw err('Evidence limit reached',409);
+   const url=validUrl(input.url);if(!url)throw err('Evidence must contain a valid HTTP(S) source URL');
+   const kind=String(input.kind||'SOURCE').toUpperCase();if(!['SOURCE','FILING','MARKET_OBSERVATION','ANALYST_REFERENCE'].includes(kind))throw err('Unsupported evidence kind');
+   const now=new Date().toISOString();const ev={id:randomUUID(),label:nonempty(input.label,220,'Evidence label'),kind,url,source:string(input.source,120)||'Analyst provided',claimedAt:validTime(input.claimedAt),addedAt:now};
+   c.evidence.push(ev);c.updatedAt=now;c.revision++;c.audit.push(audit('EVIDENCE_ADDED',`Evidence ${ev.id}`,now));return c;
+  });}
+ };
+}
+
+export {STATUSES,PRIORITIES,CONCLUSIONS};
