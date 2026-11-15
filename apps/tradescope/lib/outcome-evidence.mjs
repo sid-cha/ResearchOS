@@ -12,9 +12,9 @@ const sha=data=>createHash('sha256').update(data).digest('hex');
 const digest=v=>sha(JSON.stringify(v));
 const ISO=/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
 const validTime=v=>typeof v==='string'&&ISO.test(v)&&Number.isFinite(Date.parse(v));
-const RID=/^desk-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const VID=/^validation-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SID=/^snapshot-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const RID=/^desk-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const VID=/^validation-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const SID=/^snapshot-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 export const SOURCE_ARCHIVE_VERSION='OFFICIAL-HTTP-SNAPSHOT-0.36.1';
 export const PROSPECTIVE_DATASET_VERSION='PROSPECTIVE-RESEARCH-DATASET-0.36.1';
 export const OFFICIAL_SNAPSHOT_HOSTS=Object.freeze([
