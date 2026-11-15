@@ -1,0 +1,32 @@
+# Node-only local container. Recording is intentionally disabled in bridged containers.
+services:
+  tradescope:
+    build:
+      context: ./apps/tradescope
+      dockerfile: Dockerfile
+    image: researchos/tradescope:local
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m
+    env_file:
+      - path: ./apps/tradescope/.env
+        required: false
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      MARKET_CAPTURE_ENABLED: "false"
+      MARKET_CAPTURE_RIGHTS_CONFIRMED: "false"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - tradescope_local_data:/app/.local-data
+    stop_grace_period: 30s
+
+volumes:
+  tradescope_local_data:

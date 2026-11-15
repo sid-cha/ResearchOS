@@ -1,0 +1,13 @@
+.env
+.env.*
+.local-data/
+dist/
+node_modules/
+coverage/
+.git/
+.vscode/
+.idea/
+*.log
+*.pem
+*.key
+*.p12

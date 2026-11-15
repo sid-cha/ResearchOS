@@ -2,7 +2,7 @@
  * No tick archive or Last-Event-ID replay: reconnect continuity is unknown.
  */
 export function createMarketDelivery({stream, heartbeatMs = 15000, maxClients = 8,
-  maxBufferedBytes = 65536, setIntervalFn = setInterval, clearIntervalFn = clearInterval} = {}) {
+  maxBufferedBytes = 65536, keepAlive = () => false, setIntervalFn = setInterval, clearIntervalFn = clearInterval} = {}) {
   const clients = new Set();
   let heartbeat = null;
   let closed = false;
@@ -14,7 +14,7 @@ export function createMarketDelivery({stream, heartbeatMs = 15000, maxClients = 
     if (!clients.size) {
       if (heartbeat !== null) clearIntervalFn(heartbeat);
       heartbeat = null;
-      stream.stop();
+      if (!keepAlive()) stream.stop();
     }
   }
 

@@ -1,3 +1,9 @@
+# TradeScope v0.30 / v0.31 — Capture, Replay and Docker Pilot
+
+**Built:** manual opt-in private normalized Alpaca IEX recording, bounded per-session SHA-256 integrity verification, reconnect interruption markers, paginated deterministic VOL-01 research replay, dedicated [Capture & Replay](market-capture.html) page, three-level navigation destination, and a separate nonroot Docker Compose Node workstation. Capture remains off until local enablement AND provider retention-rights acknowledgement; Docker mode forces capture off because its internal bridge bind is not loopback. No market-data license, complete tape, detection-parity proof or production readiness is asserted. See [v0.30–v0.31 guide](docs/V030_V031_CAPTURE_DOCKER.md). PR #19 remains draft.
+
+---
+
 # TradeScope — Three-level Navigation and Sprint 1 PRD alignment
 
 **New shared navigation:** Levels 1 (product areas), 2 (modules) and 3 (tools) are visible on every TradeScope local browser page. The shared navigation source is `hierarchy-navigation.js` / `hierarchy-navigation.css` (included in the public static/server allowlists). All original research panels, market-tab controls, URLs and evidence boundaries remain operational. Deep links such as `/#research/filings`, `/market-hub.html#financials` and `/event-portal.html#case-study` are supported; browser back/forward updates the hierarchy. Source coverage and simulated/live modes remain explicitly distinct.

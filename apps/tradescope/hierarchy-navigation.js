@@ -10,6 +10,7 @@ const TREE=[
    {id:'monitor',label:'Market Monitor',href:'/#monitor'},
    {id:'blotter',label:'Trade Blotter',href:'/#blotter'},
    {id:'feed-health',label:'Feed Integrity',href:'/#feed-health'},
+   {id:'recordings',label:'Capture & Replay',href:'/market-capture.html'},
    {id:'replay',label:'Replay Lab',href:'/#replay'}]},
   {id:'market-data',label:'Market Data',tools:[
    {id:'overview',label:'Market Overview',href:'/market-hub.html#overview'},

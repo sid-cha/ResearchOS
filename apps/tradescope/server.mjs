@@ -8,6 +8,7 @@ import {createCaseApi} from './lib/case-api.mjs';
 import {createAssistantApi} from './lib/assistant-api.mjs';
 import {createMarketStream} from './lib/alpaca-stream.mjs';
 import {createMarketDelivery} from './lib/market-sse.mjs';
+import {createMarketCapture,createMarketCaptureApi} from './lib/market-capture.mjs';
 import {createResearchApi} from './lib/research-api.mjs';
 import {createCaseStore} from './lib/cases.mjs';
 import {createRegulatoryApi} from './lib/regulatory-api.mjs';
@@ -159,13 +160,21 @@ function sanitizeSnapshots(snapshots){const result={};for(const sym of DEFAULT_S
 
 const defaultEventIntelligenceApi=createEventIntelligenceApi();
 
-export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi} = {}){
- const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream});
+export function createServer({marketStream = createMarketStream({key:KEY,secret:SECRET,symbols:DEFAULT_SYMBOLS}), deliveryOptions = {}, researchApi = createResearchApi({filename:researchFile,monitorFilename:monitorFile,sources:sharedSources}), intelligenceApi = handleIntelligence, caseStore = defaultCaseStore, regulatoryApi = defaultRegulatoryApi, discoveryApi=defaultDiscoveryApi, monitorChartApi=defaultMonitorChartApi, intradayChartApi=defaultIntradayChartApi, crisisAtlasApi=defaultCrisisAtlasApi, macroVintageApi=defaultMacroVintageApi,backtestApi=defaultBacktestApi,climateApi=defaultCpcEnsoApi,transmissionApi=defaultTransmissionApi,regionalClimateApi=defaultRegionalClimateApi,commodityApi=defaultCommodityApi,commodityWorkbench=defaultCommodityWorkbench,fundamentalsApi=defaultFundamentalsApi,marketHubApi=defaultMarketHubApi,providerControlApi=defaultProviderControlApi,transmissionDossierApi=defaultTransmissionDossierApi,fredExplorerApi=defaultFredExplorerApi,evidenceLedgerApi=defaultEvidenceLedgerApi,geoExposureApi=defaultGeoExposureApi,facilityVerificationApi=defaultFacilityVerificationApi,exposureProofApi=defaultExposureProofApi,eventIntelligenceApi=defaultEventIntelligenceApi,captureService=null} = {}){
+ const capture=captureService||createMarketCapture({stream:marketStream,
+  dir:process.env.MARKET_CAPTURE_PATH||path.join(ROOT,'.local-data','market-captures'),
+  enabled:process.env.MARKET_CAPTURE_ENABLED==='true'&&['127.0.0.1','localhost','::1'].includes(HOST),
+  rightsAcknowledged:process.env.MARKET_CAPTURE_RIGHTS_CONFIRMED==='true',
+  onIdle:()=>{if(delivery.getClientCount()===0)marketStream.stop();}
+ });
+ const delivery=createMarketDelivery({...deliveryOptions,stream:marketStream,keepAlive:()=>capture.isRecording()});
+ const captureApi=createMarketCaptureApi({service:capture,host:HOST});
  const handleCases=createCaseApi({store:caseStore}),handleAssistant=createAssistantApi({store:caseStore});
  const server=http.createServer(async(req,res)=>{
   try{
     const u=new URL(req.url,`http://${HOST}:${PORT}`);
     if(delivery.handle(req,res,u))return;
+    if(await captureApi(req,res,u))return;
     if(await monitorChartApi(req,res,u))return;
     if(await intradayChartApi(req,res,u))return;
     if(await crisisAtlasApi(req,res,u))return;
@@ -192,7 +201,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
     if(await handleAssistant(req,res,u))return;
     if(req.method!=='GET'){json(res,405,{error:'Method not allowed'});return;}
     if(await intelligenceApi(req,res,u))return;
-    if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketData:marketStream.getHealth(),marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
+    if(u.pathname==='/api/health'){json(res,200,{ready:true,configured:Boolean(KEY&&SECRET),feed:'iex',pollSeconds:15,source:'ALPACA_IEX',marketData:marketStream.getHealth(),marketCapture:capture.state(),marketDataDisclaimer:'Single-venue IEX data; not the consolidated US market.'});return;}
     if(u.pathname==='/api/live'){
       if(Date.now()<cachedSnapshot.expires&&cachedSnapshot.value){json(res,200,{...cachedSnapshot.value,cacheHit:true});return;}
       const symbols=DEFAULT_SYMBOLS.join(',');const response=await alpacaGet(`/v2/stocks/snapshots?symbols=${symbols}&feed=iex`);
@@ -208,7 +217,7 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
       const trades=(upstream.trades||[]).map(t=>publicTrade(symbol,t)).filter(Boolean).reverse();
       json(res,200,{source:feed==='sip'?'ALPACA_SIP_HISTORY':'ALPACA_IEX',mode:'HISTORICAL_TRADES',feed,symbol,date:day,fetchedAt:new Date().toISOString(),trades,hasMore:Boolean(upstream.next_page_token),limit:1000});return;
     }
-    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css','/transmission-lab.html':'transmission-lab.html','/transmission-lab.js':'transmission-lab.js','/transmission-lab.css':'transmission-lab.css','/fred-research.html':'fred-research.html','/fred-research.js':'fred-research.js','/fred-research.css':'fred-research.css','/evidence-ledger.html':'evidence-ledger.html','/evidence-ledger.js':'evidence-ledger.js','/evidence-ledger.css':'evidence-ledger.css','/geo-exposure.html':'geo-exposure.html','/geo-exposure.js':'geo-exposure.js','/geo-exposure.css':'geo-exposure.css','/exposure-review.html':'exposure-review.html','/exposure-review.js':'exposure-review.js','/exposure-review.css':'exposure-review.css','/event-portal.html':'event-portal.html','/event-portal.js':'event-portal.js','/event-portal.css':'event-portal.css','/hierarchy-navigation.js':'hierarchy-navigation.js','/hierarchy-navigation.css':'hierarchy-navigation.css'};
+    const ALLOWED={'/':'index.html','/index.html':'index.html','/app.js':'app.js','/styles.css':'styles.css','/live-adapter.js':'live-adapter.js','/event-workspace.js':'event-workspace.js','/intelligence.css':'intelligence.css','/cases.css':'cases.css','/case-workspace.js':'case-workspace.js','/assistant-workspace.js':'assistant-workspace.js','/theme-controls.js':'theme-controls.js','/terminal-theme.css':'terminal-theme.css','/workspace-nav.js':'workspace-nav.js','/research-workspace.js':'research-workspace.js','/research.css':'research.css','/research-operations.js':'research-operations.js','/research-operations.css':'research-operations.css','/discovery-workspace.js':'discovery-workspace.js','/discovery-workspace.css':'discovery-workspace.css','/monitor-candles.js':'monitor-candles.js','/monitor-candles.css':'monitor-candles.css','/crisis-workspace.js':'crisis-workspace.js','/crisis-workspace.css':'crisis-workspace.css','/commodity.html':'commodity.html','/commodity.js':'commodity.js','/commodity.css':'commodity.css','/market-hub.html':'market-hub.html','/market-hub.js':'market-hub.js','/market-hub.css':'market-hub.css','/source-control.html':'source-control.html','/source-control.js':'source-control.js','/source-control.css':'source-control.css','/transmission-lab.html':'transmission-lab.html','/transmission-lab.js':'transmission-lab.js','/transmission-lab.css':'transmission-lab.css','/fred-research.html':'fred-research.html','/fred-research.js':'fred-research.js','/fred-research.css':'fred-research.css','/evidence-ledger.html':'evidence-ledger.html','/evidence-ledger.js':'evidence-ledger.js','/evidence-ledger.css':'evidence-ledger.css','/geo-exposure.html':'geo-exposure.html','/geo-exposure.js':'geo-exposure.js','/geo-exposure.css':'geo-exposure.css','/exposure-review.html':'exposure-review.html','/exposure-review.js':'exposure-review.js','/exposure-review.css':'exposure-review.css','/event-portal.html':'event-portal.html','/event-portal.js':'event-portal.js','/event-portal.css':'event-portal.css','/hierarchy-navigation.js':'hierarchy-navigation.js','/hierarchy-navigation.css':'hierarchy-navigation.css','/market-capture.html':'market-capture.html','/market-capture.js':'market-capture.js','/market-capture.css':'market-capture.css'};
     const file=ALLOWED[u.pathname];if(!file){json(res,404,{error:'Not found'});return;}
     const data=await fs.readFile(path.join(ROOT,file));
     res.writeHead(200,{'Content-Type':MIME[path.extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"});res.end(data);
@@ -216,16 +225,17 @@ export function createServer({marketStream = createMarketStream({key:KEY,secret:
  });
  // Close delivery before HTTP shutdown because SSE connections are long-lived.
  server.closeMarketData=()=>delivery.close();
+ server.closeCapture=()=>capture.close();
  server.closeResearch=()=>{researchApi.close?.();commodityWorkbench.close?.();};
  server.once('listening',async()=>{try{await researchApi.start?.();}catch{console.error('Local research monitoring could not start; check the monitor store.');}
   try{await commodityWorkbench.start?.();}catch{console.error('Local commodity pilot scheduler could not start; check its store.');}});
- server.once('close',()=>{delivery.close();server.closeResearch();});
+ server.once('close',()=>{delivery.close();void capture.close();server.closeResearch();});
  return server;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const server=createServer();
   server.listen(PORT,HOST,()=>{console.log(`TradeScope local: http://${HOST}:${PORT}`);console.log(`Alpaca credentials: ${KEY&&SECRET?'configured':'missing (demo is still available)'}`);});
-  const shutdown=()=>{server.closeResearch();server.closeMarketData();server.close();};
+  const shutdown=async()=>{server.closeResearch();await server.closeCapture();server.closeMarketData();server.close();};
   process.once('SIGINT',shutdown);process.once('SIGTERM',shutdown);
 }
 export {isoDateValid,sanitizeSnapshots,publicTrade,publicQuote};
