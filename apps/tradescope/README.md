@@ -1,3 +1,9 @@
+# ResearchOS / TradeScope v0.37 — Company & Facility Exposure Crosswalk
+
+**New:** [Facility Crosswalk](facility-exposure.html) captures EPA FRS registry metadata by 12-digit FRS ID and SEC EDGAR issuer metadata by CIK using fixed official HTTPS endpoints; stores an explicitly **unverified** owner/operator/customer/supplier research link backed by an operator-entered SEC filing URL; and produces source-captured, radius-bounded event-to-facility geographic candidates at a chosen local knowledge cutoff. All company ownership, physical damage, materiality and financial effects remain UNVERIFIED. No default sample entities are invented. See [v0.37 engineering guide](docs/V037_FACILITY_EXPOSURE.md).
+
+---
+
 # TradeScope v0.36 — Official HTTP Source Archive and Prospective Dataset Exports
 
 **New:** [Evidence Validation → Official Source Archive & Dataset Export](agent-validation.html#official-source-evidence) retrieves an explicitly reviewed official-source HTTP document from one of eight fixed HTTPS hosts, hashes bounded response bytes after retrieval, stores a local metadata/excerpt snapshot, and produces deterministic point-in-time JSON/CSV exports of frozen protocols, reviewer agreement and source digests. This is **document retrieval verification, not independent adjudication of a claim or outcome**. No verified prediction metrics or reviewer identities are exported. Feature remains single-user, loopback-only, draft. See [v0.36 limitations](docs/V036_OUTCOME_SOURCE_ARCHIVE.md).

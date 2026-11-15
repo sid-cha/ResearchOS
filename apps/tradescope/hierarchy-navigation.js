@@ -34,7 +34,10 @@ const TREE=[
   {id:'investigations',label:'Investigations',tools:[
    {id:'cases',label:'Case Queue',href:'/#cases'},
    {id:'assistant',label:'Evidence Assistant',href:'/#assist'},
-   {id:'proof',label:'Exposure Proof',href:'/exposure-review.html'}]}]},
+   {id:'proof',label:'Exposure Proof',href:'/exposure-review.html'}]},
+  {id:'facilities',label:'Facility Intelligence',tools:[
+   {id:'facility-crosswalk',label:'Company–Facility Crosswalk',href:'/facility-exposure.html'},
+   {id:'facility-candidates',label:'Event Proximity Candidates',href:'/facility-exposure.html#event-matches'}]}]},
  {id:'events',label:'Global Events',sections:[
   {id:'event-radar',label:'Event Radar',tools:[
    {id:'terminal-events',label:'Event Stream',href:'/#intel'},

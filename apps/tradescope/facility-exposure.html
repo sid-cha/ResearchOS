@@ -1,0 +1,76 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS EPA FRS facility and SEC company source crosswalk, event proximity, and independent relationship scrutiny.">
+<title>ResearchOS | Company &amp; Facility Exposure</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/facility-exposure.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a href="/" class="desk-brand">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research"><a href="/event-portal.html#global-feed">Captured Global Events</a>
+<a href="/agent-desk.html">Research Agent Desk</a></nav>
+<span class="desk-version">v0.37 · ENTITY &amp; FACILITY RESEARCH</span></header>
+<main class="desk-main">
+<section class="desk-hero"><p class="eyebrow">COMPANY RESEARCH / FACILITY EXPOSURE / SOURCE FIRST</p>
+<h1>Company &amp; facility <span>exposure crosswalk</span></h1>
+<p>Identify an EPA-reported physical site, separately identify a SEC filer, record a source-linked relationship hypothesis, and compare locally captured disruptions to facility locations.</p>
+<div class="desk-boundary"><strong>Evidence boundary:</strong> EPA FRS Registry ID identifies a reported site. SEC CIK identifies a filer. Neither establishes who currently owns/operates the site, that a local incident damaged it, or that a stock price will move. Geography is a screening lead, not verified exposure.</div></section>
+<div class="facility-grid">
+<section class="desk-panel" id="facility-search"><div class="panel-heading"><h2>01 / EPA FRS facility lookup</h2><span>OFFICIAL EPA RESPONSE</span></div>
+<div class="panel-body">
+<form id="facilityForm"><label for="frsId">FRS REGISTRY ID (12 DIGITS)
+<input id="frsId" pattern="[0-9]{12}" minlength="12" maxlength="12" required placeholder="110015778176" inputmode="numeric" autocomplete="off"></label>
+<button type="submit" id="captureFacility">Retrieve &amp; store official site record</button></form>
+<p class="muted" id="facilityStatus" role="status" aria-live="polite">No facility lookup requested.</p>
+<p class="muted">Browse the <a href="https://www.epa.gov/frs/frs-query" target="_blank" rel="noopener noreferrer">EPA FRS Registry search</a> to identify the correct site before entering its Registry ID.</p></div></section>
+<section class="desk-panel" id="issuer-search"><div class="panel-heading"><h2>02 / SEC reporting-entity lookup</h2><span>OFFICIAL SEC SUBMISSIONS</span></div>
+<div class="panel-body">
+<form id="companyForm"><label for="secCik">SEC CENTRAL INDEX KEY (CIK)
+<input id="secCik" pattern="[0-9]{1,10}" maxlength="10" required placeholder="Enter SEC company CIK" inputmode="numeric" autocomplete="off"></label>
+<button type="submit" id="captureCompany">Retrieve &amp; store issuer metadata</button></form>
+<p class="muted" id="companyStatus" role="status" aria-live="polite">No SEC lookup requested.</p>
+<p class="muted">Find a filer via <a href="https://www.sec.gov/edgar/search/" target="_blank" rel="noopener noreferrer">SEC EDGAR Search</a>. A ticker/CIK association alone is not site ownership proof.</p></div></section>
+</div>
+<section class="desk-panel" id="relationship-claim">
+<div class="panel-heading"><h2>03 / Record a disputed company–facility relationship</h2><span>UNVERIFIED OPERATOR CLAIM</span></div>
+<div class="panel-body"><p>Capture both official identities above, then add an explicit research hypothesis supported by a SEC filing link. The filing contents are <strong>not independently checked</strong> by this screen.</p>
+<form id="relationshipForm">
+<div class="facility-form-grid">
+<label for="linkFacility">CAPTURED FACILITY<select id="linkFacility" required><option value="">No facility captured</option></select></label>
+<label for="linkCompany">CAPTURED COMPANY<select id="linkCompany" required><option value="">No SEC entity captured</option></select></label>
+<label for="linkType">HYPOTHESIZED RELATIONSHIP
+<select id="linkType"><option value="POTENTIAL_OWNER">Potential owner</option>
+<option value="POTENTIAL_OPERATOR">Potential operator</option>
+<option value="POTENTIAL_SUPPLIER">Potential supplier</option>
+<option value="POTENTIAL_CUSTOMER">Potential customer</option></select></label>
+<label for="linkSource">SEC FILING ARCHIVE URL<input id="linkSource" type="url" maxlength="600" required placeholder="https://www.sec.gov/Archives/edgar/data/..."></label>
+</div>
+<label for="linkRationale">RESEARCH JUSTIFICATION (25–600 CHARACTERS)
+<textarea id="linkRationale" rows="3" minlength="25" maxlength="600" required placeholder="Specify what a named section of the SEC filing might support, and what ownership or materiality evidence remains missing."></textarea></label>
+<button type="submit" id="linkSave">Save unverified relationship claim</button>
+</form><p id="linkStatus" class="muted" role="status" aria-live="polite">No relationship claim recorded.</p></div></section>
+<section class="desk-panel" id="event-matches">
+<div class="panel-heading"><h2>04 / Event-to-facility geographic candidates</h2><span id="facilityCount">NO EVIDENCE LOADED</span></div>
+<div class="panel-body">
+<div class="facility-form-grid">
+<label for="facilityEvent">CAPTURED EVENT<select id="facilityEvent"><option value="">All locally captured events</option></select></label>
+<label for="facilityRadius">MAXIMUM PROXIMITY
+<select id="facilityRadius"><option value="25">25 km</option><option value="50">50 km</option>
+<option value="100">100 km</option><option value="250" selected>250 km</option><option value="500">500 km</option></select></label>
+<label for="facilityAsOf">LOCAL KNOWLEDGE AS-OF (UTC, OPTIONAL)
+<input id="facilityAsOf" maxlength="32" placeholder="Latest evidence" autocomplete="off"></label>
+</div>
+<div class="desk-actions"><button type="button" id="evaluateFacility">Evaluate local proximity</button>
+<button type="button" class="secondary" id="refreshFacility">Refresh source inventory</button></div>
+<p id="candidateStatus" class="muted" role="status" aria-live="polite">Only previously captured source events and facility identities are evaluated.</p>
+<div id="candidateResults" class="facility-candidates" aria-live="polite"><p>No geographic evaluation has been run.</p></div></div></section>
+<section class="desk-panel" id="anti-exposure">
+<div class="panel-heading"><h2>05 / Anti-Agent verification gates</h2><span>BLOCKING UNCERTAINTY</span></div>
+<div class="panel-body"><div class="facility-gates">
+<p><strong>Site identity:</strong> FRS data provide reported coordinates and facility metadata—not independently surveyed site boundaries.</p>
+<p><strong>Issuer identity:</strong> SEC CIK and ticker associations identify a filer—not that firm's present ownership of an EPA site.</p>
+<p><strong>Relationship:</strong> A submitted SEC link and human rationale are an unverified claim until the document and dates are separately adjudicated.</p>
+<p><strong>Event exposure:</strong> Distance does not measure flood extent, wildfire footprint, airport network disruption, physical loss, operational shutdown, revenue or equity returns.</p>
+<p><strong>Point-in-time:</strong> This local collector can only use data available at its own capture clock. It cannot certify original upstream publication dates.</p>
+</div></div></section>
+<footer>ResearchOS v0.37 · Source-reported site/company records only · No certified ownership, insurer losses or trade signals.</footer>
+</main><script src="/facility-exposure.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>
