@@ -101,7 +101,7 @@ test('outcome registration freezes question and starts horizon at registration, 
  assert.equal(result.independentlyVerified,false);
  assert.equal((await h.service.runAudit(h.run.id)).outcome.registeredAt,T1);
  await assert.rejects(h.service.register(registration(h.run)),{status:409});
- await assert.rejects(h.service.labelOutcome(label(h.run,result.registrationId,'R1')),{status:409});
+ await assert.rejects(h.service.labelOutcome(label(h.run,result.registrationId,'Reviewer1')),{status:409});
  const report=await h.service.report();
  assert.equal(report.registered,1);
  assert.equal(report.awaitingTwoReviewers,1);
