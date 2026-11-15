@@ -1,3 +1,9 @@
+# TradeScope v0.34 — Research Agent Desk and independent Anti-Agent
+
+**New local research workspace:** [Agent Desk](agent-desk.html) executes six evidence-first stages against captured global events: Evidence Scout, Timeline Auditor, Transmission Analyst, independently scoped Anti-Agent, Source Verifier and Research Arbiter. Every run stores the evidence cutoff, original provider links, deterministic rule-based disagreements and a SHA-256 checksum. Optional Ollama or LM Studio model proposals are loopback-only, tool-free, bounded and explicitly unverified; deterministic operation works without a model. No trading, certified predictions, source-independent verification, user-supplied URLs or provider retention rights are implied. See [v0.34 engineering guide](docs/V034_RESEARCH_AGENT_DESK.md). PR #19 remains draft.
+
+---
+
 # TradeScope v0.33 — Precursor Radar
 
 **New:** [Precursor Radar](event-portal.html#precursor-radar) uses local first-observed events and v0.33 polling coverage checkpoints to identify **descriptive activity spikes** only when a complete baseline exists. It never imputes missing/failed source checks, builds historical as-of analyses from future snapshots, or estimates probability, false-positive rate or financial outcomes without ground-truth labels. See [v0.33 specifications](docs/V033_PRECURSOR_RADAR.md). PR #19 remains draft.

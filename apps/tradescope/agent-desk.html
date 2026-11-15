@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS evidence-first autonomous Research Agent Desk and independent adversarial challenge">
+<title>ResearchOS | Research Agent Desk</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/hierarchy-navigation.css">
+</head><body>
+<header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a><nav aria-label="Other research workspaces"><a href="/event-portal.html#global-feed">Global Event Intelligence</a></nav><span class="desk-version">v0.34 · LOCAL RESEARCH PILOT</span></header>
+<main class="desk-main">
+<section class="desk-hero"><p class="eyebrow">RESEARCH AGENTS / EVIDENCE FIRST / HUMAN REVIEW</p>
+<h1>Research Agent Desk <span>&amp; independent Anti-Agent</span></h1>
+<p>Investigate a captured public event through six accountable research stages. The adversarial challenger works from the original evidence—not from the analyst's answer. No trades, unsourced facts or verified predictions.</p>
+<div class="desk-boundary"><strong>Safety &amp; provenance:</strong> Deterministic analysis runs without a model. Optional local model hypotheses are always unverified, have no tools, and use a fixed loopback endpoint. No source links are fetched by the agents. This is a single-user local pilot.</div>
+</section>
+<div class="desk-columns">
+<section id="agent-workspace" class="desk-panel">
+<div class="panel-heading"><h2>01 / Investigation controls</h2><span id="deskMode">Checking capability…</span></div>
+<div class="panel-body">
+<label for="deskEvent">CAPTURED SOURCE EVENT
+<select id="deskEvent"><option value="">Loading locally captured events…</option></select></label>
+<div class="desk-form-grid">
+<label for="deskAsOf">KNOWLEDGE CHECKPOINT (UTC, OPTIONAL)
+<input id="deskAsOf" placeholder="Current local knowledge" maxlength="32" autocomplete="off"></label>
+<label for="deskAnalysisMode">ANALYSIS MODE
+<select id="deskAnalysisMode"><option value="deterministic">Deterministic (no LLM)</option><option value="local">Local model + deterministic safeguards</option></select></label>
+</div>
+<div class="desk-actions"><button id="deskRun" disabled>Run six-agent investigation</button><button id="deskReloadEvents" class="secondary">Reload saved events</button></div>
+<p id="deskStatus" role="status" aria-live="polite">Loading local evidence and model status…</p>
+</div>
+</section>
+<section class="desk-panel" id="saved-runs">
+<div class="panel-heading"><h2>02 / Saved research runs</h2><span>PRIVATE LOCAL RECORDS</span></div>
+<div class="panel-body"><p>Each run stores its evidence snapshot, agent findings, unresolved questions and an integrity digest.</p>
+<div id="deskRuns" class="desk-runs" aria-live="polite"><p>No saved runs loaded.</p></div>
+</div>
+</section>
+</div>
+<section class="desk-panel" id="deskResult">
+<div class="panel-heading"><h2>03 / Research findings and evidence</h2><span id="runDisposition">HUMAN REVIEW REQUIRED</span></div>
+<div class="panel-body">
+<p id="runSummary" class="run-summary">Select a captured source event, then run the investigation or open a saved run.</p>
+<div id="referenceList" class="desk-reference-list"></div>
+<div id="agentStages" class="stage-grid" aria-live="polite"></div>
+</div>
+</section>
+<section class="desk-panel anti-panel" id="anti-agent">
+<div class="panel-heading"><h2>04 / Anti-Agent independence protocol</h2><span>NO SHARED ANALYST ANSWER</span></div>
+<div class="panel-body"><p>The independent challenger receives only the same captured, bounded source evidence and research question. It cannot inspect the analyst model's answer. Its role is to attempt falsification through alternative mechanisms, reporting delays, missing comparisons, base rates, and independent outcome evidence.</p>
+<p>Any local-model text is recorded as an <strong>unverified proposal</strong> and is never accepted as an authenticated citation. The Arbiter cannot mark causality, exposure, probability, or a trade as verified.</p></div>
+</section>
+<footer>ResearchOS v0.34 · Source-bound research · All interpretations require human review · No automated trading</footer>
+</main>
+<script src="/agent-desk.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

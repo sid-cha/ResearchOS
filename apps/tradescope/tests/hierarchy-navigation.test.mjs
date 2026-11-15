@@ -12,14 +12,14 @@ vm.runInNewContext(js,ctx,{timeout:1000});
 const model=ctx.window.TradeScopeNavigationModel;
 const pages=['index.html','market-hub.html','commodity.html','source-control.html',
  'transmission-lab.html','fred-research.html','evidence-ledger.html',
- 'geo-exposure.html','exposure-review.html','event-portal.html','market-capture.html'];
+ 'geo-exposure.html','exposure-review.html','event-portal.html','market-capture.html','agent-desk.html'];
 const rootTools=new Set(['monitor','blotter','replay','intel','cases','assist','feed-health']);
 const researchTabs=new Set(['company','signals','screener','atlas','monitoring','filings','discovery','crisis','analogues']);
 const marketTabs=new Set(['overview','dashboard','compare','financials','watchlists','screener','themes','macro']);
 
 test('shared data model contains three explicit levels, unique identifiers and meaningful complete areas',()=>{
  assert(model);
- assert.deepEqual(Array.from(model.tree,x=>x.id),['markets','companies','events','operations']);
+ assert.deepEqual(Array.from(model.tree,x=>x.id),['markets','companies','events','agents','operations']);
  assert(model.tree.every(g=>g.sections.length>0&&g.sections.every(s=>s.tools.length>0)));
  assert.equal(new Set(model.tools.map(x=>x.href)).size,model.tools.length);
  assert(model.tools.length>=25);

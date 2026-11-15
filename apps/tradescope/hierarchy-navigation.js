@@ -50,6 +50,12 @@ const TREE=[
    {id:'analogues',label:'Event Analogues',href:'/#research/analogues'},
    {id:'crisis',label:'Crisis & Climate',href:'/#research/crisis'},
    {id:'vintage',label:'FRED / ALFRED',href:'/fred-research.html'}]}]},
+ {id:'agents',label:'Research Agents',sections:[
+  {id:'agent-workbench',label:'Agent Workbench',tools:[
+   {id:'agent-desk',label:'Research Agent Desk',href:'/agent-desk.html'},
+   {id:'anti-agent',label:'Independent Anti-Agent',href:'/agent-desk.html#anti-agent'}]},
+  {id:'agent-review',label:'Research Review',tools:[
+   {id:'agent-runs',label:'Saved Research Runs',href:'/agent-desk.html#saved-runs'}]}]},
  {id:'operations',label:'Research Operations',sections:[
   {id:'sources',label:'Sources & Provenance',tools:[
    {id:'source-control',label:'Source Control',href:'/source-control.html'},
