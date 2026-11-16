@@ -59,6 +59,9 @@ const TREE=[
    {id:'aviation',label:'FAA Case & Precursors',href:'/event-portal.html#case-study'}]},
   {id:'transmission',label:'Economic Transmission',tools:[
    {id:'transmission-lab',label:'Transmission Lab',href:'/transmission-lab.html'},
+   {id:'dynamic-exposure-graph',label:'Dynamic Causal Exposure Graph',href:'/dynamic-exposure.html'},
+   {id:'exposure-review-paths',label:'Exposure & Anti-Agent Paths',href:'/dynamic-exposure.html#exposure-network'},
+   {id:'exposure-proof-gates',label:'Dynamic Anti-Agent Proof Gaps',href:'/dynamic-exposure.html#exposure-adversarial'},
    {id:'commodity',label:'Commodity Disruptions',href:'/commodity.html'},
    {id:'geo-exposure',label:'Geographic Exposure',href:'/geo-exposure.html'},
    {id:'hazard-footprints',label:'Official Hazard Polygons',href:'/hazard-footprints.html'},

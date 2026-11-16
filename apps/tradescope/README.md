@@ -1,3 +1,9 @@
+# ResearchOS v0.48 — P0 Dynamic Causal & Economic Exposure Graph
+
+**New:** [Dynamic Causal Exposure Explorer](dynamic-exposure.html) composes previously captured mechanism stages, NOAA CPC numeric observations, USGS event proximity, NWS/WFIGS warning/perimeter polygons, ShakeMap modeled intensity, EPA facility sites, SEC company identities, GLEIF accounting links and relationship review claims. Every branch is evidence-typed and timestamp-gated; each source-to-site-to-company research path has deterministic Anti-Agent proof questions. **No legal site ownership, property damage, causal issuer loss or market price effect is certified.** It is a read-only local module with no new provider calls, credentials, automatic trades or cloud access. See [v0.48 technical protocol](docs/V048_DYNAMIC_EXPOSURE_GRAPH.md).
+
+---
+
 # ResearchOS v0.47 — P0 Autonomous Source Monitoring and Durable Local Inbox
 
 **New:** [Autonomous Source Monitor](source-monitor.html) schedules bounded, opt-in NOAA numerical index, corporate/regulatory news and generic mechanism searches. It persists each RUNNING attempt *before* a provider call, recovers abandoned attempts as INTERRUPTED after restart, retries failures with bounded exponential backoff, deduplicates source-specific review alerts, and provides a private local inbox with acknowledgement and source-to-inbox timing. **No external email/push/webhook delivery and no claim of a continuous cloud service.** Every source has independent permission gates and scheduled jobs are manually added. See [v0.47 operating and acceptance protocol](docs/V047_AUTONOMOUS_SOURCE_MONITOR.md).
