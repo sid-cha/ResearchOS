@@ -1,3 +1,9 @@
+# ResearchOS v0.46 — P0 NOAA Numeric ENSO Precursor Intelligence
+
+**New:** [NOAA Numeric Climate Precursors](climate-numeric.html) explicitly captures five official CPC indices (seasonal RONI, monthly relative Niño 3.4, Southern Oscillation Index and western/central 850 mb trade-wind anomalies), preserves SHA-256 source snapshots, local first-seen clocks and per-month revisions, and computes strictly descriptive trend and cross-index research context. Opening the page or historical snapshots does not fetch an upstream service. Retrospective historical measurement values never become falsely dated research alerts. No implied regional flood, commodity price or issuer-return prediction. See [v0.46 source contract and P0 gates](docs/V046_NOAA_NUMERIC_PRECURSORS.md).
+
+---
+
 # ResearchOS v0.45 — P0 Universal Mechanism-First Radar
 
 **New:** [Mechanism-First Radar](mechanism-radar.html) discovers climate, export-policy, logistics and energy-system themes without requiring a predefined company/person watchlist. It captures bounded GDELT topic results or NOAA CPC issue-date discussions on explicit operator request, and composes source observations into conditional economic pathways. The ENSO pathway traces wind/heat coupling through California jet stream/flood exposure, Peru anchoveta/fishmeal, and region-specific South American crop/fertilizer demand. All downstream causality, named issuer effects, stock forecasts and historical original publisher timestamps remain unverified. Historical as-of views use **local first capture** only. See [v0.45 design and acceptance](docs/V045_MECHANISM_RADAR.md).

@@ -54,6 +54,8 @@ const TREE=[
    {id:'precursor-radar',label:'Precursor Radar',href:'/event-portal.html#precursor-radar'},
    {id:'mechanism-radar',label:'Mechanism-First Radar',href:'/mechanism-radar.html'},
    {id:'mechanism-ensopath',label:'ENSO Economic Mechanisms',href:'/mechanism-radar.html#mechanism-replay'},
+   {id:'noaa-numerical-precursors',label:'NOAA Numerical ENSO Signals',href:'/climate-numeric.html'},
+   {id:'noaa-precursor-vintages',label:'Numeric Source Revision Audit',href:'/climate-numeric.html#numeric-asof'},
    {id:'aviation',label:'FAA Case & Precursors',href:'/event-portal.html#case-study'}]},
   {id:'transmission',label:'Economic Transmission',tools:[
    {id:'transmission-lab',label:'Transmission Lab',href:'/transmission-lab.html'},
