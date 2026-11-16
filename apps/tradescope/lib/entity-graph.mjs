@@ -126,7 +126,7 @@ export function normalizeGleifRelationship(payload,childLei){
     relationshipType!=='IS_DIRECTLY_CONSOLIDATED_BY')
   throw err('GLEIF Level 2 record has mismatched LEI or unsupported relationship type',502);
  const periods=normalizePeriods(rel.relationshipPeriods??rel.periods??attrs.relationshipPeriods);
- return {childLei,parentLei,relationshipType:'GLEIF_REPORTED_DIRECT_ACCOUNTING_CONSOLIDATION',
+ return {childLei,parentLei:parent,relationshipType:'GLEIF_REPORTED_DIRECT_ACCOUNTING_CONSOLIDATION',
   rawRelationshipType:relationshipType,
   status:'GLEIF_REPORTED_RELATIONSHIP_RECORD_NOT_LEGAL_OWNER_CERTIFICATE',
   sourceUrl:LEI_BASE+childLei+'/direct-parent-relationship',
