@@ -1,3 +1,9 @@
+# ResearchOS v0.41 — P0 Source Corroboration Dossier
+
+**New:** [Source Corroboration Dossier](corroboration-case.html) composes previously captured EPA FRS facility metadata, SEC filer and exact filing excerpts, GLEIF LEI/Level 2 records, and existing human review into a deterministic point-in-time evidence matrix with visible Anti-Agent conflicts and reproducible JSON export. This is **read-only, source-scoped research**, not legally verified issuer/facility ownership or predictive financial impact. No live provider calls occur when viewing a case. See [v0.41 protocol](docs/V041_SOURCE_CORROBORATION.md).
+
+---
+
 # ResearchOS v0.40 — P0 Sprint 6 Level 2 Relationship-Record Evidence
 
 **New:** [Official Entity Graph](entity-graph.html) now captures GLEIF's dated Level 2 direct-accounting-consolidation relationship record separately from the direct-parent identity record, keeps provider-reported relationship/accounting/document-filing periods distinct, and surfaces a source conflict if the reported parents disagree. Two GLEIF endpoints are **not independent provider corroboration**; no company/facility ownership is certified. See [Sprint 6 record](docs/V040_GLEIF_RELATIONSHIP_RECORDS.md).

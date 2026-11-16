@@ -1,0 +1,16 @@
+.case-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.case-status{color:var(--muted);font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.case-matrix,.case-evidence,.case-issues{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:10px}
+.case-card{background:#192c3a;border:1px solid var(--line);border-radius:8px;padding:13px;overflow-wrap:anywhere}
+.case-card h3{font-size:13px;line-height:1.45;margin:4px 0 9px}
+.case-card strong{color:var(--teal);font-size:11px;overflow-wrap:anywhere}
+.case-card p,.case-card small{font-size:12px;line-height:1.65;color:var(--muted);overflow-wrap:anywhere}
+.case-card .status-warning{color:var(--amber);font:11px/1.6 ui-monospace,Consolas,monospace}
+.case-card .date{font:10px/1.6 ui-monospace,Consolas,monospace;color:var(--muted)}
+.case-card a{overflow-wrap:anywhere}
+.case-issues .case-card{border-left:3px solid #c79b71}
+.case-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.case-fact{border:1px solid var(--line);padding:13px;border-radius:8px;background:#142938;min-width:0}
+.case-fact strong{font-size:12px;line-height:1.5;color:var(--teal);overflow-wrap:anywhere}
+.case-fact small{display:block;font-size:11px;color:var(--muted)}
+@media(max-width:750px){.case-controls{grid-template-columns:1fr}}
