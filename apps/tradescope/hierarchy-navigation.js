@@ -30,7 +30,9 @@ const TREE=[
   {id:'issuer',label:'Issuer Research',tools:[
    {id:'company',label:'Company Metrics',href:'/#research/company'},
    {id:'filings',label:'SEC Filing Reader',href:'/#research/filings'},
-   {id:'discovery',label:'Issuer Discovery',href:'/#research/discovery'}]},
+   {id:'discovery',label:'Issuer Discovery',href:'/#research/discovery'},
+   {id:'corporate-precursors',label:'Corporate Precursor Monitor',href:'/corporate-precursor.html'},
+   {id:'news-first-seen',label:'News First-Seen Replay',href:'/corporate-precursor.html#precursor-chronology'}]},
   {id:'investigations',label:'Investigations',tools:[
    {id:'cases',label:'Case Queue',href:'/#cases'},
    {id:'assistant',label:'Evidence Assistant',href:'/#assist'},

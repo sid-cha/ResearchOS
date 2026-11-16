@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS source-first corporate and regulatory precursor monitor.">
+<title>ResearchOS | Corporate Precursor Monitor</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/corporate-precursor.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research"><a href="/source-control.html">Source Control</a>
+<a href="/agent-desk.html">Research Agents</a></nav>
+<span class="desk-version">v0.44 · P0 SPRINT 8 / CORPORATE PRECURSORS</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">GLOBAL EVENTS / CORPORATE RISK / FIRST-SEEN HISTORY</p>
+<h1>Corporate &amp; regulatory <span>precursor monitor</span></h1>
+<p>Capture risk-related coverage, distinguish media allegations from official documents and preserve what ResearchOS knew at each local as-of time. No stock prediction or claims about personal wrongdoing.</p>
+<div class="desk-boundary"><strong>Proof boundary:</strong> A media report documents publication of a claim, not its truth. A Federal Register search hit does not independently prove an issuer relationship. GDELT indexed time and Alpaca news metadata are <em>not</em> validated original publisher publication timestamps. Only the local ResearchOS capture time supports a first-observed-by-this-platform claim.</div>
+</section>
+<section class="desk-panel" id="precursor-capture">
+<div class="panel-heading"><h2>01 / Request bounded issuer coverage</h2><span>EXPLICIT CLICK · NO BACKGROUND POLLING</span></div>
+<div class="panel-body">
+<form id="precursorForm"><div class="precursor-fields">
+<label for="precursorSymbol">REGISTERED ISSUER
+<select id="precursorSymbol" required><option value="">Loading issuers…</option></select></label>
+<label for="precursorProvider">SOURCE
+<select id="precursorProvider"><option value="GDELT_MEDIA">GDELT — global media index</option>
+<option value="FEDERAL_REGISTER">Federal Register — official keyword discovery</option>
+<option value="ALPACA_MEDIA">Alpaca — licensed issuer news</option></select></label>
+</div><button type="submit" id="precursorCapture" disabled>Capture current source observations</button></form>
+<p id="precursorCaptureStatus" class="precursor-status" role="status" aria-live="polite">Capture is disabled unless the local operator explicitly enables it and acknowledges permitted source retention.</p>
+</div></section>
+<section class="desk-panel" id="precursor-chronology">
+<div class="panel-heading"><h2>02 / Reconstruct local knowledge chronology</h2><span id="precursorCounts">NO SNAPSHOTS</span></div>
+<div class="panel-body"><div class="precursor-fields">
+<label for="precursorAsOf">LOCAL AS-OF UTC (OPTIONAL)
+<input id="precursorAsOf" placeholder="Current, or 2026-10-29T13:00:00Z" maxlength="32"></label>
+<label for="precursorFilter">ISSUER FILTER
+<select id="precursorFilter"><option value="">All captured issuers</option></select></label>
+</div>
+<div class="desk-actions"><button type="button" id="precursorRefresh" class="secondary">Replay saved evidence</button>
+<button type="button" id="precursorExport" class="secondary" disabled>Export evidence JSON</button></div>
+<p id="precursorStatus" role="status" aria-live="polite" class="precursor-status">No local news history loaded. Missing coverage is not proof that a risk event did not happen.</p>
+<div id="precursorHealth" class="precursor-health"></div>
+<div id="precursorResults" class="precursor-results"></div>
+</div></section>
+<section class="desk-panel" id="precursor-challenge">
+<div class="panel-heading"><h2>03 / Anti-Agent proof requirements</h2><span>DO NOT CLASSIFY ALLEGATIONS AS VERIFIED</span></div>
+<div class="panel-body"><div class="precursor-gates">
+<p><strong>Source:</strong> An article and a syndicated copy are not independent confirmation of the underlying claim.</p>
+<p><strong>Entity resolution:</strong> Named people, company brands, suppliers and subsidiaries require separately cited relationship records.</p>
+<p><strong>Original clocks:</strong> Archive retrieval now does not retroactively establish 2025 platform detection. Original publisher timestamps and all later revisions need independent proof.</p>
+<p><strong>Official corroboration:</strong> A Federal Register search match may be about unrelated entities. Verify original legal text, party, date and jurisdiction.</p>
+<p><strong>Market outcome:</strong> An elevated review flag is not a measured NVDA return, causality, calibrated probability or trading recommendation.</p>
+</div></div></section>
+<footer>ResearchOS v0.44 · local-on-demand source discovery only · Human verification required · PR #19 draft</footer>
+</main>
+<script src="/corporate-precursor.js"></script><script src="/hierarchy-navigation.js"></script></body></html>

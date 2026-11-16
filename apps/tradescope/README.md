@@ -1,3 +1,9 @@
+# ResearchOS v0.44 — P0 Sprint 8 Corporate & Regulatory Precursor Monitor
+
+**New:** [Corporate Precursor Monitor](corporate-precursor.html) captures explicitly requested GDELT media index matches, Federal Register issuer-keyword search candidates and authorized Alpaca issuer news. Local as-of clocks, bounded source hashes and revisions, separate provider-indexed timestamps, conservative headline-based risk taxonomy and JSON export let an analyst replay what was actually available **to ResearchOS at capture**, not retroactively claim a 2025 alert from a 2026 archive search. An allegation headline is never a verified espionage, wrongdoing, official action or stock-price effect. Local capture requires explicit environmental rights and feature controls. See [v0.44 guide](docs/V044_CORPORATE_PRECURSOR.md).
+
+---
+
 # ResearchOS v0.43 — P0 Sprint 7 USGS ShakeMap MMI Grid Sampling
 
 **New:** [USGS ShakeMap Site Intensity](usgs-shakemap.html) samples the nearest valid reported USGS ShakeMap MMI grid node to a previously captured EPA FRS site, only for a previously captured USGS earthquake event. It stores bounded event-detail and grid response hashes, explicit missing/outside-grid states, local as-of revisions and a JSON export. MMI is **modeled shaking intensity**, not a site damage or portfolio loss estimate. The XML grid is a documented but legacy ShakeMap product; live acceptance and CoverageJSON/HDF modernization remain P0. See [v0.43 technical guide](docs/V043_SHAKEMAP_MMI.md).
