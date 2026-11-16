@@ -54,6 +54,10 @@ async function renderView(){
     if(link.evidenceUrl){
      const a=add(box,'a','Operator-supplied SEC filing reference');
      a.href=link.evidenceUrl;a.target='_blank';a.rel='noopener noreferrer';
+     if(link.relationshipId){
+      const verify=add(box,'a','Challenge relationship evidence & dates');
+      verify.href='/relationship-verification.html?relationship='+encodeURIComponent(link.relationshipId);
+     }
     }
    }
    add(c,'p','Assessment: '+x.resultClass+

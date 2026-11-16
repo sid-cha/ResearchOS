@@ -12,7 +12,7 @@ vm.runInNewContext(js,ctx,{timeout:1000});
 const model=ctx.window.TradeScopeNavigationModel;
 const pages=['index.html','market-hub.html','commodity.html','source-control.html',
  'transmission-lab.html','fred-research.html','evidence-ledger.html',
- 'geo-exposure.html','exposure-review.html','event-portal.html','market-capture.html','agent-desk.html','agent-validation.html','facility-exposure.html'];
+ 'geo-exposure.html','exposure-review.html','event-portal.html','market-capture.html','agent-desk.html','agent-validation.html','facility-exposure.html','relationship-verification.html'];
 const rootTools=new Set(['monitor','blotter','replay','intel','cases','assist','feed-health']);
 const researchTabs=new Set(['company','signals','screener','atlas','monitoring','filings','discovery','crisis','analogues']);
 const marketTabs=new Set(['overview','dashboard','compare','financials','watchlists','screener','themes','macro']);

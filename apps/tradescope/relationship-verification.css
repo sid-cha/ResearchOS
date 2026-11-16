@@ -1,0 +1,7 @@
+.verification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.verification-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.evidence-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px;margin:16px 0}.evidence-card{background:#192b39;border:1px solid var(--line);padding:14px;border-radius:8px;min-width:0}
+.evidence-card strong{font-size:12px;color:var(--teal)}.evidence-card p{font-size:12px;line-height:1.65;color:var(--muted)}.evidence-card small{font:11px/1.55 ui-monospace,Consolas,monospace;color:var(--muted);display:block;overflow-wrap:anywhere}
+.evidence-card .rejected{color:var(--amber)}.review-message{font-size:12px;color:var(--muted);line-height:1.65;white-space:pre-line}
+.relation-source{font-size:11px;color:var(--teal);overflow-wrap:anywhere}.review-warning{border:1px solid #705642;background:#332921;padding:10px;color:#f1cfad;border-radius:6px;font-size:12px}
+.verification-grid label,.desk-panel label{max-width:100%}@media(max-width:920px){.verification-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.verification-form-grid{grid-template-columns:1fr}}

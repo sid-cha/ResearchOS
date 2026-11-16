@@ -145,7 +145,7 @@ export function buildExposureCandidates({facilities,companies,relationships,even
     distanceKm:km,searchRadiusKm:limitKm,
     links:claims.filter(x=>iso(x.capturedAt)&&x.capturedAt<=asOf).map(x=>({
      cik:x.cik,companyName:x.company.companyName,tickers:x.company.tickers,
-     claimedRelationship:x.relationshipType,evidenceUrl:x.evidenceUrl,
+     claimedRelationship:x.relationshipType,relationshipId:x.relationshipId||null,evidenceUrl:x.evidenceUrl,
      claimCapturedAt:x.capturedAt,ownershipVerified:false})),
     resultClass:'GEOGRAPHIC_CANDIDATE_ONLY',siteDamageVerified:false,
     ownershipVerified:false,issuerEconomicImpactVerified:false,
@@ -205,7 +205,7 @@ export function createFacilityExposure({collector,filename,fetchImpl=globalThis.
   for(const e of entries){
    if(e.type==='FACILITY')facilities.set(e.value.registryId,{...e.value,capturedAt:e.capturedAt});
    else if(e.type==='COMPANY')companies.set(e.value.cik,{...e.value,capturedAt:e.capturedAt});
-   else if(e.type==='RELATIONSHIP')links.push({...e.value,capturedAt:e.capturedAt});
+   else if(e.type==='RELATIONSHIP')links.push({...e.value,relationshipId:e.id,capturedAt:e.capturedAt});
   }
   return {facilities:[...facilities.values()],companies:[...companies.values()],
    relationships:links};

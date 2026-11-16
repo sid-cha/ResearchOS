@@ -1,3 +1,9 @@
+# ResearchOS / TradeScope v0.38 — SEC Evidence & Relationship-Interval Review
+
+**New:** [Relationship Evidence Review](relationship-verification.html) extends the v0.37 crosswalk with a fixed-origin SEC filing text match, captured document digest, analyst-proposed relationship-effective dates, two sealed reviewer decisions, anti-agent proof limitations, and point-in-time replay of the verification journal. None of these actions certifies ownership, operational control, supplier relationships, materiality, or stock-price impact. Local-only, draft PR #19. See [v0.38 technical guide](docs/V038_RELATIONSHIP_VERIFICATION.md).
+
+---
+
 # ResearchOS / TradeScope v0.37 — Company & Facility Exposure Crosswalk
 
 **New:** [Facility Crosswalk](facility-exposure.html) captures EPA FRS registry metadata by 12-digit FRS ID and SEC EDGAR issuer metadata by CIK using fixed official HTTPS endpoints; stores an explicitly **unverified** owner/operator/customer/supplier research link backed by an operator-entered SEC filing URL; and produces source-captured, radius-bounded event-to-facility geographic candidates at a chosen local knowledge cutoff. All company ownership, physical damage, materiality and financial effects remain UNVERIFIED. No default sample entities are invented. See [v0.37 engineering guide](docs/V037_FACILITY_EXPOSURE.md).
