@@ -1,3 +1,9 @@
+# ResearchOS v0.43 — P0 Sprint 7 USGS ShakeMap MMI Grid Sampling
+
+**New:** [USGS ShakeMap Site Intensity](usgs-shakemap.html) samples the nearest valid reported USGS ShakeMap MMI grid node to a previously captured EPA FRS site, only for a previously captured USGS earthquake event. It stores bounded event-detail and grid response hashes, explicit missing/outside-grid states, local as-of revisions and a JSON export. MMI is **modeled shaking intensity**, not a site damage or portfolio loss estimate. The XML grid is a documented but legacy ShakeMap product; live acceptance and CoverageJSON/HDF modernization remain P0. See [v0.43 technical guide](docs/V043_SHAKEMAP_MMI.md).
+
+---
+
 # ResearchOS v0.42 — P0 Sprint 7 Official Hazard Polygon Screening
 
 **New:** [Hazard Polygon Screening](hazard-footprints.html) explicitly retrieves NWS active Flood/Flash Flood alert polygons and WFIGS current interagency wildfire perimeters for an already captured EPA facility coordinate. It stores provider response hashes, local capture clocks, bounded GeoJSON and deterministic point-in-polygon classifications (including boundary/holes), with GeoJSON export, as-of revisions and Anti-Agent verification limits. Warning polygons do not establish actual flood extent; perimeter overlap does not certify site damage. See [v0.42 guide](docs/V042_HAZARD_POLYGON_CAPTURE.md). USGS ShakeMap intensity data and live-source acceptance remain separate P0 gates.

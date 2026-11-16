@@ -8,7 +8,7 @@ This is a forward **planning** register. Earlier engineering sprints 1–4 are i
 | --- | --- | --- | --- | --- |
 | 5 / v0.39 | P0 | Source contract diagnostics and entity ownership graph | GLEIF, EPA, SEC identifiers + accounting-parent/candidate crosswalk code | Live source schema, rights/rate contracts, independent legal CIK↔LEI mapping, real browser |
 | 6 / v0.40–0.41 | P0 | Legal parent/subsidiary/operator/supplier corroboration | GLEIF Level 2 source conflict plus v0.41 read-only SEC/EPA/GLEIF case, proof gaps and as-of JSON export | Still OPEN: independent CIK↔LEI/facility legal proof, effective dates, licensed/live source acceptance and authenticated adjudication |
-| 7 / v0.42 | P0 | Incident hazard footprints and facility intersections | v0.42 explicit NWS flood warning polygons + WFIGS current wildfire-perimeter point screening, source-revision journal and GeoJSON export | OPEN: real provider/geometry acceptance, USGS ShakeMap MMI coverage, actual flood extent/intensity, verified asset damage |
+| 7 / v0.42–0.43 | P0 | Hazard footprints and modeled seismic intensity | NWS flood warning areas, WFIGS current wildfire polygons, and v0.43 bounded USGS ShakeMap grid.xml MMI at captured EPA points | OPEN: real provider acceptance, CoverageJSON/HDF model validation, surveyed assets, actual flood/fire damage, insured loss |
 | 8 | P0 | Historical first-release/revision provenance | Local capture receipts and selected ALFRED/NOAA pilots | Actual original issue timestamps, source revisions and no hindsight leakage |
 | 9 | P0 | Two complete event–commodity–issuer case studies | Limited scenario and commodity research pilots | Verified mechanism, issuer materiality and independent outcome data |
 | 10 | P0 | Prospective negative controls and historical performance | Preregistered unverified outcomes and limited studies | Certified positive/negative labels, holdout, error/false alarm estimates |
@@ -24,4 +24,4 @@ This is a forward **planning** register. Earlier engineering sprints 1–4 are i
 Backlog references: docs/SPRINTS.md, docs/V018_PRIORITIZED_BACKLOG.md, docs/V025_PRODUCT_BACKLOG_AUDIT.md, docs/STACKED_RELEASE_VALIDATION_GATE.md. Do not merge PR #19 until the full gate is reviewed.
 
 
-**Next P0 focus:** v0.42 official hazard polygons, then real NWS/WFIGS acceptance and USGS ShakeMap intensity coverage. P0-5/6 independent ownership and provider license gates remain OPEN; no P1 substitution.
+**Next P0 focus:** validate live v0.42 NWS/WFIGS and v0.43 USGS event grid captures, compare model intensity against USGS CoverageJSON/HDF, and proceed to P0 Sprint 8 original source publication chronology. P0-5/6 independent ownership and provider license gates remain OPEN; no P1 substitution.

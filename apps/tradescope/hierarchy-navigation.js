@@ -56,7 +56,9 @@ const TREE=[
    {id:'commodity',label:'Commodity Disruptions',href:'/commodity.html'},
    {id:'geo-exposure',label:'Geographic Exposure',href:'/geo-exposure.html'},
    {id:'hazard-footprints',label:'Official Hazard Polygons',href:'/hazard-footprints.html'},
-   {id:'hazard-revisions',label:'Hazard Source Revisions',href:'/hazard-footprints.html#hazard-history'}]},
+   {id:'hazard-revisions',label:'Hazard Source Revisions',href:'/hazard-footprints.html#hazard-history'},
+   {id:'usgs-shakemap-mmi',label:'USGS ShakeMap Site Intensity',href:'/usgs-shakemap.html'},
+   {id:'usgs-mmi-history',label:'Shaking Source Revisions',href:'/usgs-shakemap.html#shakemap-history'}]},
   {id:'historical',label:'Historical Research',tools:[
    {id:'analogues',label:'Event Analogues',href:'/#research/analogues'},
    {id:'crisis',label:'Crisis & Climate',href:'/#research/crisis'},
