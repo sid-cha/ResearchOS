@@ -1,7 +1,7 @@
 {
   "name": "tradescope-event-intelligence",
   "private": true,
-  "version": "0.44.0",
+  "version": "0.45.0",
   "description": "ResearchOS global event intake, revision-aware provenance and market capture research",
   "type": "module",
   "scripts": {

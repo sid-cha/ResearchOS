@@ -1,3 +1,9 @@
+# ResearchOS v0.45 — P0 Universal Mechanism-First Radar
+
+**New:** [Mechanism-First Radar](mechanism-radar.html) discovers climate, export-policy, logistics and energy-system themes without requiring a predefined company/person watchlist. It captures bounded GDELT topic results or NOAA CPC issue-date discussions on explicit operator request, and composes source observations into conditional economic pathways. The ENSO pathway traces wind/heat coupling through California jet stream/flood exposure, Peru anchoveta/fishmeal, and region-specific South American crop/fertilizer demand. All downstream causality, named issuer effects, stock forecasts and historical original publisher timestamps remain unverified. Historical as-of views use **local first capture** only. See [v0.45 design and acceptance](docs/V045_MECHANISM_RADAR.md).
+
+---
+
 # ResearchOS v0.44 — P0 Sprint 8 Corporate & Regulatory Precursor Monitor
 
 **New:** [Corporate Precursor Monitor](corporate-precursor.html) captures explicitly requested GDELT media index matches, Federal Register issuer-keyword search candidates and authorized Alpaca issuer news. Local as-of clocks, bounded source hashes and revisions, separate provider-indexed timestamps, conservative headline-based risk taxonomy and JSON export let an analyst replay what was actually available **to ResearchOS at capture**, not retroactively claim a 2025 alert from a 2026 archive search. An allegation headline is never a verified espionage, wrongdoing, official action or stock-price effect. Local capture requires explicit environmental rights and feature controls. See [v0.44 guide](docs/V044_CORPORATE_PRECURSOR.md).
