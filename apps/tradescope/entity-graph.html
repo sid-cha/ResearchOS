@@ -1,0 +1,78 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS v0.39: source-verified identifier observations and point-in-time entity graph.">
+<title>ResearchOS | Source Entity Graph</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/entity-graph.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Research workspaces"><a href="/facility-exposure.html">Facility Crosswalk</a>
+<a href="/relationship-verification.html">Relationship Review</a></nav>
+<span class="desk-version">v0.39 · P0 / SPRINT 5 ENGINEERING</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">COMPANY RESEARCH / SOURCE CONTRACTS / ENTITY GRAPH</p>
+<h1>Source-validated <span>entity graph</span></h1>
+<p>Record official GLEIF identities and reported direct accounting-consolidation parents, compare independently captured SEC filers and EPA sites, and inspect point-in-time provenance.</p>
+<div class="desk-boundary"><strong>Evidence guard:</strong> An LEI does not establish a CIK mapping; a GLEIF accounting parent is not automatically a legal owner; a SEC filer is not automatically an operator of an EPA site. No identifier association, facility ownership, economic exposure or stock impact is certified here. Missing source records stay missing.</div>
+</section>
+<div class="entity-columns">
+<section class="desk-panel" id="lei-observations">
+<div class="panel-heading"><h2>01 / Official GLEIF identifier observation</h2><span>LEVEL 1 / LEGAL ENTITY</span></div>
+<div class="panel-body">
+<form id="leiForm"><label for="gleifLei">LEI (20 CHARACTERS, UPPERCASE)
+<input id="gleifLei" minlength="20" maxlength="20" required pattern="[A-Z0-9]{18}[0-9]{2}" autocomplete="off" placeholder="5493001KJTIIGC8Y1R12"></label>
+<div class="desk-actions"><button id="captureLei" type="submit">Capture GLEIF legal entity</button>
+<button type="button" id="captureDirectParent" class="secondary">Capture reported direct parent</button></div>
+</form>
+<p class="entity-status" id="leiStatus" role="status" aria-live="polite">Official GLEIF retrieval occurs only when requested. Capture a child LEI before its parent.</p>
+</div></section>
+<section class="desk-panel" id="provider-contracts">
+<div class="panel-heading"><h2>02 / Explicit source contract diagnostics</h2><span>NO AUTO-FETCH</span></div>
+<div class="panel-body">
+<form id="sourceCheckForm">
+<label for="sourceKind">OFFICIAL PROVIDER
+<select id="sourceKind"><option value="EPA_FRS">EPA FRS — 12-digit Registry ID</option>
+<option value="SEC_EDGAR">SEC EDGAR — CIK</option><option value="GLEIF_LEI">GLEIF — LEI</option></select></label>
+<label for="sourceIdentifier">PROVIDER IDENTIFIER<input id="sourceIdentifier" required maxlength="20" autocomplete="off" placeholder="Enter a valid ID"></label>
+<button id="runSourceCheck" type="submit">Check real provider response</button>
+</form>
+<p class="entity-status" id="sourceStatus" role="status" aria-live="polite">Checks validate live HTTP response shape if reachable. Mock tests and HTTP success alone do not certify data-use rights.</p></div></section>
+</div>
+<section class="desk-panel" id="identifier-links">
+<div class="panel-heading"><h2>03 / SEC CIK ↔ GLEIF LEI candidate resolution</h2><span>NOT AUTOMATIC NAME MATCHING</span></div>
+<div class="panel-body"><p>Capture the SEC CIK first under <a href="/facility-exposure.html#issuer-search">Facility Crosswalk</a>. Then capture the matching GLEIF LEI above. An explicit analyst citation associates the records only as a candidate requiring corroboration.</p>
+<form id="identifierForm">
+<div class="entity-fields">
+<label for="candidateCik">CAPTURED SEC FILER<select id="candidateCik" required><option value="">No SEC filers captured</option></select></label>
+<label for="candidateLei">CAPTURED LEI<select id="candidateLei" required><option value="">No GLEIF identities captured</option></select></label>
+</div>
+<label for="candidateRationale">WHY THE IDENTIFIERS MAY REFER TO THE SAME LEGAL ENTITY (30–480 CHARS)
+<textarea id="candidateRationale" minlength="30" maxlength="480" required rows="3" placeholder="Name the original document or authoritative identifier crosswalk needed to disprove or confirm this candidate."></textarea></label>
+<button id="submitCandidate" type="submit" disabled>Record unverified identifier candidate</button></form>
+<p class="entity-status" id="candidateStatus" role="status" aria-live="polite">No CIK–LEI binding established.</p>
+</div></section>
+<section class="desk-panel" id="entity-network">
+<div class="panel-heading"><h2>04 / Captured graph &amp; historical cutoff</h2><span id="entityCounts">NOT LOADED</span></div>
+<div class="panel-body">
+<div class="entity-fields">
+<label for="entityAsOf">SOURCE KNOWLEDGE AS-OF (UTC, OPTIONAL)
+<input id="entityAsOf" maxlength="32" placeholder="Latest, or 2026-11-15T18:00:00Z" autocomplete="off"></label>
+<div class="desk-actions" style="align-items:end;margin-bottom:14px">
+<button type="button" id="loadGraph" class="secondary">Refresh graph</button></div>
+</div>
+<p id="graphStatus" class="entity-status" role="status" aria-live="polite">Loading captured local identifiers without making external source requests.</p>
+<div id="entityLegend" class="entity-legend"></div>
+<div id="entityNodes" class="entity-nodes" aria-live="polite"><p>No source records loaded.</p></div>
+<h2 class="entity-section-heading">Relationship edges and Anti-Agent challenges</h2>
+<div id="entityEdges" class="entity-edges"></div>
+</div></section>
+<section class="desk-panel" id="p0-backlog">
+<div class="panel-heading"><h2>05 / P0 validation gates remaining</h2><span>DO NOT PROMOTE PILOT TO VERIFIED</span></div>
+<div class="panel-body">
+<p>Current graph shows official identifier snapshots, reported accounting consolidation, operator-submitted candidate identifier links and v0.37 potential company–facility relationships. It does not verify beneficial ownership, legal subsidiary status, facility operation, original historical publication date, supply-chain materiality, hazard intensity or market return effects.</p>
+<p>Real EPA/SEC/GLEIF responses, provider rate/retention terms, independent source corroboration, browser E2E, and historical negative controls require explicit acceptance before a production claim.</p>
+</div></section>
+<footer>ResearchOS v0.39 · P0 foundation · No proven ownership, exposure ranking or trading recommendations.</footer>
+</main>
+<script src="/entity-graph.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

@@ -1,3 +1,9 @@
+# ResearchOS / TradeScope v0.39 — P0 Sprint 5 Entity Graph Foundation
+
+**New:** [Source-Validated Entity Graph](entity-graph.html) adds official GLEIF LEI legal entity capture, optional source-reported direct accounting consolidation parents, deterministic point-in-time snapshots, explicit unverified SEC CIK ↔ LEI candidate identifiers, EPA FRS/SEC/GLEIF real-response contract checks, and a graph workspace integrated under Company Research → Facility Intelligence. This is a **P0 engineering foundation**, not real-source acceptance, independently verified legal ownership, facility damage, provider rights or production readiness. Read [v0.39 contract](docs/V039_ENTITY_GRAPH_P0.md). The cumulative PR #19 remains draft.
+
+---
+
 # ResearchOS / TradeScope v0.38 — SEC Evidence & Relationship-Interval Review
 
 **New:** [Relationship Evidence Review](relationship-verification.html) extends the v0.37 crosswalk with a fixed-origin SEC filing text match, captured document digest, analyst-proposed relationship-effective dates, two sealed reviewer decisions, anti-agent proof limitations, and point-in-time replay of the verification journal. None of these actions certifies ownership, operational control, supplier relationships, materiality, or stock-price impact. Local-only, draft PR #19. See [v0.38 technical guide](docs/V038_RELATIONSHIP_VERIFICATION.md).

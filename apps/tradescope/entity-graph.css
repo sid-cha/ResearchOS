@@ -1,0 +1,19 @@
+.entity-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.entity-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.entity-status{font-size:12px;line-height:1.65;color:var(--muted);white-space:pre-line;overflow-wrap:anywhere}
+.entity-legend{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.entity-legend span{border:1px solid var(--line);border-radius:5px;padding:5px 8px;font:11px ui-monospace,Consolas,monospace;color:var(--muted)}
+.entity-nodes,.entity-edges{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px}
+.entity-node{padding:15px;background:#1a2c3a;border:1px solid var(--line);border-radius:8px;overflow-wrap:anywhere}
+.entity-node[data-kind="LEGAL_ENTITY"]{border-left:3px solid #77dcc7}
+.entity-node[data-kind="SEC_FILER"]{border-left:3px solid #7aa8de}
+.entity-node[data-kind="EPA_FACILITY"]{border-left:3px solid #e3b36f}
+.entity-node[data-kind="GLEIF_PARENT_REFERENCE"]{border-left:3px dashed #d2b398}
+.entity-node h3{margin:6px 0;font-size:14px}.entity-node small{font:11px/1.7 ui-monospace,Consolas,monospace;color:var(--muted);display:block}
+.entity-node strong{font:10px ui-monospace,Consolas,monospace;color:var(--teal)}
+.entity-edge{background:#142635;border:1px solid #425867;padding:14px;border-radius:8px;overflow-wrap:anywhere}
+.entity-edge h3{font-size:13px;margin:5px 0}.entity-edge p{color:var(--muted);font-size:12px;line-height:1.6}
+.entity-edge .unverified{color:var(--amber);font-weight:bold;font-size:11px}
+.entity-section-heading{font-size:14px;margin:22px 0 12px}
+@media(max-width:900px){.entity-columns{grid-template-columns:1fr}}
+@media(max-width:650px){.entity-fields{grid-template-columns:1fr}}

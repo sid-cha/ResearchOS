@@ -39,7 +39,9 @@ const TREE=[
    {id:'facility-crosswalk',label:'Company–Facility Crosswalk',href:'/facility-exposure.html'},
    {id:'facility-candidates',label:'Event Proximity Candidates',href:'/facility-exposure.html#event-matches'},
    {id:'relationship-verification',label:'Relationship Evidence Review',href:'/relationship-verification.html'},
-   {id:'effective-timeline',label:'Effective-Date Timeline',href:'/relationship-verification.html#relationship-timeline'}]}]},
+   {id:'effective-timeline',label:'Effective-Date Timeline',href:'/relationship-verification.html#relationship-timeline'},
+   {id:'entity-graph',label:'Official Entity Graph',href:'/entity-graph.html'},
+   {id:'source-contracts',label:'Source Contract Diagnostics',href:'/entity-graph.html#provider-contracts'}]}]},
  {id:'events',label:'Global Events',sections:[
   {id:'event-radar',label:'Event Radar',tools:[
    {id:'terminal-events',label:'Event Stream',href:'/#intel'},
