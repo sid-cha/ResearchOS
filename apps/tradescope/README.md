@@ -1,3 +1,9 @@
+# ResearchOS v0.47 — P0 Autonomous Source Monitoring and Durable Local Inbox
+
+**New:** [Autonomous Source Monitor](source-monitor.html) schedules bounded, opt-in NOAA numerical index, corporate/regulatory news and generic mechanism searches. It persists each RUNNING attempt *before* a provider call, recovers abandoned attempts as INTERRUPTED after restart, retries failures with bounded exponential backoff, deduplicates source-specific review alerts, and provides a private local inbox with acknowledgement and source-to-inbox timing. **No external email/push/webhook delivery and no claim of a continuous cloud service.** Every source has independent permission gates and scheduled jobs are manually added. See [v0.47 operating and acceptance protocol](docs/V047_AUTONOMOUS_SOURCE_MONITOR.md).
+
+---
+
 # ResearchOS v0.46 — P0 NOAA Numeric ENSO Precursor Intelligence
 
 **New:** [NOAA Numeric Climate Precursors](climate-numeric.html) explicitly captures five official CPC indices (seasonal RONI, monthly relative Niño 3.4, Southern Oscillation Index and western/central 850 mb trade-wind anomalies), preserves SHA-256 source snapshots, local first-seen clocks and per-month revisions, and computes strictly descriptive trend and cross-index research context. Opening the page or historical snapshots does not fetch an upstream service. Retrospective historical measurement values never become falsely dated research alerts. No implied regional flood, commodity price or issuer-return prediction. See [v0.46 source contract and P0 gates](docs/V046_NOAA_NUMERIC_PRECURSORS.md).

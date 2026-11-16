@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS durable local source scheduler and evidence-first alert inbox.">
+<title>ResearchOS | Autonomous Source Monitor</title>
+<link rel="stylesheet" href="/agent-desk.css">
+<link rel="stylesheet" href="/source-monitor.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head>
+<body><header class="desk-header">
+<a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Research sources"><a href="/climate-numeric.html">NOAA Indices</a>
+<a href="/mechanism-radar.html">Mechanism Radar</a>
+<a href="/corporate-precursor.html">Corporate News</a></nav>
+<span class="desk-version">v0.47 · P0 SPRINT 8 / AUTONOMOUS MONITORING</span>
+</header><main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">SOURCE OPERATIONS / BOUNDED JOBS / PROVENANCE</p>
+<h1>Autonomous source <span>monitoring</span></h1>
+<p>Schedule permitted-source checks in the running local Node server. Track retries, interrupted attempts, source versions and a durable research review inbox. No arbitrary URLs, third-party emails, text messages or orders are sent.</p>
+<div class="desk-boundary"><strong>Delivery boundary:</strong> Inbox persistence records when a research alert became available locally. It does not demonstrate an external notification, a user's reading time, verified original article publication, source materiality or investment forecast. The application must remain online for scheduled checks.</div>
+</section>
+<section class="desk-panel" id="monitor-configure">
+<div class="panel-heading"><h2>01 / Explicit source schedule</h2><span id="monitorAvailability">NO BACKGROUND WORK UNLESS OPTED IN</span></div>
+<div class="panel-body"><p>Enable scheduler and provider-specific source rights in a private ignored <code>.env</code>. Every task requires an explicit schedule. Upstream collectors retain their own rights/permission gates; a schedule cannot override them.</p>
+<form id="monitorForm">
+<div class="monitor-grid">
+<label for="monitorKind">COLLECTOR FAMILY<select id="monitorKind" required><option value="">Choose collector</option></select></label>
+<label for="monitorTarget">FIXED DATASET / ISSUER / THEME<select id="monitorTarget" required><option value="">Choose target</option></select></label>
+<label for="monitorProvider">REGISTERED PROVIDER<select id="monitorProvider" required><option value="">Choose provider</option></select></label>
+<label for="monitorInterval">CHECK EVERY (MINUTES)<input id="monitorInterval" type="number" min="60" max="1440" step="60" required value="360"></label>
+</div>
+<button type="submit" id="monitorSchedule" disabled>Add or update recurring check</button>
+</form>
+<p id="monitorConfigureStatus" class="monitor-status" role="status" aria-live="polite">Source scheduling not configured.</p>
+</div></section>
+<section class="desk-panel" id="monitor-jobs">
+<div class="panel-heading"><h2>02 / Worker and provider health</h2><span id="monitorJobsCount">0 JOBS</span></div>
+<div class="panel-body">
+<div class="desk-actions"><button type="button" class="secondary" id="monitorRefresh">Refresh local state</button></div>
+<p id="monitorStatus" class="monitor-status" role="status" aria-live="polite">No external source is fetched by refreshing this screen.</p>
+<div id="monitorJobCards" class="monitor-cards"></div>
+</div></section>
+<section class="desk-panel" id="monitor-alerts">
+<div class="panel-heading"><h2>03 / Durable research review inbox</h2><span id="monitorAlertCount">0 UNREVIEWED</span></div>
+<div class="panel-body">
+<p>Items are source leads. An allegation, reported disruption, NOAA index update or headline match must be challenged independently before being considered an established event.</p>
+<div id="monitorAlertCards" class="monitor-cards"></div>
+</div></section>
+<section class="desk-panel" id="monitor-audit">
+<div class="panel-heading"><h2>04 / Scheduled attempt audit</h2><span>LAST 50 RUNS</span></div>
+<div class="panel-body">
+<div class="desk-actions"><button type="button" id="monitorExport" class="secondary" disabled>Export local monitoring audit JSON</button></div>
+<div id="monitorRuns" class="monitor-cards"></div>
+</div></section>
+<footer>ResearchOS v0.47 · Local single-process research scheduling only · Opt-in source rights · Not financial advice.</footer>
+</main>
+<script src="/source-monitor.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

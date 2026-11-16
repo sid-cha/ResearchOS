@@ -1,0 +1,12 @@
+.monitor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.monitor-status{color:var(--muted);font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.monitor-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px;margin:12px 0}
+.monitor-card{background:#162a39;border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0;overflow-wrap:anywhere}
+.monitor-card h3{font-size:14px;line-height:1.5;margin:5px 0 8px}
+.monitor-card strong{font-size:11px;font-family:ui-monospace,Consolas,monospace;color:var(--teal)}
+.monitor-card p,.monitor-card small{font-size:12px;line-height:1.65;color:var(--muted);overflow-wrap:anywhere}
+.monitor-card .risk{color:#dfae74}.monitor-card .fail{color:#eab0a0}
+.monitor-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.monitor-controls button{font-size:12px;padding:8px 10px;min-height:auto}
+.monitor-audit-time{font-family:ui-monospace,Consolas,monospace}
+@media(max-width:700px){.monitor-grid{grid-template-columns:1fr}}

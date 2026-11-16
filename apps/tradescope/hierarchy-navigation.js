@@ -82,6 +82,9 @@ const TREE=[
  {id:'operations',label:'Research Operations',sections:[
   {id:'sources',label:'Sources & Provenance',tools:[
    {id:'source-control',label:'Source Control',href:'/source-control.html'},
+   {id:'autonomous-source-monitor',label:'Autonomous Source Monitoring',href:'/source-monitor.html'},
+   {id:'source-monitor-inbox',label:'Source Alert Review Inbox',href:'/source-monitor.html#monitor-alerts'},
+   {id:'source-monitor-audit',label:'Source Check Audit',href:'/source-monitor.html#monitor-audit'},
    {id:'evidence-ledger',label:'Evidence Ledger',href:'/evidence-ledger.html'}]}
  ]}
 ];
