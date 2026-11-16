@@ -53,7 +53,7 @@ const mm={registryId:FRS,eventId:EVENT,eventTitle:'M6.1 earthquake',
 function snapshots(asOf,{withClaim=true,withHazards=true,withMmi=true,withEvents=true,withTheme=true}={}){
  const late=asOf>=T2;
  const params={asOf};
- return {
+ return structuredClone({
   ...params,
   mechanism:{asOf,ruleVersion:'RADAR',
    results:[{...scenario,observedNodes:withTheme?['climate-observation']:[],
@@ -79,7 +79,7 @@ function snapshots(asOf,{withClaim=true,withHazards=true,withMmi=true,withEvents
    snapshots:withHazards&&late?[hazard]:[]},
   shakemap:{asOf,version:'SHAKEMAP',
    results:withMmi&&late?[mm]:[]}
- };
+ });
 }
 function input(asOf,opts={}){
  const a=snapshots(asOf,opts);
