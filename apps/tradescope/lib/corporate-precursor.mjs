@@ -14,8 +14,8 @@ export const PRECURSOR_VERSION='CORPORATE-PRECURSOR-0.44.1';
 export const PRECURSOR_PROVIDERS=Object.freeze(['GDELT_MEDIA','FEDERAL_REGISTER','ALPACA_MEDIA']);
 const patterns=[
  ['NATIONAL_SECURITY_ALLEGATION',/\b(?:spy|spying|spies|espionage|intelligence operation|intelligence agency)\b/i],
- ['EXPORT_CONTROL',/\b(?:export[- ]control|export[- ]restriction|export ban|chip diversion|chip smuggling|sanctions)\b/i],
- ['REGULATORY_SCRUTINY',/\b(?:investigation|investigate|probe|subpoena|congressional inquiry|senator calls for|regulator)\b/i],
+ ['EXPORT_CONTROL',/\b(?:export[- ]controls?|export[- ]restrictions?|export ban|chip diversion|chip smuggling|sanctions)\b/i],
+ ['REGULATORY_SCRUTINY',/\b(?:investigation|investigat(?:e|ed|ing|or)|probe|subpoena|congressional inquiry|senator calls for|regulator)\b/i],
  ['EXECUTIVE_GOVERNANCE',/\b(?:resigns|resignation|steps down|removed as ceo|leadership inquiry)\b/i],
  ['SUPPLY_CHAIN',/\b(?:supply chain|supplier disruption|counterparty|chip shipment)\b/i]
 ];
