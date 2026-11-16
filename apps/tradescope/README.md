@@ -1,3 +1,9 @@
+# ResearchOS v0.42 — P0 Sprint 7 Official Hazard Polygon Screening
+
+**New:** [Hazard Polygon Screening](hazard-footprints.html) explicitly retrieves NWS active Flood/Flash Flood alert polygons and WFIGS current interagency wildfire perimeters for an already captured EPA facility coordinate. It stores provider response hashes, local capture clocks, bounded GeoJSON and deterministic point-in-polygon classifications (including boundary/holes), with GeoJSON export, as-of revisions and Anti-Agent verification limits. Warning polygons do not establish actual flood extent; perimeter overlap does not certify site damage. See [v0.42 guide](docs/V042_HAZARD_POLYGON_CAPTURE.md). USGS ShakeMap intensity data and live-source acceptance remain separate P0 gates.
+
+---
+
 # ResearchOS v0.41 — P0 Source Corroboration Dossier
 
 **New:** [Source Corroboration Dossier](corroboration-case.html) composes previously captured EPA FRS facility metadata, SEC filer and exact filing excerpts, GLEIF LEI/Level 2 records, and existing human review into a deterministic point-in-time evidence matrix with visible Anti-Agent conflicts and reproducible JSON export. This is **read-only, source-scoped research**, not legally verified issuer/facility ownership or predictive financial impact. No live provider calls occur when viewing a case. See [v0.41 protocol](docs/V041_SOURCE_CORROBORATION.md).

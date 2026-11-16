@@ -54,7 +54,9 @@ const TREE=[
   {id:'transmission',label:'Economic Transmission',tools:[
    {id:'transmission-lab',label:'Transmission Lab',href:'/transmission-lab.html'},
    {id:'commodity',label:'Commodity Disruptions',href:'/commodity.html'},
-   {id:'geo-exposure',label:'Geographic Exposure',href:'/geo-exposure.html'}]},
+   {id:'geo-exposure',label:'Geographic Exposure',href:'/geo-exposure.html'},
+   {id:'hazard-footprints',label:'Official Hazard Polygons',href:'/hazard-footprints.html'},
+   {id:'hazard-revisions',label:'Hazard Source Revisions',href:'/hazard-footprints.html#hazard-history'}]},
   {id:'historical',label:'Historical Research',tools:[
    {id:'analogues',label:'Event Analogues',href:'/#research/analogues'},
    {id:'crisis',label:'Crisis & Climate',href:'/#research/crisis'},
