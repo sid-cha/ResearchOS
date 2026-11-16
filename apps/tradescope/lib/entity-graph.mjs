@@ -19,7 +19,7 @@ const validCik=s=>typeof s==='string'&&/^[0-9]{1,10}$/.test(s);
 const canonicalCik=s=>String(BigInt(s)).padStart(10,'0');
 const safeText=(s,n=300)=>typeof s==='string'?s.replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,n):'';
 const LEI_BASE='https://api.gleif.org/api/v1/lei-records/';
-export const ENTITY_GRAPH_SCHEMA='ENTITY-GRAPH-0.39.1';
+export const ENTITY_GRAPH_SCHEMA='ENTITY-GRAPH-0.40.1';
 export const ENTITY_GRAPH_FLAGS=Object.freeze([
  'LEI_IDENTITY_DOES_NOT_VERIFY_CIK_BINDING',
  'ACCOUNTING_CONSOLIDATION_IS_NOT_LEGAL_OWNERSHIP',
@@ -96,6 +96,52 @@ export async function fetchGleifParent(lei,{fetchImpl=globalThis.fetch}={}){
  return {...normalizeGleifParent(data,lei),bodySha256:data.bodySha256||null,
   responseBytes:data.responseBytes||0};
 }
+
+const dateString=value=>typeof value==='string'&&
+ (/^\d{4}-\d{2}-\d{2}$/.test(value)||/^\d{4}-\d{2}-\d{2}T/.test(value))&&
+ !Number.isNaN(Date.parse(value));
+const normalizePeriods=periods=>{
+ if(periods==null)return [];
+ if(!Array.isArray(periods)||periods.length>8)throw err('GLEIF relationship period list invalid',502);
+ return periods.map(x=>{
+  if(!x||typeof x!=='object'||typeof x.type!=='string'||
+   !['RELATIONSHIP_PERIOD','ACCOUNTING_PERIOD','DOCUMENT_FILING_PERIOD'].includes(x.type)||
+   x.startDate!=null&&!dateString(x.startDate)||
+   x.endDate!=null&&!dateString(x.endDate)||
+   x.startDate&&x.endDate&&Date.parse(x.startDate)>Date.parse(x.endDate))
+   throw err('GLEIF relationship period metadata invalid',502);
+  return {type:x.type,startDate:x.startDate||null,endDate:x.endDate||null};
+ });
+};
+export function normalizeGleifRelationship(payload,childLei){
+ if(!validLei(childLei))throw err('Invalid child LEI');
+ if(payload?.notFound)return {childLei,parentLei:null,
+  status:'RELATIONSHIP_RECORD_NOT_RETURNED',sourceUrl:LEI_BASE+childLei+'/direct-parent-relationship',
+  periods:[],sourceRelationshipVerified:false,legalOwnershipVerified:false};
+ const d=payload?.json?.data;
+ const attrs=d?.attributes,rel=attrs?.relationship||attrs;
+ const child=rel?.startNode?.id, parent=rel?.endNode?.id;
+ const relationshipType=rel?.relationshipType||rel?.type;
+ if(!d||Array.isArray(d)||child!==childLei||!validLei(parent)||parent===childLei||
+    relationshipType!=='IS_DIRECTLY_CONSOLIDATED_BY')
+  throw err('GLEIF Level 2 record has mismatched LEI or unsupported relationship type',502);
+ const periods=normalizePeriods(rel.relationshipPeriods??rel.periods??attrs.relationshipPeriods);
+ return {childLei,parentLei,relationshipType:'GLEIF_REPORTED_DIRECT_ACCOUNTING_CONSOLIDATION',
+  rawRelationshipType:relationshipType,
+  status:'GLEIF_REPORTED_RELATIONSHIP_RECORD_NOT_LEGAL_OWNER_CERTIFICATE',
+  sourceUrl:LEI_BASE+childLei+'/direct-parent-relationship',
+  periods,registrationStatus:safeText(attrs?.registration?.status,40)||null,
+  corroborationLevel:safeText(attrs?.registration?.corroborationLevel,50)||null,
+  effectivePeriodOriginalPublicationVerified:false,legalOwnershipVerified:false,
+  independentProviderCorroboration:false};
+}
+export async function fetchGleifRelationship(lei,{fetchImpl=globalThis.fetch}={}){
+ if(!validLei(lei))throw err('Invalid child LEI');
+ const data=await fixedJson(LEI_BASE+lei+'/direct-parent-relationship',{fetchImpl});
+ return {...normalizeGleifRelationship(data,lei),
+  bodySha256:data.bodySha256||null,responseBytes:data.responseBytes||0};
+}
+
 const ensureJournal=(doc,maxEntries)=>{
  if(doc?.schemaVersion!==1||!Array.isArray(doc.entries)||doc.entries.length>maxEntries)
   throw err('Entity graph journal schema invalid',500);
@@ -103,7 +149,7 @@ const ensureJournal=(doc,maxEntries)=>{
  for(const [i,e] of doc.entries.entries()){
   if(!e||e.seq!==i||!/^graph-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(e.id)||
    ids.has(e.id)||!iso(e.capturedAt)||time&&e.capturedAt<time||
-   e.previousHash!==prior||!['LEI','DIRECT_PARENT','CIK_LEI_CANDIDATE'].includes(e.type)||
+   e.previousHash!==prior||!['LEI','DIRECT_PARENT','GLEIF_RELATIONSHIP','CIK_LEI_CANDIDATE'].includes(e.type)||
    !e.value||typeof e.value!=='object')
    throw err('Entity graph journal record invalid',500);
   const {hash:recordHash,...base}=e;
@@ -112,7 +158,7 @@ const ensureJournal=(doc,maxEntries)=>{
  }
  return doc;
 };
-export function buildGraph({leiNodes,secFilers,facilities,parents,candidates,relationshipClaims,
+export function buildGraph({leiNodes,secFilers,facilities,parents,candidates,relationshipClaims,relationshipRecords=[],
  asOf}={}){
  if(!iso(asOf))throw err('Point-in-time graph requires exact UTC cutoff');
  const nodes=[
@@ -139,6 +185,19 @@ export function buildGraph({leiNodes,secFilers,facilities,parents,candidates,rel
     evidenceUrl:p.sourceUrl,legalOwnershipVerified:false,
     relationshipEffectiveDatesVerified:false});
   }
+ }
+ for(const record of relationshipRecords){
+  if(!record.parentLei)continue;
+  if(!nodes.some(n=>n.id==='lei:'+record.parentLei))
+   nodes.push({id:'lei:'+record.parentLei,kind:'GLEIF_PARENT_REFERENCE',
+    label:'GLEIF-reported relationship parent',lei:record.parentLei,
+    capturedAt:record.capturedAt,identityIndependentlyCaptured:false});
+  edges.push({from:'lei:'+record.childLei,to:'lei:'+record.parentLei,
+   type:'GLEIF_LEVEL2_RECORDED_CONSOLIDATION',capturedAt:record.capturedAt,
+   evidenceUrl:record.sourceUrl,relationshipPeriods:record.periods,
+   rawRelationshipType:record.rawRelationshipType,sourceRegistrationStatus:record.registrationStatus,
+   legalOwnershipVerified:false,relationshipEffectiveDatesVerified:false,
+   independentProviderCorroboration:false});
  }
  for(const c of candidates){
   edges.push({from:'cik:'+c.cik,to:'lei:'+c.lei,type:'OPERATOR_IDENTIFIER_CANDIDATE',
@@ -198,7 +257,7 @@ export function createEntityGraph({facilityService,filename,fetchImpl=globalThis
  const records=at=>doc.entries.filter(e=>e.capturedAt<=at);
  const latest=(kind,id,at)=>{
   const rows=records(at).filter(e=>e.type===kind&&
-    (kind==='LEI'?e.value.lei===id:kind==='DIRECT_PARENT'?e.value.childLei===id:
+    (kind==='LEI'?e.value.lei===id:kind==='DIRECT_PARENT'||kind==='GLEIF_RELATIONSHIP'?e.value.childLei===id:
      (e.value.cik+'|'+e.value.lei)===id));
   return rows.at(-1)||null;
  };
@@ -225,6 +284,18 @@ export function createEntityGraph({facilityService,filename,fetchImpl=globalThis
    return {deduplicated:false,record:await append('DIRECT_PARENT',source)};
   });
  }
+ async function capturedRelationship({lei}={}){
+  if(!enabled)throw err('Private entity graph unavailable on external host',403);
+  if(!validLei(lei))throw err('Valid child LEI required');
+  return serial(async()=>{
+   if(!latest('LEI',lei,clock()))throw err('Capture child LEI identity before its Level 2 record',409);
+   const source=await fetchGleifRelationship(lei,{fetchImpl});
+   const previous=latest('GLEIF_RELATIONSHIP',lei,clock());
+   if(previous&&digest(previous.value)===digest(source))
+    return {deduplicated:true,record:previous};
+   return {deduplicated:false,record:await append('GLEIF_RELATIONSHIP',source)};
+  });
+ }
  async function candidateLink({lei,cik,evidenceUrl,rationale}={}){
   if(!enabled)throw err('Private entity graph unavailable on external host',403);
   if(!validLei(lei)||!validCik(cik)||evidenceUrl!==LEI_BASE+lei||
@@ -249,16 +320,25 @@ export function createEntityGraph({facilityService,filename,fetchImpl=globalThis
   if(!iso(at)||at>clock())throw err('Graph cutoff must be nonfuture ISO UTC instant');
   await queue;await load();
   const f=await facilityService.view({asOf:at,radiusKm:1});
-  const l=new Map(),p=new Map(),c=new Map();
+  const l=new Map(),p=new Map(),r=new Map(),c=new Map();
   for(const e of records(at)){
    if(e.type==='LEI')l.set(e.value.lei,{...e.value,capturedAt:e.capturedAt});
    else if(e.type==='DIRECT_PARENT')p.set(e.value.childLei,{...e.value,capturedAt:e.capturedAt});
+   else if(e.type==='GLEIF_RELATIONSHIP')r.set(e.value.childLei,{...e.value,capturedAt:e.capturedAt});
    else c.set(e.value.cik+'|'+e.value.lei,{...e.value,capturedAt:e.capturedAt});
   }
   return {...buildGraph({leiNodes:[...l.values()],secFilers:f.companies,
    facilities:f.facilities,parents:[...p.values()],candidates:[...c.values()],
-   relationshipClaims:f.relationships,asOf:at}),
-   inventory:{leis:l.size,reportedParents:p.size,secFilers:f.companies.length,
+   relationshipClaims:f.relationships,relationshipRecords:[...r.values()],asOf:at}),
+   relationshipConflicts:[...r.values()].filter(x=>{
+    const parent=p.get(x.childLei);
+    return x.parentLei&&parent?.parentLei&&x.parentLei!==parent.parentLei;
+   }).map(x=>({childLei:x.childLei,sourceIdentityParent:p.get(x.childLei).parentLei,
+    sourceLevel2Parent:x.parentLei,status:'PARENT_SOURCES_CONFLICT',
+    claimVerified:false,warning:'Two separately retrieved GLEIF records disagree; neither asserts legal ownership.'})),
+   level2Records:[...r.values()].map(x=>({...x,
+    independentProviderCorroboration:false,legalOwnershipVerified:false})),
+   inventory:{leis:l.size,reportedParents:p.size,level2Records:r.size,secFilers:f.companies.length,
     sites:f.facilities.length,identifierCandidates:c.size,
     facilityRelationshipClaims:f.relationships.length}};
  }
@@ -285,16 +365,25 @@ export function createEntityGraph({facilityService,filename,fetchImpl=globalThis
     sourceUrl:record.sourceUrl,bodySha256:record.bodySha256,bytes:record.responseBytes,
     verifiedLegalOwnership:false,persisted:false};
   }
-  throw err('Only EPA_FRS, SEC_EDGAR or GLEIF_LEI official contract checks allowed');
+  if(source==='GLEIF_LEVEL2_RELATIONSHIP'){
+   if(!validLei(id))throw err('GLEIF relationship check needs an exact 20-character child LEI');
+   const record=await fetchGleifRelationship(id,{fetchImpl});
+   return {provider:'GLEIF_LEVEL2_RELATIONSHIP',
+    ok:record.parentLei!==null,contract:'EXACT_CHILD_LEI_AND_DIRECT_ACCOUNTING_PARENT',
+    sourceUrl:record.sourceUrl,bodySha256:record.bodySha256,bytes:record.responseBytes,
+    note:record.parentLei?'GLEIF-reported, not independently verified ownership':'No matching GLEIF Level 2 relationship record returned',
+    verifiedLegalOwnership:false,persisted:false};
+  }
+  throw err('Only EPA_FRS, SEC_EDGAR, GLEIF_LEI or GLEIF_LEVEL2_RELATIONSHIP checks allowed');
  }
  const catalog=()=>({enabled,version:ENTITY_GRAPH_SCHEMA,
-  sourceContracts:['EPA_FRS','SEC_EDGAR','GLEIF_LEI'],
+  sourceContracts:['EPA_FRS','SEC_EDGAR','GLEIF_LEI','GLEIF_LEVEL2_RELATIONSHIP'],
   ids:['FRS_REGISTRY_ID','SEC_CIK','GLEIF_LEI'],
   linkTypes:['REPORTED_ACCOUNTING_CONSOLIDATION','OPERATOR_IDENTIFIER_CANDIDATE','HUMAN_FACILITY_RELATIONSHIP_CLAIM'],
   legalOwnershipIndependentlyVerified:false,
   note:'Live provider checks are operator-initiated. CI fixtures do not establish successful live access, licensing or legal ownership.'});
  async function close(){await queue;}
- return {catalog,capturedLei,capturedParent,candidateLink,checkSource,view,close};
+ return {catalog,capturedLei,capturedParent,capturedRelationship,candidateLink,checkSource,view,close};
 }
 const send=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',
  'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(body));};
@@ -309,7 +398,7 @@ export function createEntityGraphApi({graph,host='127.0.0.1'}={}){
      url.searchParams.getAll('asOf').length<=1)
      send(res,200,await graph.view({asOf:url.searchParams.get('asOf')||null}));
     else throw err('Unknown graph read endpoint',404);
-   }else if(req.method==='POST'&&['lei','parent','link','check'].includes(op)&&!url.searchParams.size){
+   }else if(req.method==='POST'&&['lei','parent','relationship','link','check'].includes(op)&&!url.searchParams.size){
     if(!['127.0.0.1','localhost','::1'].includes(host)||
      req.headers['x-researchos-entity-graph']!=='1'||
      req.headers['sec-fetch-site']==='cross-site'||
@@ -321,12 +410,12 @@ export function createEntityGraphApi({graph,host='127.0.0.1'}={}){
     for await(const part of req){bytes+=part.byteLength;if(bytes>1100)throw err('Graph input too large',413);input+=part;}
     let args;
     try{args=JSON.parse(input);}catch{throw err('Invalid graph JSON');}
-    const allowed=op==='lei'||op==='parent'?['lei']:op==='link'?
+    const allowed=op==='lei'||op==='parent'||op==='relationship'?['lei']:op==='link'?
      ['lei','cik','evidenceUrl','rationale']:['source','id'];
     if(!args||Array.isArray(args)||typeof args!=='object'||
       Object.keys(args).some(x=>!allowed.includes(x)))throw err('Unsupported graph input fields');
     const output=op==='lei'?await graph.capturedLei(args):op==='parent'?
-     await graph.capturedParent(args):op==='link'?await graph.candidateLink(args):
+     await graph.capturedParent(args):op==='relationship'?await graph.capturedRelationship(args):op==='link'?await graph.candidateLink(args):
      await graph.checkSource(args);
     send(res,200,output);
    }else throw err('Unsupported entity graph operation',405);

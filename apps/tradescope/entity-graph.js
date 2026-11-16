@@ -33,6 +33,25 @@ function renderGraph(graph){
   if(node.registryStatus)add(card,'small','GLEIF registration: '+node.registryStatus);
   if(node.kind==='GLEIF_PARENT_REFERENCE')add(card,'small','Parent identity not separately captured');
  }
+ const diagnostics=$('entityConflicts');diagnostics.replaceChildren();
+ for(const record of graph.level2Records||[]){
+  const card=add(diagnostics,'article',undefined,'entity-edge');
+  add(card,'h3','GLEIF Level 2 · '+record.childLei);
+  add(card,'p','Direct accounting consolidation parent: '+(record.parentLei||'No record returned'));
+  add(card,'p','Observed locally: '+record.capturedAt);
+  add(card,'p','Reported periods: '+(record.periods?.length?record.periods.map(p=>p.type+
+   ' ('+(p.startDate||'unknown')+' → '+(p.endDate||'unknown')+')').join('; '):'Unreported'));
+  add(card,'p','Accounting consolidation is not legal ownership, site operation or independently verified effective dates.','unverified');
+ }
+ for(const conflict of graph.relationshipConflicts||[]){
+  const card=add(diagnostics,'article',undefined,'entity-edge');
+  add(card,'h3','SOURCE CONFLICT · '+conflict.childLei);
+  add(card,'p','Parent identity record: '+conflict.sourceIdentityParent);
+  add(card,'p','Level 2 relationship record: '+conflict.sourceLevel2Parent);
+  add(card,'p','Human review required. Both records are from GLEIF and are not independent providers.','unverified');
+ }
+ if(!(graph.level2Records?.length||graph.relationshipConflicts?.length))
+  add(diagnostics,'p','No GLEIF Level 2 period records or reported conflicts captured.');
  const edges=$('entityEdges');edges.replaceChildren();
  if(!graph.edges.length)add(edges,'p','No source-reported accounting parents or captured relationship hypotheses yet.');
  for(const edge of graph.edges){
@@ -79,6 +98,8 @@ async function mutate(op,body,status,button){
 $('leiForm').addEventListener('submit',e=>{
  e.preventDefault();void mutate('lei',{lei:$('gleifLei').value.trim()},'leiStatus','captureLei');
 });
+$('captureLevel2').addEventListener('click',()=>void mutate('relationship',
+ {lei:$('gleifLei').value.trim()},'leiStatus','captureLevel2'));
 $('captureDirectParent').addEventListener('click',()=>void mutate('parent',
  {lei:$('gleifLei').value.trim()},'leiStatus','captureDirectParent'));
 $('sourceCheckForm').addEventListener('submit',e=>{
@@ -100,7 +121,7 @@ void(async()=>{
   const data=await api('catalog');state.enabled=data.enabled===true;
   if(!state.enabled){
    set('graphStatus','Entity graph is disabled outside a local loopback Node server.');
-   for(const id of ['captureLei','captureDirectParent','runSourceCheck','submitCandidate','loadGraph'])$(id).disabled=true;
+   for(const id of ['captureLei','captureDirectParent','captureLevel2','runSourceCheck','submitCandidate','loadGraph'])$(id).disabled=true;
    return;
   }
   await refresh();

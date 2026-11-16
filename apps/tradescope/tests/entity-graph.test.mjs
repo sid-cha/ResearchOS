@@ -6,7 +6,7 @@ import {Readable} from 'node:stream';
 import {mkdtemp,readFile,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {
- normalizeLei,normalizeGleifParent,fetchLei,fetchGleifParent,
+ normalizeLei,normalizeGleifParent,normalizeGleifRelationship,fetchLei,fetchGleifParent,fetchGleifRelationship,
  createEntityGraph,createEntityGraphApi,buildGraph,ENTITY_GRAPH_SCHEMA,ENTITY_GRAPH_FLAGS
 } from '../lib/entity-graph.mjs';
 
@@ -19,6 +19,12 @@ const leiRecord=(id=LEI,name='Example Global Holdings')=>({
  data:{type:'lei-records',id,attributes:{entity:{legalName:{name},
   jurisdiction:'US-DE',legalAddress:{country:'US'}},registration:{status:'ISSUED'}}}});
 const parentRecord=()=>leiRecord(PARENT,'Example Consolidating Parent');
+const level2Record=(parent=PARENT)=>({data:{type:'relationship-records',id:'source-relationship-1',
+ attributes:{relationship:{startNode:{id:LEI,type:'LEI'},endNode:{id:parent,type:'LEI'},
+  relationshipType:'IS_DIRECTLY_CONSOLIDATED_BY',
+  relationshipPeriods:[{type:'RELATIONSHIP_PERIOD',startDate:'2025-01-01',endDate:null},
+   {type:'ACCOUNTING_PERIOD',startDate:'2025-01-01',endDate:'2025-12-31'}]},
+ registration:{status:'PUBLISHED',corroborationLevel:'FULLY_CORROBORATED'}}}});
 const frsJson=()=>({FRSFacilities:{FRSFacility:[{
  RegistryId:FRS,FacilityName:'EPA Test Facility',Latitude83:'38.2',
  Longitude83:'-120.4',StateAbbr:'CA',CityName:'Test City'}]}});
@@ -32,9 +38,12 @@ async function fixture(t,{enabled=true,maxEntries=240}={}){
  const dir=await mkdtemp(path.join(tmpdir(),'researchos-entity-graph-'));
  t.after(async()=>rm(dir,{recursive:true,force:true}));
  const filename=path.join(dir,'entity-graph.json'),requests=[];
- let now=T1,entityName='Example Global Holdings',parent404=false;
+ let now=T1,entityName='Example Global Holdings',parent404=false,level2Parent=PARENT,level2Missing=false;
  const fetchImpl=async(url,config)=>{
   requests.push({url,config});
+  if(url.includes('/direct-parent-relationship'))return level2Missing?
+   jsonResponse({errors:[{status:'404'}]},{status:404}):
+   jsonResponse(level2Record(level2Parent));
   if(url.includes('/direct-parent'))return parent404?
    jsonResponse({errors:[{status:'404'}]},{status:404}):jsonResponse(parentRecord());
   if(url.includes('api.gleif.org'))return jsonResponse(leiRecord(LEI,entityName));
@@ -56,7 +65,8 @@ async function fixture(t,{enabled=true,maxEntries=240}={}){
   now:()=>now});
  return {graph,facilityService,filename,requests,fetchImpl,
   setNow:x=>{now=x;},setEntityName:x=>{entityName=x;},
-  setParent404:x=>{parent404=x;}};
+  setParent404:x=>{parent404=x;},setLevel2Parent:x=>{level2Parent=x;},
+  setLevel2Missing:x=>{level2Missing=x;}};
 }
 const link=()=>({lei:LEI,cik:'123',evidenceUrl:'https://api.gleif.org/api/v1/lei-records/'+LEI,
  rationale:'This is a candidate identifier association only; a separate authoritative CIK to LEI source is required.'});
@@ -257,5 +267,99 @@ test('v0.39 graph UI and Level 3 navigation remain in the static package',async(
  assert(server.includes("if(await handleEntityGraph(req,res,u))return;"));
  assert(nav.includes("href:'/entity-graph.html'"));
  assert(build.includes("'entity-graph.js'"));
- assert.equal(ENTITY_GRAPH_SCHEMA,'ENTITY-GRAPH-0.39.1');
+ assert.equal(ENTITY_GRAPH_SCHEMA,'ENTITY-GRAPH-0.40.1');
+});
+
+test('P0 Level 2 relationship endpoint validates child, parent, accounting type, periods and corroboration separately',async()=>{
+ const value=normalizeGleifRelationship({json:level2Record()},LEI);
+ assert.equal(value.childLei,LEI);
+ assert.equal(value.parentLei,PARENT);
+ assert.equal(value.corroborationLevel,'FULLY_CORROBORATED');
+ assert.deepEqual(value.periods.map(p=>p.type),['RELATIONSHIP_PERIOD','ACCOUNTING_PERIOD']);
+ assert.equal(value.effectivePeriodOriginalPublicationVerified,false);
+ assert.equal(value.legalOwnershipVerified,false);
+ assert.equal(value.independentProviderCorroboration,false);
+ assert.throws(()=>normalizeGleifRelationship({json:level2Record('5493000IBP32UQZ0KL24')},PARENT),{status:502});
+ assert.throws(()=>normalizeGleifRelationship({json:{data:{attributes:{relationship:{
+  startNode:{id:LEI},endNode:{id:PARENT},relationshipType:'IS_LEGALLY_OWNED_BY'
+ }}}}},LEI),{status:502});
+ const fetched=await fetchGleifRelationship(LEI,{fetchImpl:async(url,init)=>{
+  assert.equal(url,'https://api.gleif.org/api/v1/lei-records/'+LEI+'/direct-parent-relationship');
+  assert.equal(init.redirect,'error');return jsonResponse(level2Record());
+ }});
+ assert.equal(fetched.bodySha256.length,64);
+});
+test('captured GLEIF direct-parent record remains a source claim with distinct as-of timestamp',async t=>{
+ const h=await fixture(t);
+ await assert.rejects(h.graph.capturedRelationship({lei:LEI}),{status:409});
+ await h.graph.capturedLei({lei:LEI});
+ h.setNow(T2);
+ const first=await h.graph.capturedRelationship({lei:LEI});
+ assert.equal(first.deduplicated,false);
+ assert.equal(first.record.type,'GLEIF_RELATIONSHIP');
+ assert.equal(first.record.value.registrationStatus,'PUBLISHED');
+ assert.equal(first.record.value.legalOwnershipVerified,false);
+ const duplicate=await h.graph.capturedRelationship({lei:LEI});
+ assert.equal(duplicate.deduplicated,true);
+ assert.equal((await h.graph.view({asOf:T1})).inventory.level2Records,0);
+ const after=await h.graph.view({asOf:T2});
+ assert.equal(after.inventory.level2Records,1);
+ assert.equal(after.level2Records[0].periods.length,2);
+ assert.equal(after.edges.some(e=>e.type==='GLEIF_LEVEL2_RECORDED_CONSOLIDATION'),true);
+ assert.equal(after.verifiedCompanyFacilityOwnershipEdges,0);
+ assert.equal(after.level2Records[0].independentProviderCorroboration,false);
+});
+test('conflicting direct-parent observation and Level 2 relationship is surfaced instead of averaged or auto-accepted',async t=>{
+ const h=await fixture(t);
+ await h.graph.capturedLei({lei:LEI});
+ h.setNow(T2);await h.graph.capturedParent({lei:LEI});
+ h.setLevel2Parent('5493000IBP32UQZ0KL24');
+ h.setNow(T3);await h.graph.capturedRelationship({lei:LEI});
+ const before=await h.graph.view({asOf:T2});
+ assert.equal(before.relationshipConflicts.length,0);
+ const after=await h.graph.view({asOf:T3});
+ assert.equal(after.relationshipConflicts.length,1);
+ assert.equal(after.relationshipConflicts[0].status,'PARENT_SOURCES_CONFLICT');
+ assert.equal(after.relationshipConflicts[0].claimVerified,false);
+ assert.equal(after.verifiedCompanyFacilityOwnershipEdges,0);
+});
+test('missing Level 2 record never creates a fictional consolidation edge',async t=>{
+ const h=await fixture(t);
+ await h.graph.capturedLei({lei:LEI});
+ h.setLevel2Missing(true);
+ const r=await h.graph.capturedRelationship({lei:LEI});
+ assert.equal(r.record.value.parentLei,null);
+ assert.equal(r.record.value.status,'RELATIONSHIP_RECORD_NOT_RETURNED');
+ const report=await h.graph.view();
+ assert.equal(report.level2Records.length,1);
+ assert.equal(report.edges.filter(x=>x.type==='GLEIF_LEVEL2_RECORDED_CONSOLIDATION').length,0);
+});
+test('independent Level 2 source diagnostic does not append identity or relationship automatically',async t=>{
+ const h=await fixture(t);
+ const checked=await h.graph.checkSource({source:'GLEIF_LEVEL2_RELATIONSHIP',id:LEI});
+ assert.equal(checked.provider,'GLEIF_LEVEL2_RELATIONSHIP');
+ assert.equal(checked.ok,true);
+ assert.equal(checked.persisted,false);
+ assert.equal(checked.verifiedLegalOwnership,false);
+ assert.equal((await h.graph.view()).inventory.level2Records,0);
+});
+test('record invalid relationship period is rejected before persistence',async()=>{
+ const r=level2Record();
+ r.data.attributes.relationship.relationshipPeriods=[{
+  type:'UNSUPPORTED_PERIOD',startDate:'2025-01-01'}];
+ assert.throws(()=>normalizeGleifRelationship({json:r},LEI),{status:502});
+ const q=level2Record();
+ q.data.attributes.relationship.relationshipPeriods=[{
+  type:'RELATIONSHIP_PERIOD',startDate:'2026-01-01',endDate:'2025-01-01'}];
+ assert.throws(()=>normalizeGleifRelationship({json:q},LEI),{status:502});
+});
+test('v0.40 Level 2 source controls and conflicts are present on existing entity graph page',async()=>{
+ const read=async name=>readFile(new URL('../'+name,import.meta.url),'utf8');
+ const [html,js,backend]=await Promise.all([
+  read('entity-graph.html'),read('entity-graph.js'),read('lib/entity-graph.mjs')]);
+ assert(html.includes('id="captureLevel2"'));
+ assert(html.includes('id="entityConflicts"'));
+ assert(html.includes('GLEIF_LEVEL2_RELATIONSHIP'));
+ assert(js.includes("mutate('relationship'"));
+ assert(backend.includes("['lei','parent','relationship','link','check']"));
 });

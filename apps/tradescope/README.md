@@ -1,3 +1,9 @@
+# ResearchOS v0.40 — P0 Sprint 6 Level 2 Relationship-Record Evidence
+
+**New:** [Official Entity Graph](entity-graph.html) now captures GLEIF's dated Level 2 direct-accounting-consolidation relationship record separately from the direct-parent identity record, keeps provider-reported relationship/accounting/document-filing periods distinct, and surfaces a source conflict if the reported parents disagree. Two GLEIF endpoints are **not independent provider corroboration**; no company/facility ownership is certified. See [Sprint 6 record](docs/V040_GLEIF_RELATIONSHIP_RECORDS.md).
+
+---
+
 # ResearchOS / TradeScope v0.39 — P0 Sprint 5 Entity Graph Foundation
 
 **New:** [Source-Validated Entity Graph](entity-graph.html) adds official GLEIF LEI legal entity capture, optional source-reported direct accounting consolidation parents, deterministic point-in-time snapshots, explicit unverified SEC CIK ↔ LEI candidate identifiers, EPA FRS/SEC/GLEIF real-response contract checks, and a graph workspace integrated under Company Research → Facility Intelligence. This is a **P0 engineering foundation**, not real-source acceptance, independently verified legal ownership, facility damage, provider rights or production readiness. Read [v0.39 contract](docs/V039_ENTITY_GRAPH_P0.md). The cumulative PR #19 remains draft.

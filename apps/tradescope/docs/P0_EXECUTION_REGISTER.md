@@ -7,7 +7,7 @@ This is a forward **planning** register. Earlier engineering sprints 1–4 are i
 | Sprint | Priority | Scope | Current engineering evidence | Independent acceptance still needed |
 | --- | --- | --- | --- | --- |
 | 5 / v0.39 | P0 | Source contract diagnostics and entity ownership graph | GLEIF, EPA, SEC identifiers + accounting-parent/candidate crosswalk code | Live source schema, rights/rate contracts, independent legal CIK↔LEI mapping, real browser |
-| 6 | P0 | Legal parent/subsidiary/operator/supplier corroboration | v0.37–39 candidate and SEC excerpt pilots | Independent site/legal entity proof, effective dates and authenticated adjudication |
+| 6 / v0.40 | P0 | Legal parent/subsidiary/operator/supplier corroboration | v0.40 GLEIF Level 2 accounting relationship periods and source-conflict UI added to v0.37–39 pilots | Still OPEN: independent CIK↔LEI/facility legal proof, effective dates and authenticated adjudication |
 | 7 | P0 | Incident hazard footprints and facility intersections | USGS epicenter proximity pilot | USGS intensity polygons, wildfire perimeters, flood/wind regional footprints |
 | 8 | P0 | Historical first-release/revision provenance | Local capture receipts and selected ALFRED/NOAA pilots | Actual original issue timestamps, source revisions and no hindsight leakage |
 | 9 | P0 | Two complete event–commodity–issuer case studies | Limited scenario and commodity research pilots | Verified mechanism, issuer materiality and independent outcome data |
@@ -19,6 +19,6 @@ This is a forward **planning** register. Earlier engineering sprints 1–4 are i
 | 15 | P1 | Licensed SaaS deployment and reliability | Nonroot local Docker pilot | Staging, provider rights, access control, observability and rollback |
 | 16 | Beta/P2 | Private beta and commercial readiness | Concept only | Real design partners, willingness-to-pay and approved release |
 
-**Workflow policy:** Finish P0-5 implementation/validation, then P0-6 legal crosswalk, P0-7 hazard footprints, P0-8 historical source clocks, P0-9 economic case studies, and P0-10 scientific evaluation before starting new P1 scope. Current CI success and code labels are not real-world verification, source entitlements, prediction quality or commercial readiness.
+**Workflow policy:** Validate v0.39 live EPA/SEC/GLEIF source responses and v0.40 Level 2 contract, finish P0-6 legal crosswalk, P0-7 hazard footprints, P0-8 historical source clocks, P0-9 economic case studies, and P0-10 scientific evaluation before starting new P1 scope. Current CI success and code labels are not real-world verification, source entitlements, prediction quality or commercial readiness.
 
 Backlog references: docs/SPRINTS.md, docs/V018_PRIORITIZED_BACKLOG.md, docs/V025_PRODUCT_BACKLOG_AUDIT.md, docs/STACKED_RELEASE_VALIDATION_GATE.md. Do not merge PR #19 until the full gate is reviewed.
