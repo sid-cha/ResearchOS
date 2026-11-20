@@ -6,6 +6,7 @@ import com.researchos.api.entity.Document;
 import com.researchos.api.repository.DocChunkRepository;
 import com.researchos.api.repository.DocumentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -21,16 +22,17 @@ public class DocumentService {
     private final DocChunkRepository docChunkRepository;
     private final RestTemplate restTemplate;
 
-    // In a real app, from config
-    private final String ML_SERVICE_URL = "http://localhost:8000";
+    private final String mlServiceOrigin;
 
     @Autowired
     public DocumentService(DocumentRepository documentRepository,
             DocChunkRepository docChunkRepository,
-            RestTemplateBuilder builder) {
+            RestTemplateBuilder builder,
+            @Value("${researchos.ml.origin:http://127.0.0.1:8001}") String mlServiceOrigin) {
         this.documentRepository = documentRepository;
         this.docChunkRepository = docChunkRepository;
         this.restTemplate = builder.build();
+        this.mlServiceOrigin = mlServiceOrigin.replaceAll("/+$", "");
     }
 
     public Document processDocument(MultipartFile file, String ticker, String type) throws IOException {
@@ -51,7 +53,7 @@ public class DocumentService {
         MlDto.ProcessDocRequest req = new MlDto.ProcessDocRequest(content, ticker);
         try {
             MlDto.ProcessDocResponse resp = restTemplate.postForObject(
-                    ML_SERVICE_URL + "/process_document",
+                    mlServiceOrigin + "/process_document",
                     req,
                     MlDto.ProcessDocResponse.class);
 

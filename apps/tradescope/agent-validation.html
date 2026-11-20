@@ -1,0 +1,139 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ResearchOS | Evidence Validation &amp; Prospective Review</title>
+<meta name="description" content="ResearchOS claim traceability, adversarial review, preregistered outcomes and evidence audit.">
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/agent-validation.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css">
+</head><body>
+<header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Workspaces"><a href="/agent-desk.html">Research Agent Desk</a></nav>
+<span class="desk-version">v0.36 · SOURCE CAPTURE & EXPORT PILOT</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">RESEARCH AGENTS / EVIDENCE AUDIT / PROSPECTIVE OUTCOMES</p>
+<h1>Evidence validation <span>&amp; contradiction review</span></h1>
+<p>Audit source references and clock availability, review competing agent hypotheses, preregister a measurable question, and independently submit outcome attestations after its observation window.</p>
+<div class="desk-boundary"><strong>Interpretation limits:</strong> A 0–100 score measures source traceability, <em>not</em> claim accuracy or probability. Reviewer aliases are unauthenticated. A two-alias agreement is not independently verified ground truth; no success rate or false-positive rate is certified.</div>
+</section>
+<section class="desk-panel">
+ <div class="panel-heading"><h2>01 / Select a saved Agent Desk run</h2><span id="validationMode">LOCAL REVIEW ONLY</span></div>
+ <div class="panel-body">
+  <label for="validationRun">IMMUTABLE RESEARCH RUN
+   <select id="validationRun"><option value="">Loading saved runs…</option></select></label>
+  <div class="desk-actions"><button id="loadAudit">Audit evidence &amp; contradictions</button>
+   <a href="/agent-desk.html" class="audit-link">Create a new six-agent investigation</a></div>
+  <p id="validationMessage" role="status" aria-live="polite">Select a run to inspect claims and register outcomes.</p>
+ </div>
+</section>
+<section id="claim-audit" class="desk-panel">
+ <div class="panel-heading"><h2>02 / Claim-level evidence traceability</h2><span id="auditTotals">NOT LOADED</span></div>
+ <div class="panel-body">
+  <p>Scoring components: known captured evidence IDs (40), official source-host links (25), source locally observed by the run cutoff (20), and two or more independent source providers (15). Scores do not validate a hypothesis.</p>
+  <div id="claimAuditRows" class="validation-claims"><p>No run selected.</p></div>
+ </div>
+</section>
+<div class="desk-columns">
+<section id="contradiction-review" class="desk-panel">
+ <div class="panel-heading"><h2>03 / Adversarial comparison review</h2><span>SEPARATE ATTESTATIONS</span></div>
+ <div class="panel-body">
+  <p>Pairs connect an Analyst hypothesis with an Anti-Agent alternative. Reviewers judge which proposition currently has better evidence; pair formation alone is not semantic proof of contradiction.</p>
+  <label for="validationPair">HYPOTHESIS COMPARISON<select id="validationPair"><option value="">Load a saved run</option></select></label>
+  <div id="pairStatus" class="validation-status">No comparison loaded.</div>
+  <form id="pairReviewForm">
+   <label for="pairReviewer">REVIEWER ALIAS (NOT IDENTITY-VERIFIED)<input id="pairReviewer" maxlength="36" placeholder="analyst_a" required autocomplete="off"></label>
+   <label for="pairDecision">ASSESSMENT<select id="pairDecision">
+    <option value="INSUFFICIENT_EVIDENCE">Insufficient independent evidence</option>
+    <option value="SUPPORTS_ANALYST">More support for analyst</option>
+    <option value="SUPPORTS_CHALLENGER">More support for challenger</option>
+    <option value="BOTH_PLAUSIBLE">Both remain plausible</option></select></label>
+   <label for="pairRationale">RATIONALE (20–500 CHARACTERS)
+    <textarea id="pairRationale" minlength="20" maxlength="500" rows="3" required placeholder="Identify the source gap or counterevidence to investigate."></textarea></label>
+   <label for="pairRefs">SAVED EVIDENCE IDs (OPTIONAL, COMMA-SEPARATED)
+    <input id="pairRefs" maxlength="110" placeholder="EV-1, EV-2"></label>
+   <button type="submit" id="submitPairReview" disabled>Submit reviewer assessment</button>
+  </form>
+ </div>
+</section>
+<section id="prospective-protocol" class="desk-panel">
+ <div class="panel-heading"><h2>04 / Preregister a future outcome</h2><span>FROZEN QUESTION &amp; HORIZON</span></div>
+ <div class="panel-body">
+  <p>This freezes the evaluation criterion and starts the observation window <strong>when you register</strong>, not at the earlier event date. Cohort assignment is operator-selected, not a model prediction.</p>
+  <div id="registrationStatus" class="validation-status">No registration loaded.</div>
+  <form id="registerOutcomeForm">
+   <label for="outcomeQuestion">MEASURABLE QUESTION
+    <input id="outcomeQuestion" minlength="18" maxlength="240" required
+     placeholder="Does a source-confirmed operational shutdown occur?"></label>
+   <label for="outcomeCriterion">OPERATIONALIZED CRITERION (30–420 CHARACTERS)
+    <textarea id="outcomeCriterion" rows="4" minlength="30" maxlength="420" required
+      placeholder="Name the target, primary evidence type, outcome boundary and what counts as no observed outcome."></textarea></label>
+   <div class="desk-form-grid">
+    <label for="outcomeHorizon">OBSERVATION HORIZON
+     <select id="outcomeHorizon"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option><option value="90">90 days</option></select></label>
+    <label for="signalTag">OPERATOR-DECLARED COHORT
+     <select id="signalTag"><option value="CANDIDATE">Candidate for investigation</option><option value="CONTROL">Comparison / control</option></select></label>
+   </div>
+   <button type="submit" id="registerOutcome" disabled>Freeze prospective protocol</button>
+  </form>
+ </div>
+</section>
+</div>
+<section id="outcome-review" class="desk-panel">
+ <div class="panel-heading"><h2>05 / Dual-review outcome labels</h2><span>AFTER THE REGISTERED HORIZON</span></div>
+ <div class="panel-body">
+  <p id="outcomeStatus">Register an outcome, then wait until its horizon ends before submitting outcome labels. The first label remains concealed until the second is recorded.</p>
+  <form id="outcomeReviewForm" class="validation-review-grid">
+   <label for="outcomeReviewer">REVIEWER ALIAS (DIFFERENT FOR SECOND REVIEWER)
+    <input id="outcomeReviewer" maxlength="36" placeholder="reviewer_b" required autocomplete="off"></label>
+   <label for="outcomeDecision">OBSERVED OUTCOME
+    <select id="outcomeDecision"><option value="INCONCLUSIVE">Inconclusive</option>
+     <option value="OBSERVED">Outcome observed in the preregistered window</option>
+     <option value="NOT_OBSERVED">Outcome not observed under the criterion</option></select></label>
+   <label for="outcomeEvidenceUrl">DATED PUBLIC HTTPS EVIDENCE LINK
+    <input id="outcomeEvidenceUrl" type="url" maxlength="650" placeholder="https://public-source.example.org/evidence" required></label>
+   <label for="outcomePublished">EVIDENCE PUBLICATION TIME (UTC)
+    <input id="outcomePublished" maxlength="32" placeholder="2026-11-22T18:00:00Z" required autocomplete="off"></label>
+   <label for="outcomeRationale" class="span-all">REVIEW JUSTIFICATION
+    <textarea id="outcomeRationale" minlength="25" maxlength="520" rows="3" required
+      placeholder="Explain how this dated source does or does not satisfy the preregistered test."></textarea></label>
+   <button type="submit" id="submitOutcomeReview" disabled>Record outcome attestation</button>
+  </form>
+ </div>
+</section>
+<section id="official-source-evidence" class="desk-panel">
+ <div class="panel-heading"><h2>06 / Capture reviewed official-source evidence</h2><span>BOUNDED / READ-ONLY FETCH</span></div>
+ <div class="panel-body">
+  <p>After an outcome horizon has ended and a reviewer has submitted an evidence URL, capture its actual HTTP response from an approved official host. The content digest and capture clock can be audited, but this does not prove the underlying outcome.</p>
+  <p>Allowed hosts: SEC, USGS earthquakes, NASA EONET, FAA NAS Status/FAA.gov, NWS and EPA. PDF and arbitrary external URLs are intentionally not supported.</p>
+  <form id="captureSourceForm">
+   <label for="captureSourceUrl">OFFICIAL URL ALREADY SUBMITTED WITH AN OUTCOME ATTESTATION
+    <input id="captureSourceUrl" maxlength="650" type="url" required placeholder="https://www.sec.gov/Archives/edgar/data/..."></label>
+   <button id="captureOfficialSource" type="submit" disabled>Capture &amp; hash official document</button>
+  </form>
+  <p class="validation-hint" id="captureSourceStatus" role="status" aria-live="polite">Choose a run with a registered outcome and a submitted source link.</p>
+  <div id="capturedSourceList" class="validation-claims"><p>No source snapshots loaded.</p></div>
+ </div>
+</section>
+<section id="dataset-export" class="desk-panel">
+ <div class="panel-heading"><h2>07 / Reproducible dataset export</h2><span>JSON / CSV · DESCRIPTIVE ONLY</span></div>
+ <div class="panel-body">
+  <p>Export frozen outcome definitions, locally available reviewer-agreement status, capture hashes and a deterministic manifest. Reviewer aliases, private rationales and unverified performance metrics are omitted.</p>
+  <div class="desk-form-grid">
+   <label for="datasetAsOf">AS-OF UTC (OPTIONAL)
+    <input id="datasetAsOf" placeholder="Latest local evidence" maxlength="32" autocomplete="off"></label>
+   <div class="desk-actions" style="align-items:end;margin-bottom:14px">
+    <button id="downloadDatasetJson" type="button" class="secondary">Download JSON</button>
+    <button id="downloadDatasetCsv" type="button" class="secondary">Download CSV</button>
+   </div>
+  </div>
+  <p id="datasetStatus" class="validation-status" role="status" aria-live="polite">No dataset exported. Historical as-of exports never include later outcome reviews or source snapshots.</p>
+ </div>
+</section>
+<section id="prospective-report" class="desk-panel">
+ <div class="panel-heading"><h2>08 / Prospective evaluation ledger</h2><span>DESCRIPTIVE / NOT VALIDATED</span></div>
+ <div class="panel-body"><div id="validationReport">No outcome cohort report loaded.</div>
+  <div class="desk-actions"><button id="refreshValidationReport" class="secondary">Refresh report</button></div>
+ </div>
+</section>
+<footer>ResearchOS v0.36 · Private, manually attested research validation · No financial predictions, autonomous trading or certified accuracy.</footer>
+</main>
+<script src="/agent-validation.js"></script><script src="/hierarchy-navigation.js"></script></body></html>

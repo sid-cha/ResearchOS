@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Official NOAA CPC numeric ENSO precursors with historical receipt-time evidence and source revisions.">
+<title>ResearchOS | NOAA Numeric Climate Precursors</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/climate-numeric.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header">
+<a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research"><a href="/mechanism-radar.html">Causal Mechanism Radar</a><a href="/transmission-lab.html">Economic Transmission</a></nav>
+<span class="desk-version">v0.46 · P0 SPRINT 8 / NOAA NUMERIC DATA</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">CLIMATE / SOURCE-OBSERVED SIGNALS / TEMPORAL EVIDENCE</p>
+<h1>Numerical climate <span>precursor intelligence</span></h1>
+<p>Capture original NOAA CPC index tables for Relative ONI, relative Niño 3.4, SOI and equatorial trade winds. Track changing measured conditions, distinguish ocean and atmospheric indicators, and review exactly when ResearchOS first recorded each source version.</p>
+<div class="desk-boundary"><strong>Interpretation boundary:</strong> These indicators describe published climate measurements, often revised after the measurement month. A numerical threshold does not prove an ENSO episode, regional storm damage, crop loss, fishery collapse or issuer return. The archive capture time is not the publisher's original release time.</div>
+</section>
+<section class="desk-panel" id="numeric-capture">
+<div class="panel-heading"><h2>01 / Explicit NOAA data capture</h2><span>OFFICIAL FIXED SOURCES · NO AUTO-POLL</span></div>
+<div class="panel-body">
+<form id="numericForm"><div class="numeric-controls"><label for="numericMetric">NUMERICAL INDICATOR
+<select id="numericMetric" required><option value="">Loading NOAA data series…</option></select></label>
+<label for="numericSource">SOURCE TYPE<input id="numericSource" value="NOAA Climate Prediction Center · published index file" readonly></label>
+</div>
+<button id="numericCapture" type="submit" disabled>Retrieve and archive official index</button></form>
+<p id="numericCaptureStatus" class="numeric-status" role="status" aria-live="polite">No source downloaded. Only a local, rights-enabled explicit click can store data.</p>
+</div></section>
+<section class="desk-panel" id="numeric-asof">
+<div class="panel-heading"><h2>02 / Historical knowledge and cross-index context</h2><span id="numericCounts">NO CAPTURED SERIES</span></div>
+<div class="panel-body">
+<div class="numeric-controls">
+<label for="numericAsOf">RESEARCHOS LOCAL AS-OF INSTANT (UTC)
+<input id="numericAsOf" maxlength="32" placeholder="Current, or 2026-11-16T18:00:00Z"></label>
+<label for="numericFilter">INDICATOR FILTER<select id="numericFilter"><option value="">All captured indices</option></select></label>
+</div>
+<div class="desk-actions">
+<button type="button" id="numericRefresh" class="secondary">Replay stored source snapshots</button>
+<button type="button" id="numericExport" class="secondary" disabled>Export evidence JSON</button>
+</div>
+<p id="numericStatus" class="numeric-status" role="status" aria-live="polite">Missing index observations do not imply normal climate conditions.</p>
+<div id="numericConsensus" class="numeric-consensus"></div>
+<div id="numericResults" class="numeric-cards"></div>
+</div></section>
+<section class="desk-panel" id="numeric-causal-context">
+<div class="panel-heading"><h2>03 / Climate-to-economy evidence requirements</h2><span>CONDITIONAL CAUSAL LINKS</span></div>
+<div class="panel-body">
+<div class="numeric-gates">
+<p><strong>Pacific coupling:</strong> RONI measures overlapping three-month relative SST anomalies. Atmospheric SOI and wind fields are separate supporting indicators, not independent confirmation of a whole ENSO episode.</p>
+<p><strong>California winter:</strong> Need dated seasonal precipitation forecast, observed rainfall, basin-specific hazard and real asset geometry before financial exposure.</p>
+<p><strong>Peru fisheries:</strong> Need measured coastal upwelling, oxygen/nutrients, anchoveta catch and official quota changes, then fishmeal inventory and pricing.</p>
+<p><strong>South America agriculture:</strong> Rainfall effects differ by crop and region. Potash/fertilizer impact requires crop yields, import demand, supplier contracts and price vintages.</p>
+<p><strong>Point-in-time research:</strong> A 2026 fetch containing a 2015 value does not mean the platform saw it in 2015. Climate series can undergo later revisions; these must not leak into earlier backtests.</p>
+</div></div></section>
+<footer>ResearchOS v0.46 · NOAA numeric observation research only · Not a calibrated ENSO, weather, fishery or investment forecast.</footer>
+</main>
+<script src="/climate-numeric.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

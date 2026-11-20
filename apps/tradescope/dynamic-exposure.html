@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS source-backed mechanism to facility to issuer exposure research graph.">
+<title>ResearchOS | Dynamic Causal Exposure Graph</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/dynamic-exposure.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a href="/" class="desk-brand">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related source workspaces"><a href="/mechanism-radar.html">Mechanism Radar</a>
+<a href="/facility-exposure.html">EPA &amp; SEC Crosswalk</a>
+<a href="/hazard-footprints.html">Hazard Polygons</a>
+<a href="/entity-graph.html">Legal Identity Graph</a></nav>
+<span class="desk-version">v0.48 · P0 SPRINT 8 / EXPOSURE GRAPH</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">MECHANISM → EVENT → ASSET → ISSUER / EVIDENCE FIRST</p>
+<h1>Dynamic causal &amp; <span>economic exposure graph</span></h1>
+<p>Explore real, locally captured source observations and explicitly conditional economic pathways. Investigate reported geographic exposure and company-relationship hypotheses with citations, timestamp boundaries and Anti-Agent challenges.</p>
+<div class="desk-boundary"><strong>Proof boundary:</strong> Official facility/SEC identity metadata and an analyst-submitted relationship are not legal ownership verification. A flood-warning polygon, wildfire perimeter, proximity radius or modeled shaking intensity is not verified damage or issuer loss. Neither thematic mechanisms nor company mentions are investment signals.</div>
+</section>
+<section class="desk-panel" id="exposure-controls">
+<div class="panel-heading"><h2>01 / As-of source snapshot</h2><span>READ ONLY · NO EXTERNAL REQUESTS</span></div>
+<div class="panel-body">
+<div class="exposure-fields">
+<label for="exposureTheme">MECHANISM FAMILY
+<select id="exposureTheme"><option value="">All captured mechanism families</option></select></label>
+<label for="exposureAsOf">LOCAL KNOWLEDGE AS-OF UTC
+<input id="exposureAsOf" maxlength="32" placeholder="Current, or 2026-11-16T18:00:00Z"></label>
+<label for="exposureSite">EPA REGISTRY ID (OPTIONAL)
+<input id="exposureSite" inputmode="numeric" maxlength="12" placeholder="12-digit EPA Registry ID"></label>
+<label for="exposureEvent">CAPTURED SOURCE EVENT ID (OPTIONAL)
+<input id="exposureEvent" maxlength="165" placeholder="USGS:... or NASA_EONET:..."></label>
+</div>
+<div class="desk-actions"><button id="exposureRefresh" type="button">Build evidence graph</button>
+<button id="exposureExport" type="button" class="secondary" disabled>Export source &amp; challenge JSON</button></div>
+<p id="exposureStatus" role="status" aria-live="polite" class="exposure-status">Read-only graph assembled only from previously captured, local research journals.</p>
+</div></section>
+<section class="desk-panel" id="exposure-network">
+<div class="panel-heading"><h2>02 / Causal graph and exposure pathway</h2><span id="exposureCounts">NO GRAPH</span></div>
+<div class="panel-body">
+<p>Mechanism template edges are hypothetical; event-to-site links are spatial/model screens; site-to-company edges are operator assertions. Select a path to inspect its actual provenance and open contradiction checks.</p>
+<div id="exposureSummary" class="exposure-summary"></div>
+<div class="exposure-path-picker"><label for="exposurePath">EXPOSURE RESEARCH PATH
+<select id="exposurePath" disabled><option value="">No eligible path</option></select></label></div>
+<div id="exposureDiagram" class="exposure-diagram" role="group" aria-label="Selected source to site to issuer path"></div>
+<div id="exposurePathDetails" class="exposure-detail"><p>No path selected. A mechanism can be explored without a named issuer, but company exposure must be independently evidenced.</p></div>
+</div></section>
+<section class="desk-panel" id="exposure-mechanisms">
+<div class="panel-heading"><h2>03 / Mechanism → sector hypothesis stages</h2><span>CONDITIONAL · NOT VERIFIED</span></div>
+<div class="panel-body"><div id="exposureMechanismCards" class="exposure-cards"></div></div>
+</section>
+<section class="desk-panel" id="exposure-adversarial">
+<div class="panel-heading"><h2>04 / Anti-Agent contradiction checklist</h2><span>UNANSWERED PROOF GATES</span></div>
+<div class="panel-body"><div id="exposureChallenges" class="exposure-cards">
+<p>Select a candidate exposure path to inspect source gaps, alternative mechanisms, legal ownership uncertainty and financial materiality.</p></div></div>
+</section>
+<section class="desk-panel" id="exposure-sources">
+<div class="panel-heading"><h2>05 / Captured evidence and graph audit</h2><span>SOURCE CLOCKS AND DIGEST</span></div>
+<div class="panel-body"><p id="exposureDigest" class="exposure-status">No source replay generated.</p>
+<div id="exposureSourceCards" class="exposure-cards"></div></div>
+</section>
+<footer>ResearchOS v0.48 · Read-only local causal research, no automatic execution or materiality claim · PR #19 draft</footer>
+</main><script src="/dynamic-exposure.js"></script>
+<script src="/hierarchy-navigation.js"></script></body></html>

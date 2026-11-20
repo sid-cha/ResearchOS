@@ -7,12 +7,18 @@ build/
 node_modules/
 .next/
 npm-debug.log*
+dist/
 
 # Python
 __pycache__/
 *.py[cod]
 venv/
+
+# Secrets and local environment overrides
 .env
+.env.*
+!.env.example
+.envrc
 
 # IDE
 .idea/
@@ -25,3 +31,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Generated Java / IDE output (never commit compiled classes or copied config)
+apps/api/bin/
+*.class

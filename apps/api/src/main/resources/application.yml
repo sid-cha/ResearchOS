@@ -16,4 +16,4 @@ researchos:
   api:
     provider: fmp
     base-url: https://financialmodelingprep.com/api/v3
-    key: cun3bDZAclkpsncg0XWHNUWBeyDbjIbD
+    key: ${FMP_API_KEY:}

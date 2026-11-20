@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS USGS ShakeMap modeled intensity sampling for previously captured earthquakes and EPA FRS facilities.">
+<title>ResearchOS | USGS ShakeMap Facility MMI</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/usgs-shakemap.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a href="/" class="desk-brand">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research"><a href="/event-portal.html#global-feed">USGS Captured Events</a>
+<a href="/facility-exposure.html">EPA Facility Crosswalk</a>
+<a href="/hazard-footprints.html">Hazard Polygons</a></nav>
+<span class="desk-version">v0.43 · P0 SPRINT 7 / SHAKEMAP MMI</span></header>
+<main class="desk-main">
+<section class="desk-hero"><p class="eyebrow">GLOBAL EVENTS / SOURCE GRIDS / SEISMIC INTENSITY</p>
+<h1>USGS ShakeMap <span>site intensity sampling</span></h1>
+<p>Sample the USGS modeled Modified Mercalli Intensity (MMI) grid near a captured EPA facility, for an earthquake already observed in the local event archive.</p>
+<div class="desk-boundary"><strong>Evidence boundary:</strong> Nearest grid-node MMI is a modeled shaking estimate, not a seismic instrument reading at the facility. It does not prove building damage, ownership, operating loss or share-price effect. A missing ShakeMap grid or site outside the grid is <strong>unknown</strong>, not zero shaking.</div></section>
+<section id="shakemap-capture" class="desk-panel">
+<div class="panel-heading"><h2>01 / Explicit ShakeMap source capture</h2><span>USGS DETAIL + BOUNDED GRID XML</span></div>
+<div class="panel-body">
+<p>First collect USGS events via <a href="/event-portal.html#global-feed">Captured Global Feed</a>, then register an EPA FRS site under <a href="/facility-exposure.html#facility-search">Facility Crosswalk</a>. Historical available-source dates are not backdated by the earthquake time.</p>
+<form id="shakemapForm">
+<div class="mmi-fields">
+<label for="mmiEvent">CAPTURED USGS EARTHQUAKE<select id="mmiEvent" required><option value="">No saved USGS earthquake</option></select></label>
+<label for="mmiFacility">CAPTURED EPA FACILITY<select id="mmiFacility" required><option value="">No saved EPA facility</option></select></label>
+</div>
+<button id="mmiCapture" type="submit" disabled>Retrieve selected USGS ShakeMap and sample MMI</button>
+</form><p id="mmiCaptureStatus" class="mmi-status" aria-live="polite" role="status">No external USGS request made. The legacy grid.xml product is used only when USGS reports one.</p>
+</div></section>
+<section id="shakemap-history" class="desk-panel">
+<div class="panel-heading"><h2>02 / Captured shaking observations</h2><span id="mmiCounts">NO SNAPSHOTS</span></div>
+<div class="panel-body">
+<label for="mmiAsOf">LOCAL KNOWLEDGE AS-OF (UTC, OPTIONAL)<input id="mmiAsOf" maxlength="32" placeholder="Current or 2026-11-16T18:00:00Z"></label>
+<div class="desk-actions"><button id="mmiRefresh" type="button" class="secondary">Refresh captured MMI snapshots</button>
+<button id="mmiExport" type="button" class="secondary" disabled>Export observations as JSON</button></div>
+<p id="mmiStatus" class="mmi-status" role="status" aria-live="polite">Grid observations are retained point-in-time with provider hashes; no retrospective revisions are invented.</p>
+<div id="mmiResults" class="mmi-results"><p>No USGS ShakeMap observations yet.</p></div>
+</div></section>
+<section id="mmi-proof-gates" class="desk-panel">
+<div class="panel-heading"><h2>03 / Anti-Agent interpretation gates</h2><span>NEVER A LOSS CERTIFICATE</span></div>
+<div class="panel-body"><div class="mmi-proofs">
+<p>USGS intensity is a modeled ground-motion estimate. Reported local grid nodes may be sparse, revised or unavailable.</p>
+<p>ShakeMap XML is a legacy product. A future CoverageJSON/HDF integration should independently cross-check the grid output and uncertainty.</p>
+<p>Nearest-grid sampling performs no spatial interpolation, structural fragility calculation, soil amplification or site damage estimation.</p>
+<p>EPA reported facility points are not surveyed building footprints, nor proof of legal ownership by a SEC filer.</p>
+<p>Economic impact, supplier interruption, insurance loss, equity sensitivity and false-positive performance require separately verified outcomes.</p>
+</div></div></section>
+<footer>ResearchOS v0.43 · USGS grid estimate for point screening only · Not building safety, disaster response or investment advice.</footer>
+</main>
+<script src="/usgs-shakemap.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

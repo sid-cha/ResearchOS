@@ -1,0 +1,12 @@
+.mmi-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mmi-status{font-size:12px;line-height:1.7;color:var(--muted);overflow-wrap:anywhere}
+.mmi-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px;margin-top:15px}
+.mmi-card{background:#162b39;border:1px solid var(--line);padding:15px;border-radius:8px;overflow-wrap:anywhere}
+.mmi-card h3{font-size:14px;margin:5px 0 10px}
+.mmi-card strong{font:700 23px ui-monospace,Consolas,monospace;color:var(--teal)}
+.mmi-card p,.mmi-card small{font-size:12px;line-height:1.65;color:var(--muted)}
+.mmi-card .caveat{font-size:11px;color:var(--amber)}
+.mmi-card a{overflow-wrap:anywhere}
+.mmi-proofs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px}
+.mmi-proofs p{border:1px solid var(--line);border-radius:8px;padding:13px;color:var(--muted);font-size:12px;line-height:1.65}
+@media(max-width:750px){.mmi-fields{grid-template-columns:1fr}}

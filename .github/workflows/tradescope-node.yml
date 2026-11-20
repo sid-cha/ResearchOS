@@ -1,0 +1,29 @@
+name: TradeScope Node checks
+on:
+  pull_request:
+    paths:
+      - 'apps/tradescope/**'
+      - '.github/workflows/tradescope-node.yml'
+  push:
+    branches:
+      - 'feature/tradescope-v010-discovery-case-workflow'
+    paths:
+      - 'apps/tradescope/**'
+      - '.github/workflows/tradescope-node.yml'
+permissions:
+  contents: read
+jobs:
+  node-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax and regression suite
+        working-directory: apps/tradescope
+        run: npm test
+      - name: Verify static public-asset allowlist
+        working-directory: apps/tradescope
+        run: npm run build:static

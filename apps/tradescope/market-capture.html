@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="TradeScope local opt-in IEX capture and deterministic evidence replay">
+<title>TradeScope | Capture &amp; Replay</title>
+<link rel="stylesheet" href="/market-capture.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css">
+</head>
+<body>
+<header class="capture-header"><a class="logo" href="/">T<span>.</span> TRADE<b>SCOPE</b></a>
+<nav aria-label="Legacy jump"><a href="/">Terminal</a></nav>
+<span class="scope">RESEARCHOS / LOCAL MARKET ARCHIVE</span></header>
+<main>
+<section class="hero">
+ <div><p class="eyebrow">MARKETS / SURVEILLANCE / TS-MDI-704</p><h1>Market capture &amp; deterministic replay</h1>
+ <p>Record only normalized Alpaca IEX observations, preserve exchange and ingestion clocks, and verify a private hash-chained session before review.</p></div>
+ <strong class="pill" id="configuration">Checking local capability…</strong>
+</section>
+<div class="notice"><strong>Evidence boundary:</strong> IEX is a single exchange, not the consolidated tape. Browser reconnects, provider outages and sampling gaps cannot be reconstructed. Recording must be permitted by your provider's current data-use and retention rights. Hashes are not independent timestamps or WORM records.</div>
+<div class="columns">
+<section class="panel">
+ <div class="panel-head"><h2>01 / Recording controls</h2><span>Manual opt-in</span></div>
+ <div class="panel-content">
+ <p>Local-only configuration requires <code>HOST=127.0.0.1</code>, <code>MARKET_CAPTURE_ENABLED=true</code> and <code>MARKET_CAPTURE_RIGHTS_CONFIRMED=true</code>. Restart Node after changing your private <code>.env</code>.</p>
+ <dl class="facts">
+  <div><dt>Connector</dt><dd id="connector">—</dd></div>
+  <div><dt>Status</dt><dd id="recording">—</dd></div>
+  <div><dt>Captured observations</dt><dd id="count">—</dd></div>
+  <div><dt>Continuity</dt><dd>Unverified across gaps</dd></div>
+ </dl>
+ <div class="buttons"><button id="start" disabled>Start local recording</button><button id="stop" disabled class="secondary">Stop &amp; seal</button><button id="refresh" class="secondary">Refresh</button></div>
+ <p id="status" role="status" aria-live="polite">Source state has not loaded.</p>
+ </div>
+</section>
+<section class="panel">
+ <div class="panel-head"><h2>02 / Saved research sessions</h2><span id="capacity">—</span></div>
+ <div class="panel-content"><div id="sessions"><p class="empty">No session metadata loaded.</p></div></div>
+</section>
+</div>
+<section class="panel replay">
+ <div class="panel-head"><h2>03 / Verified replay</h2><span>Deterministic VOL-01 research rule</span></div>
+ <div class="panel-content">
+  <p id="replayStatus">Choose a captured session to inspect hash-chain integrity, evidence timestamps and replay results.</p>
+  <div class="table-wrap"><table><thead><tr><th>Seq</th><th>Exchange time (UTC)</th><th>Symbol</th><th>Type</th><th>Observed value</th><th>VOL-01</th></tr></thead><tbody id="replayRows"></tbody></table></div>
+  <div class="pagination"><button id="prev" class="secondary" disabled>Previous page</button><span id="page">—</span><button id="next" class="secondary" disabled>Next page</button></div>
+ </div>
+</section>
+<footer>TradeScope ResearchOS · Local single-user pilot · No trading, prediction or licensed redistribution</footer>
+</main>
+<script src="/market-capture.js"></script>
+<script src="/hierarchy-navigation.js"></script>
+</body></html>

@@ -1,0 +1,74 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS company facility relationship evidence, SEC excerpt matching and effective-date review.">
+<title>ResearchOS | Relationship Verification</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/relationship-verification.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a href="/" class="desk-brand">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research"><a href="/facility-exposure.html">Company–Facility Crosswalk</a></nav>
+<span class="desk-version">v0.38 · EVIDENCE CHALLENGE</span></header>
+<main class="desk-main">
+<section class="desk-hero"><p class="eyebrow">COMPANY RESEARCH / FACILITY INTELLIGENCE / EVIDENCE VERIFICATION</p>
+<h1>Relationship evidence <span>&amp; effective-date review</span></h1>
+<p>Independently capture the registered SEC document, compare a literal source excerpt, propose a dated relationship claim, and record two separate reviewer assessments.</p>
+<div class="desk-boundary"><strong>Proof boundary:</strong> A source-text match is not proof of legal ownership, supplier contracts, operational control or effective dates. Two unauthenticated reviewer aliases cannot certify a relationship. All proposed dates are recorded when reviewed—not backdated as historical knowledge.</div></section>
+<section class="desk-panel" id="source-excerpt">
+<div class="panel-heading"><h2>01 / Match text in the registered SEC filing</h2><span>STRICT SOURCE URL · NO REDIRECT</span></div>
+<div class="panel-body">
+<p>Start in <a href="/facility-exposure.html">Facility Crosswalk</a> and record a potential relationship between captured EPA and SEC records. Select that relationship below; this page can retrieve only its already registered SEC filing URL.</p>
+<form id="sourceCaptureForm">
+<label for="relationshipChoice">CAPTURED RELATIONSHIP CLAIM<select id="relationshipChoice" required><option value="">Loading existing claims…</option></select></label>
+<p id="sourceLink" class="relation-source">No SEC filing selected.</p>
+<label for="sourceExcerpt">VERBATIM SEC FILING PASSAGE (40–450 CHARACTERS)
+<textarea id="sourceExcerpt" rows="4" minlength="40" maxlength="450" required placeholder="Paste a sufficiently specific passage from the official filing that is relevant to the proposed relationship."></textarea></label>
+<button id="captureSource" type="submit" disabled>Fetch official filing &amp; check exact excerpt</button>
+</form><p id="sourceMessage" class="review-message" role="status" aria-live="polite">No source capture requested.</p>
+<div id="documentList" class="evidence-cards"></div>
+</div></section>
+<div class="verification-grid">
+<section class="desk-panel" id="effective-dates">
+<div class="panel-heading"><h2>02 / Propose effective-date interval</h2><span>HUMAN ASSERTION · NOT CERTIFIED</span></div>
+<div class="panel-body">
+<p>Only matching text from a previously captured document can be referenced. Dates are research hypotheses. A document dated years ago does not mean ResearchOS knew it then.</p>
+<form id="proposalForm">
+<label for="documentChoice">MATCHED CAPTURED SEC EXCERPT<select id="documentChoice" required><option value="">No matching document yet</option></select></label>
+<div class="verification-form-grid">
+<label for="relationshipFrom">PROPOSED EFFECTIVE FROM (YYYY-MM-DD)<input type="date" id="relationshipFrom" required></label>
+<label for="relationshipTo">PROPOSED EFFECTIVE THROUGH (OPTIONAL)<input type="date" id="relationshipTo"></label>
+</div>
+<label for="proposalExplanation">WHY THESE DATES / WHAT REMAINS MISSING (40–700 CHARACTERS)
+<textarea id="proposalExplanation" rows="4" minlength="40" maxlength="700" required placeholder="Describe exactly what the captured wording suggests, whether it names a subsidiary/site, and the unverified relationship/dates."></textarea></label>
+<button type="submit" id="saveProposal" disabled>Record unverified effective-date proposal</button>
+</form><p id="proposalMessage" class="review-message" role="status" aria-live="polite">No interval proposed.</p>
+</div></section>
+<section class="desk-panel" id="dual-review">
+<div class="panel-heading"><h2>03 / Independent Anti-Agent review</h2><span>2 ALIASES · DECISIONS SEALED UNTIL BOTH</span></div>
+<div class="panel-body">
+<p>Reviewers assess text/context and alternatives. One reviewer cannot see the first decision through this endpoint. Aliases are not authenticated identities.</p>
+<form id="reviewForm">
+<label for="proposalChoice">RECORDED INTERVAL PROPOSAL<select id="proposalChoice" required><option value="">No proposals available</option></select></label>
+<p id="proposalReviewState" class="review-message">No proposal selected.</p>
+<label for="reviewerAlias">REVIEWER ALIAS<input id="reviewerAlias" minlength="3" maxlength="36" required autocomplete="off" placeholder="reviewer_alpha"></label>
+<label for="reviewVote">ASSESSMENT<select id="reviewVote">
+<option value="INSUFFICIENT_EVIDENCE">Insufficient evidence</option>
+<option value="SUPPORTS_CLAIM">Source appears to support proposed link</option>
+<option value="REFUTES_CLAIM">Contradicts proposed link</option></select></label>
+<label for="reviewRationale">REVIEW RATIONALE (30–600 CHARACTERS)
+<textarea id="reviewRationale" minlength="30" maxlength="600" required rows="4" placeholder="Explain alternate ownership, filing age, subsidiary identity, site-name ambiguity or missing proof."></textarea></label>
+<button id="submitReview" type="submit" disabled>Submit independent assessment</button>
+</form><p id="reviewMessage" class="review-message" role="status" aria-live="polite">No review submitted.</p>
+</div></section>
+</div>
+<section class="desk-panel" id="relationship-timeline">
+<div class="panel-heading"><h2>04 / Recorded relationship timeline &amp; unresolved claims</h2><span id="verificationCounts">NOT LOADED</span></div>
+<div class="panel-body">
+<label for="verificationAsOf">LOCAL ARCHIVE AS-OF UTC (OPTIONAL)<input id="verificationAsOf" maxlength="32" placeholder="Current knowledge, or 2026-11-15T18:00:00Z"></label>
+<div class="desk-actions"><button type="button" id="refreshVerification" class="secondary">Inspect as-of evidence</button></div>
+<p id="verificationMessage" role="status" class="review-message">An older cutoff cannot include later source captures, proposals or reviews.</p>
+<div id="proposalResults" class="evidence-cards"></div>
+</div></section>
+<section class="desk-panel" id="adversarial-gates">
+<div class="panel-heading"><h2>05 / Required verification gates</h2><span>BEFORE ANY ISSUER EXPOSURE RANKING</span></div>
+<div class="panel-body"><p>Still required for established ownership or supply-chain links: authenticated independent reviewers, independently adjudicated filing context, subsidiary-to-parent legal entity resolution, verified effective/termination dates, and corroboration of specific site/facility identity. Actual incident footprints, damage and materiality remain separate research problems.</p>
+</div></section>
+<footer>ResearchOS v0.38 · An SEC excerpt match + two human assessments do not constitute a certified corporate ownership record.</footer>
+</main><script src="/relationship-verification.js"></script><script src="/hierarchy-navigation.js"></script></body></html>

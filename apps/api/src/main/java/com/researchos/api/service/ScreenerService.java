@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Objects;
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,8 +44,15 @@ public class ScreenerService {
         // Fetch all metrics for this company
         // Optimization: In a real app we'd fetch this in bulk or use SQL
         List<MetricValue> metrics = metricValueRepository.findByCompanyTicker(company.getTicker());
-        Map<String, MetricValue> metricMap = metrics.stream()
-                .collect(Collectors.toMap(MetricValue::getMetricCode, m -> m));
+        Map<String,MetricValue> metricMap=new HashMap<>();
+        metrics.stream().filter(m->m.getMetricCode()!=null&&m.getDate()!=null)
+                .collect(Collectors.groupingBy(MetricValue::getMetricCode)).forEach((code,history)->{
+                    LocalDate latest=history.stream().map(MetricValue::getDate).max(LocalDate::compareTo).orElseThrow();
+                    List<MetricValue> current=history.stream().filter(m->m.getDate().equals(latest)).toList();
+                    MetricValue candidate=current.getFirst();
+                    // Duplicate equal calculations are safe; conflicting latest values are unknown.
+                    if(candidate.getValue()!=null&&current.stream().allMatch(m->m.getValue()!=null&&m.getValue().compareTo(candidate.getValue())==0))metricMap.put(code,candidate);
+                });
 
         for (ScreenCriterion c : criteria) {
             if (c.getField().startsWith("metric:")) {

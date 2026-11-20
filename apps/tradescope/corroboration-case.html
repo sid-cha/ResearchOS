@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS v0.41 source corroboration dossier: SEC, EPA FRS, GLEIF relationship evidence and anti-agent objections.">
+<title>ResearchOS | Source Corroboration Dossier</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/corroboration-case.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header">
+<a href="/" class="desk-brand">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Related research">
+<a href="/facility-exposure.html">Facility Crosswalk</a>
+<a href="/entity-graph.html">Entity Graph</a>
+<a href="/relationship-verification.html">SEC Evidence Review</a>
+</nav><span class="desk-version">v0.41 · P0 SOURCE CASE BUILDER</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">COMPANY RESEARCH / SOURCE CHAIN / POINT-IN-TIME CASE</p>
+<h1>Corroboration <span>case dossier</span></h1>
+<p>Reconcile already-captured EPA, SEC and GLEIF source records around one company–facility research claim. Inspect provenance, conflicting identifiers, dated excerpts and blocking Anti-Agent objections.</p>
+<div class="desk-boundary"><strong>Evidence boundary:</strong> This is a deterministic research dossier, not legal due diligence or independent ownership certification. Matching filing text, an accounting-consolidation relationship and a claimed CIK↔LEI association are observations about different propositions. Their combination does not prove that an issuer owns or operates a facility.</div>
+</section>
+<section class="desk-panel" id="case-selection">
+<div class="panel-heading"><h2>01 / Select a captured company–facility claim</h2><span>LOCAL READ ONLY</span></div>
+<div class="panel-body">
+<div class="case-controls">
+<label for="caseRelationship">SOURCE-LINKED RELATIONSHIP
+<select id="caseRelationship"><option value="">Loading captured claims…</option></select></label>
+<label for="caseAsOf">LOCAL KNOWLEDGE CUTOFF (UTC, OPTIONAL)
+<input id="caseAsOf" maxlength="32" placeholder="Current, or 2026-11-15T18:00:00Z" autocomplete="off"></label>
+</div>
+<div class="desk-actions">
+<button type="button" id="loadCase">Build evidence dossier</button>
+<button type="button" id="reloadCases" class="secondary">Refresh saved claims</button>
+<button type="button" id="exportCase" class="secondary" disabled>Download reproducible JSON</button>
+</div>
+<p class="case-status" id="caseMessage" aria-live="polite" role="status">No dossier requested. Saved data only; no external source fetch will occur.</p>
+</div></section>
+<section class="desk-panel" id="case-verdict">
+<div class="panel-heading"><h2>02 / Decision boundary</h2><span id="caseRule">SOURCE REVIEW ONLY</span></div>
+<div class="panel-body">
+<div class="case-facts" id="caseFacts"><p>Choose a relationship to inspect source identity and provenance.</p></div>
+<p class="case-status" id="caseDecision">No verified ownership or issuer economic effect can be asserted without additional source evidence.</p>
+</div></section>
+<section class="desk-panel" id="case-matrix">
+<div class="panel-heading"><h2>03 / Independent evidence requirements</h2><span>UNRESOLVED STATUS VISIBLE</span></div>
+<div class="panel-body">
+<div id="caseMatrix" class="case-matrix"><p>No evidence matrix loaded.</p></div>
+</div></section>
+<section class="desk-panel" id="case-provenance">
+<div class="panel-heading"><h2>04 / Source capture and provenance chain</h2><span>NO LIVE SCRAPING</span></div>
+<div class="panel-body">
+<p>Each reference is identified by the original provider and its local capture clock. Capturing a historical filing today does not mean the information was available to the platform on its original date.</p>
+<div class="case-evidence" id="caseEvidence"><p>No provenance records loaded.</p></div>
+</div></section>
+<section class="desk-panel" id="case-challenges">
+<div class="panel-heading"><h2>05 / Anti-Agent objections &amp; conflicting records</h2><span>DO NOT SILENCE DISAGREEMENT</span></div>
+<div class="panel-body"><div class="case-issues" id="caseIssues"><p>No objections loaded.</p></div>
+</div></section>
+<footer>ResearchOS v0.41 · Point-in-time source dossier, not certified facility ownership or investment attribution · Local workstation pilot</footer>
+</main>
+<script src="/corroboration-case.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>

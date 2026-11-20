@@ -1,0 +1,58 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="ResearchOS official NWS flood warning polygons and WFIGS wildfire perimeters screened against EPA FRS facility coordinates.">
+<title>ResearchOS | Hazard Polygon Screening</title>
+<link rel="stylesheet" href="/agent-desk.css"><link rel="stylesheet" href="/hazard-footprints.css">
+<link rel="stylesheet" href="/hierarchy-navigation.css"></head><body>
+<header class="desk-header"><a class="desk-brand" href="/">R<span>.</span> RESEARCH<b>OS</b></a>
+<nav aria-label="Research workspaces"><a href="/facility-exposure.html">Facility Crosswalk</a>
+<a href="/corroboration-case.html">Corroboration Dossier</a></nav>
+<span class="desk-version">v0.42 · P0 SPRINT 7 / HAZARD POLYGONS</span></header>
+<main class="desk-main">
+<section class="desk-hero">
+<p class="eyebrow">GLOBAL EVENTS / FACILITY INTELLIGENCE / CAPTURED HAZARD AREAS</p>
+<h1>Hazard polygon <span>exposure screening</span></h1>
+<p>Check an already captured EPA facility against original NWS flood-alert polygons or current interagency WFIGS wildfire perimeter polygons. Inspect local capture history without forecasting damage or loss.</p>
+<div class="desk-boundary"><strong>Method boundary:</strong> A warning polygon is not measured flood depth or actual inundation. A reported wildfire perimeter is not a structure-damage survey. EPA FRS coordinates are reported points, not surveyed property boundaries. Point-in-polygon is a geographic lead, not a confirmed operating loss or security-price impact.</div>
+</section>
+<section id="capture-hazard" class="desk-panel">
+<div class="panel-heading"><h2>01 / Explicit official hazard capture</h2><span>NO AUTOMATED FETCH ON PAGE LOAD</span></div>
+<div class="panel-body">
+<p>Capture an EPA facility under <a href="/facility-exposure.html#facility-search">Facility Crosswalk</a> first. The server derives official provider queries from the captured facility coordinate; it does not accept arbitrary coordinates or external URLs.</p>
+<form id="hazardForm"><div class="hazard-columns">
+<label for="hazardFacility">EPA FRS CAPTURED FACILITY<select id="hazardFacility" required>
+<option value="">No captured facilities</option></select></label>
+<label for="hazardProvider">OFFICIAL HAZARD SOURCE<select id="hazardProvider">
+<option value="NWS_FLOOD_ALERT">NWS active Flood/Flash Flood alert polygons</option>
+<option value="WFIGS_WILDFIRE">WFIGS current wildfire perimeters</option></select></label>
+</div><button id="captureHazard" type="submit" disabled>Retrieve and store source polygon evidence</button></form>
+<p id="captureHazardStatus" class="hazard-status" role="status" aria-live="polite">No provider call requested.</p>
+</div></section>
+<section id="hazard-history" class="desk-panel">
+<div class="panel-heading"><h2>02 / Point-in-polygon and source revisions</h2><span id="hazardCounts">NOT LOADED</span></div>
+<div class="panel-body">
+<div class="hazard-columns">
+<label for="hazardAsOf">LOCAL KNOWLEDGE AS-OF (UTC, OPTIONAL)
+<input id="hazardAsOf" maxlength="32" placeholder="2026-11-16T18:00:00Z" autocomplete="off"></label>
+<label for="hazardFilter">FACILITY FILTER<select id="hazardFilter">
+<option value="">All captured facility snapshots</option></select></label></div>
+<div class="desk-actions">
+<button id="refreshHazards" type="button" class="secondary">Review captured snapshots</button>
+<button id="downloadFootprints" type="button" class="secondary" disabled>Export selected GeoJSON</button>
+</div>
+<p id="hazardReviewStatus" class="hazard-status" role="status" aria-live="polite">Only saved provider responses appear here; if no polygon was returned, that is not a safety finding.</p>
+<div id="hazardResults" class="hazard-snapshots"><p>No hazard snapshots captured.</p></div>
+</div></section>
+<section id="hazard-adversarial" class="desk-panel">
+<div class="panel-heading"><h2>03 / Anti-Agent verification gates</h2><span>ALWAYS UNRESOLVED</span></div>
+<div class="panel-body"><div class="hazard-gates">
+<p><strong>Source geometry:</strong> NWS warning area and wildfire perimeter are different products. Neither shows verified site damage. Alerts may be zone-based with no usable polygon.</p>
+<p><strong>Coordinate precision:</strong> Reported EPA FRS site coordinates cannot establish facility boundary intersection; a point on a polygon edge is reported as uncertain.</p>
+<p><strong>Historical integrity:</strong> Current hazard service responses are captured now. They do not backfill an authoritative historical event footprint before they were locally observed.</p>
+<p><strong>Financial causality:</strong> No verified facility interruption, ownership, insured loss, revenue materiality or share-price impact follows from point containment.</p>
+<p><strong>Partial coverage:</strong> Upstream missing features, incomplete polygons, large records, source downtime and omitted geometry are recorded explicitly, never replaced with fabricated negative evidence.</p>
+</div></div></section>
+<footer>ResearchOS v0.42 · Source-reported polygons for geographic research only · Not an emergency alert or engineering loss model.</footer>
+</main>
+<script src="/hazard-footprints.js"></script><script src="/hierarchy-navigation.js"></script>
+</body></html>
