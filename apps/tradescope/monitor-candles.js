@@ -50,6 +50,42 @@
    return Number.isFinite(prev)?prev:null;
   });
  }
+
+ function predictiveResearch(result){
+  const bars=result.bars, step={'1Min':60000,'5Min':300000}[result.interval];
+  if(!step)return '';
+  const label=b=>{
+   const range=b.high-b.low, body=Math.abs(b.close-b.open);
+   if(range===0||body<=range*.1)return 'Doji';
+   if(Math.min(b.open,b.close)-b.low>=2*body&&b.high-Math.max(b.open,b.close)<=body)return 'Hammer-shaped';
+   if(b.high-Math.max(b.open,b.close)>=2*body&&Math.min(b.open,b.close)-b.low<=body)return 'Shooting-star-shaped';
+   return b.close>b.open?'Up candle':'Down candle';
+  };
+  const contiguous=(a,b)=>Date.parse(b.time)-Date.parse(a.time)===step;
+  const last=bars.at(-1),prev=bars.at(-2);
+  let pattern=label(last);
+  if(prev&&contiguous(prev,last)&&prev.close<prev.open&&last.close>last.open&&last.open<=prev.close&&last.close>=prev.open)pattern='Bullish engulfing';
+  else if(prev&&contiguous(prev,last)&&prev.close>prev.open&&last.close<last.open&&last.open>=prev.close&&last.close<=prev.open)pattern='Bearish engulfing';
+  // Empirical conditional frequencies, not a calibrated ML forecast.
+  // Non-overlapping historical windows, excluding the current observation.
+  const rows=[];
+  for(let h=1;h<=5;h++){
+   const returns=[];
+   for(let i=1;i+h<bars.length-1;){
+    const a=bars[i-1],b=bars[i];
+    let match=label(b)===pattern;
+    if(pattern==='Bullish engulfing')match=a.close<a.open&&b.close>b.open&&b.open<=a.close&&b.close>=a.open;
+    if(pattern==='Bearish engulfing')match=a.close>a.open&&b.close<b.open&&b.open>=a.close&&b.close<=a.open;
+    if(contiguous(a,b)&&match&&bars.slice(i+1,i+h+1).every((v,j)=>contiguous(bars[i+j],v))){
+     returns.push(bars[i+h].close/b.close-1);i+=h+2;
+    }else i++;
+   }
+   const n=returns.length, pct=k=>(100*k/n).toFixed(1)+'%';
+   const up=returns.filter(v=>v>.0005).length,down=returns.filter(v=>v<-.0005).length;
+   rows.push('<tr><td>T+'+h+'</td><td>'+n+'</td><td>'+(n>=20?pct(up):'—')+'</td><td>'+(n>=20?pct(down):'—')+'</td><td>'+(n>=20?pct(n-up-down):'—')+'</td></tr>');
+  }
+  return '<section class="candle-metrics" style="display:block"><h3>Predictive Intelligence · experimental baseline</h3><p>Latest completed pattern: <strong>'+escapeText(pattern)+'</strong> · '+escapeText(last.time)+' UTC</p><p>Historical matching-pattern outcomes, relative to the signal close. Neutral ±5 basis points. Minimum 20 non-overlapping observations per horizon; missing values are withheld.</p><table style="width:100%;text-align:left"><thead><tr><th>Horizon</th><th>Samples</th><th>Up</th><th>Down</th><th>Neutral</th></tr></thead><tbody>'+rows.join('')+'</tbody></table><p>Single-venue IEX historical sample only; not a calibrated forecast or live signal. No bid/ask, executed order flow, futures or options inputs in this version. No transaction costs or out-of-sample validation.</p></section>';
+ }
  function draw(result){
   const bars=result.bars;
   if(!bars.length){
@@ -109,7 +145,7 @@
    '<span>SMA50 <strong>'+(sma50===null?'UNAVAILABLE':money(sma50))+'</strong></span>'+
    '<span>'+escapeText(intraday?'BAR VOLUME':'DAILY VOLUME')+' <strong>'+volume(last.volume)+'</strong></span>'+
    '<span>REL. BAR VOLUME / PRIOR 20 <strong>'+(relativeVolume===null?'UNAVAILABLE':relativeVolume.toFixed(2)+'×')+'</strong></span>'+
-   '</div>';
+   '</div>'+predictiveResearch(result);
   sourceLabel(result);
  }
  function empty(message){
